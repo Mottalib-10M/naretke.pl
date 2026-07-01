@@ -1,0 +1,333 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Calculator from "../components/Calculator.tsx";
+import "../styles/global.css";
+---
+
+<Layout
+  title="Kalkulator Wynagrodzeń 2026 — Brutto Netto | KalkulatorWynagrodzen.pl"
+  description="Kalkulator wynagrodzeń brutto-netto 2026. Oblicz wynagrodzenie netto, składki ZUS, zdrowotną, podatek PIT i koszt pracodawcy. Aktualne stawki."
+  canonical="/"
+>
+  <!-- Hero -->
+  <section class="text-center mb-10">
+    <h1 class="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+      Kalkulator Wynagrodzeń <span class="text-[var(--color-primary)]">2026</span>
+    </h1>
+    <p class="text-lg text-[var(--color-muted)] max-w-2xl mx-auto">
+      Oblicz swoje wynagrodzenie netto z brutto. Sprawdź składki ZUS, składkę zdrowotną,
+      podatek PIT oraz całkowity koszt pracodawcy — zgodnie z przepisami na 2026 rok.
+    </p>
+  </section>
+
+  <!-- Kalkulator -->
+  <section id="kalkulator" class="mb-16">
+    <Calculator client:load />
+  </section>
+
+  <!-- Treść SEO -->
+  <article class="prose prose-lg max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">
+      Jak działa kalkulator wynagrodzeń brutto-netto?
+    </h2>
+    <p>
+      Kalkulator wynagrodzeń na stronie KalkulatorWynagrodzen.pl pozwala w prosty i szybki sposób
+      obliczyć, ile pieniędzy otrzymasz „na rękę" z podanego wynagrodzenia brutto. Nasze narzędzie
+      uwzględnia wszystkie obowiązujące w 2026 roku przepisy dotyczące składek na ubezpieczenia
+      społeczne (ZUS), składki zdrowotnej oraz podatku dochodowego od osób fizycznych (PIT).
+      Kalkulator jest przeznaczony dla osób zatrudnionych na podstawie umowy o pracę w Polsce.
+    </p>
+    <p>
+      Wystarczy, że wpiszesz kwotę wynagrodzenia brutto, a kalkulator automatycznie obliczy:
+      składki emerytalne, rentowe, chorobowe, składkę zdrowotną, zaliczkę na podatek dochodowy,
+      a także wynagrodzenie netto — czyli kwotę, która trafi na Twoje konto bankowe. Dodatkowo
+      kalkulator pokaże Ci koszt pracodawcy, czyli łączną kwotę, jaką pracodawca musi przeznaczyć
+      na Twoje zatrudnienie.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Składki ZUS w 2026 roku — co musisz wiedzieć?
+    </h2>
+    <p>
+      System ubezpieczeń społecznych w Polsce, zarządzany przez Zakład Ubezpieczeń Społecznych (ZUS),
+      obejmuje kilka rodzajów ubezpieczeń, z których składki są potrącane zarówno od pracownika,
+      jak i od pracodawcy. Zrozumienie struktury tych składek jest kluczowe dla prawidłowego
+      obliczenia wynagrodzenia netto.
+    </p>
+
+    <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">
+      Składki ZUS potrącane od pracownika
+    </h3>
+    <p>
+      Pracownik zatrudniony na umowę o pracę odprowadza następujące składki społeczne:
+    </p>
+    <ul>
+      <li>
+        <strong>Składka emerytalna</strong> — 9,76% wynagrodzenia brutto. Jest to składka na
+        przyszłą emeryturę pracownika. Środki te gromadzone są na indywidualnym koncie
+        w ZUS i stanowią podstawę do obliczenia wysokości emerytury.
+      </li>
+      <li>
+        <strong>Składka rentowa</strong> — 1,5% wynagrodzenia brutto. Składka ta finansuje
+        ubezpieczenie rentowe, które zapewnia świadczenia w przypadku niezdolności do pracy
+        lub śmierci żywiciela rodziny.
+      </li>
+      <li>
+        <strong>Składka chorobowa</strong> — 2,45% wynagrodzenia brutto. Dzięki tej składce
+        pracownik ma prawo do zasiłku chorobowego, macierzyńskiego i opiekuńczego.
+      </li>
+    </ul>
+    <p>
+      Łącznie pracownik odprowadza <strong>13,71%</strong> wynagrodzenia brutto na składki
+      społeczne. Warto pamiętać, że składki emerytalne i rentowe podlegają rocznemu limitowi —
+      tzw. 30-krotności przeciętnego wynagrodzenia. W 2026 roku limit ten wynosi około
+      235 000 PLN rocznie. Po przekroczeniu tego progu składki emerytalne i rentowe nie są
+      już naliczane, natomiast składka chorobowa jest odprowadzana bez ograniczeń.
+    </p>
+
+    <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">
+      Składki ZUS pracodawcy
+    </h3>
+    <p>
+      Oprócz składek pracownika, pracodawca ponosi dodatkowe koszty związane z zatrudnieniem.
+      Składki pracodawcy nie są potrącane z wynagrodzenia pracownika, ale wpływają na całkowity
+      koszt zatrudnienia. Do składek pracodawcy należą:
+    </p>
+    <ul>
+      <li><strong>Składka emerytalna</strong> — 9,76% (taka sama jak pracownika)</li>
+      <li><strong>Składka rentowa</strong> — 6,5% (wyższa niż część pracownika)</li>
+      <li><strong>Składka wypadkowa</strong> — średnio 1,67% (zależy od branży i wielkości firmy)</li>
+      <li><strong>Fundusz Pracy (FP)</strong> — 2,45%</li>
+      <li><strong>Fundusz Gwarantowanych Świadczeń Pracowniczych (FGŚP)</strong> — 0,10%</li>
+    </ul>
+    <p>
+      Łączne obciążenie pracodawcy to około <strong>20,48%</strong> wynagrodzenia brutto.
+      Oznacza to, że rzeczywisty koszt zatrudnienia pracownika jest znacznie wyższy niż
+      samo wynagrodzenie brutto widoczne na umowie.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Składka zdrowotna w 2026 roku
+    </h2>
+    <p>
+      Składka na ubezpieczenie zdrowotne w przypadku umowy o pracę wynosi <strong>9%</strong>
+      i jest naliczana od podstawy, która stanowi wynagrodzenie brutto pomniejszone o składki
+      społeczne ZUS. Składka zdrowotna finansuje system opieki zdrowotnej w Polsce i daje
+      prawo do bezpłatnych świadczeń medycznych w ramach Narodowego Funduszu Zdrowia (NFZ).
+    </p>
+    <p>
+      W odróżnieniu od wcześniejszych lat, od 2022 roku składka zdrowotna nie jest już
+      odliczana od podatku dochodowego. Oznacza to, że cała kwota składki zdrowotnej
+      zmniejsza wynagrodzenie netto pracownika, co wpływa na wyższe efektywne opodatkowanie.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Podatek dochodowy PIT — skala podatkowa 2026
+    </h2>
+    <p>
+      Podatek dochodowy od osób fizycznych (PIT) w Polsce obliczany jest według skali
+      progresywnej. W 2026 roku obowiązują dwa progi podatkowe:
+    </p>
+    <ul>
+      <li>
+        <strong>12%</strong> — od dochodu do 120 000 PLN rocznie
+      </li>
+      <li>
+        <strong>32%</strong> — od nadwyżki ponad 120 000 PLN rocznie
+      </li>
+    </ul>
+    <p>
+      Podstawą opodatkowania jest wynagrodzenie brutto pomniejszone o składki społeczne ZUS
+      oraz o koszty uzyskania przychodu. Standardowe koszty uzyskania przychodu wynoszą
+      <strong>250 PLN</strong> miesięcznie, natomiast pracownicy dojeżdżający z innej miejscowości
+      mogą stosować podwyższone koszty w wysokości <strong>300 PLN</strong> miesięcznie.
+    </p>
+
+    <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">
+      Kwota wolna od podatku
+    </h3>
+    <p>
+      Jednym z najważniejszych elementów polskiego systemu podatkowego jest kwota wolna od podatku,
+      która w 2026 roku wynosi <strong>30 000 PLN</strong> rocznie. Oznacza to, że osoby zarabiające
+      do 30 000 PLN rocznie nie płacą podatku dochodowego. Dla osób zarabiających więcej kwota
+      wolna przekłada się na ulgę podatkową w wysokości <strong>3 600 PLN</strong> rocznie
+      (12% × 30 000 PLN), czyli <strong>300 PLN</strong> miesięcznie. Ta ulga podatkowa jest
+      stosowana automatycznie, gdy pracownik złoży pracodawcy oświadczenie PIT-2.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Wynagrodzenie minimalne w 2026 roku
+    </h2>
+    <p>
+      Wynagrodzenie minimalne w Polsce na rok 2026 wynosi prognozowane <strong>4 700 PLN</strong>
+      brutto miesięcznie. Jest to kwota, poniżej której pracodawca nie może wynagradzać
+      pracownika zatrudnionego na pełny etat na podstawie umowy o pracę. Wynagrodzenie
+      minimalne jest corocznie ustalane przez Radę Ministrów w drodze rozporządzenia,
+      po konsultacjach z Radą Dialogu Społecznego.
+    </p>
+    <p>
+      Warto podkreślić, że wynagrodzenie minimalne brutto to nie to samo, co kwota „na rękę".
+      Po odliczeniu wszystkich składek i podatków, netto z wynagrodzenia minimalnego jest
+      znacząco niższe. Kalkulator na naszej stronie pozwala dokładnie sprawdzić, ile wyniesie
+      netto z minimalnej pensji.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Krok po kroku — jak obliczane jest wynagrodzenie netto?
+    </h2>
+    <p>
+      Obliczenie wynagrodzenia netto z brutto przebiega w kilku etapach. Poniżej przedstawiamy
+      szczegółowy schemat obliczeń stosowany w naszym kalkulatorze:
+    </p>
+    <ol>
+      <li>
+        <strong>Obliczenie składek społecznych ZUS</strong> — od wynagrodzenia brutto naliczane są
+        składki emerytalna (9,76%), rentowa (1,5%) i chorobowa (2,45%). Łączne potrącenie wynosi
+        13,71% brutto.
+      </li>
+      <li>
+        <strong>Obliczenie podstawy składki zdrowotnej</strong> — podstawą jest wynagrodzenie brutto
+        pomniejszone o składki społeczne.
+      </li>
+      <li>
+        <strong>Obliczenie składki zdrowotnej</strong> — 9% od podstawy obliczonej w kroku 2.
+      </li>
+      <li>
+        <strong>Obliczenie podstawy opodatkowania</strong> — od wynagrodzenia brutto odejmujemy
+        składki społeczne oraz koszty uzyskania przychodu (250 lub 300 PLN). Wynik zaokrąglamy
+        do pełnych złotych.
+      </li>
+      <li>
+        <strong>Obliczenie zaliczki na podatek</strong> — od podstawy opodatkowania naliczamy
+        stawkę 12% (pierwszy próg), a następnie odejmujemy ulgę podatkową (300 PLN miesięcznie).
+        Wynik zaokrąglamy do pełnych złotych.
+      </li>
+      <li>
+        <strong>Obliczenie netto</strong> — od wynagrodzenia brutto odejmujemy składki ZUS,
+        składkę zdrowotną i zaliczkę na PIT.
+      </li>
+    </ol>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Koszt pracodawcy — ile naprawdę kosztuje Twoje zatrudnienie?
+    </h2>
+    <p>
+      Koszt pracodawcy to całkowita kwota, jaką firma musi wydać na zatrudnienie pracownika.
+      Oprócz wynagrodzenia brutto pracodawca ponosi dodatkowe koszty w postaci składek na
+      ubezpieczenia społeczne, Fundusz Pracy i FGŚP. Te dodatkowe koszty wynoszą łącznie
+      około 20,48% wynagrodzenia brutto. Nasz kalkulator automatycznie oblicza tę kwotę,
+      co jest szczególnie przydatne dla pracodawców planujących budżet wynagrodzeń.
+    </p>
+    <p>
+      Dla pracownika znajomość kosztu pracodawcy jest ważna z kilku powodów. Po pierwsze,
+      pozwala zrozumieć, jaka część kosztów zatrudnienia trafia do różnych instytucji.
+      Po drugie, daje pełny obraz sytuacji podczas negocjacji wynagrodzenia — pracodawca
+      może operować kwotą kosztu pracodawcy zamiast brutto czy netto. Po trzecie, pozwala
+      porównać koszty zatrudnienia na umowę o pracę z innymi formami współpracy, takimi
+      jak umowa zlecenie, umowa o dzieło czy kontrakt B2B.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Limit składek ZUS — 30-krotność przeciętnego wynagrodzenia
+    </h2>
+    <p>
+      Przepisy polskiego prawa przewidują roczny limit podstawy wymiaru składek na ubezpieczenia
+      emerytalne i rentowe. Limit ten wynosi 30-krotność prognozowanego przeciętnego miesięcznego
+      wynagrodzenia brutto w gospodarce narodowej na dany rok kalendarzowy. W 2026 roku limit
+      ten wynosi około <strong>235 000 PLN</strong> rocznie.
+    </p>
+    <p>
+      Po przekroczeniu tego progu w ciągu roku kalendarzowego, od nadwyżki nie są już naliczane
+      składki emerytalne i rentowe — zarówno po stronie pracownika, jak i pracodawcy. Składka
+      chorobowa (pracownik) oraz wypadkowa, FP i FGŚP (pracodawca) nadal są naliczane bez
+      ograniczeń. Oznacza to, że osoby o wysokich dochodach mogą zaobserwować wzrost
+      wynagrodzenia netto w miesiącach, w których limit zostanie przekroczony.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Efektywna stawka podatkowa
+    </h2>
+    <p>
+      Efektywna stawka podatkowa to wskaźnik, który pokazuje, jaki procent wynagrodzenia brutto
+      jest przeznaczany na wszystkie obciążenia publicznoprawne — składki ZUS, składkę zdrowotną
+      i podatek PIT. Nasz kalkulator automatycznie oblicza ten wskaźnik, co pozwala na szybkie
+      porównanie obciążeń przy różnych poziomach wynagrodzenia.
+    </p>
+    <p>
+      W polskim systemie podatkowym efektywna stawka podatkowa rośnie wraz ze wzrostem
+      wynagrodzenia, choć nie w sposób liniowy. Dzięki kwocie wolnej od podatku i progresywnej
+      skali podatkowej, osoby o niższych dochodach płacą proporcjonalnie mniej. Z kolei osoby
+      o wyższych dochodach, po przekroczeniu drugiego progu podatkowego (32%), odczuwają
+      wyższe efektywne opodatkowanie.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Dla kogo jest ten kalkulator?
+    </h2>
+    <p>
+      Kalkulator wynagrodzeń na KalkulatorWynagrodzen.pl jest przeznaczony dla szerokiego
+      grona użytkowników:
+    </p>
+    <ul>
+      <li>
+        <strong>Pracownicy</strong> — sprawdź, ile zarobisz na rękę z oferowanego wynagrodzenia
+        brutto. Kalkulator pomoże Ci ocenić oferty pracy i zaplanować domowy budżet.
+      </li>
+      <li>
+        <strong>Pracodawcy i HR</strong> — oblicz całkowity koszt zatrudnienia pracownika.
+        Narzędzie ułatwia planowanie budżetu wynagrodzeń i przygotowanie ofert rekrutacyjnych.
+      </li>
+      <li>
+        <strong>Studenci i osoby wchodzące na rynek pracy</strong> — zrozum, jak działa polski
+        system podatkowy i ubezpieczeń społecznych. Kalkulator wizualizuje podział wynagrodzenia
+        brutto na poszczególne składniki.
+      </li>
+      <li>
+        <strong>Księgowi i doradcy podatkowi</strong> — szybkie narzędzie do weryfikacji obliczeń
+        i prezentacji klientom struktury wynagrodzenia.
+      </li>
+    </ul>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Ważne informacje prawne
+    </h2>
+    <p>
+      Obliczenia wykonywane przez kalkulator mają charakter informacyjny i szacunkowy. Nie
+      stanowią one porady podatkowej ani prawnej. Rzeczywista kwota wynagrodzenia netto może
+      się nieznacznie różnić w zależności od indywidualnych okoliczności, takich jak:
+      korzystanie z ulg podatkowych (np. ulga dla młodych do 26 roku życia, ulga dla rodzin 4+),
+      praca w szczególnych warunkach, zatrudnienie w niepełnym wymiarze czasu pracy,
+      lub inne czynniki wpływające na sposób naliczania składek i podatku.
+    </p>
+    <p>
+      W przypadku wątpliwości dotyczących obliczenia wynagrodzenia lub zobowiązań podatkowych,
+      zalecamy konsultację z wykwalifikowanym doradcą podatkowym lub bezpośredni kontakt
+      z urzędem skarbowym bądź oddziałem ZUS. Kalkulator jest aktualizowany zgodnie
+      z obowiązującymi przepisami na rok 2026, jednak przepisy mogą ulec zmianie
+      w trakcie roku podatkowego.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-4 mt-10">
+      Podsumowanie — dlaczego warto korzystać z kalkulatora wynagrodzeń?
+    </h2>
+    <p>
+      Kalkulator wynagrodzeń to niezbędne narzędzie dla każdego, kto chce zrozumieć strukturę
+      swojego wynagrodzenia w Polsce. W obliczu skomplikowanego systemu podatkowego i licznych
+      składek na ubezpieczenia społeczne, samodzielne obliczenie wynagrodzenia netto może być
+      trudne i czasochłonne. Nasz kalkulator wykonuje wszystkie obliczenia automatycznie,
+      w czasie rzeczywistym, zgodnie z aktualnymi przepisami na rok 2026.
+    </p>
+    <p>
+      Dzięki przejrzystemu interfejsowi i szczegółowemu rozbijeniu wynagrodzenia na poszczególne
+      składniki, kalkulator pozwala nie tylko poznać kwotę netto, ale także zrozumieć,
+      dokąd trafiają Twoje pieniądze. Wizualizacja w postaci paska proporcjonalnego
+      obrazuje podział wynagrodzenia między netto, ZUS, składkę zdrowotną i podatek PIT,
+      co ułatwia szybkie porównanie różnych scenariuszy wynagrodzeniowych.
+    </p>
+    <p>
+      Zapraszamy do korzystania z kalkulatora i udostępniania go osobom, które mogą go
+      potrzebować. KalkulatorWynagrodzen.pl to darmowe, dostępne dla wszystkich narzędzie,
+      które pomoże Ci podejmować świadome decyzje finansowe.
+    </p>
+  </article>
+</Layout>

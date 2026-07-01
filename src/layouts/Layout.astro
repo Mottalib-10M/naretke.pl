@@ -1,0 +1,93 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+}
+
+const {
+  title,
+  description = "Kalkulator wynagrodzeń 2026 — oblicz wynagrodzenie netto z brutto. Składki ZUS, zdrowotna, PIT, koszt pracodawcy.",
+  canonical,
+} = Astro.props;
+
+const siteUrl = "https://kalkulatorwynagrodzen.pl";
+const canonicalUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
+---
+
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content="pl_PL" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- Pasek flagi polskiej -->
+    <div class="polish-flag-bar"></div>
+
+    <!-- Nagłówek -->
+    <header class="gradient-header text-white py-4 shadow-lg">
+      <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <a href="/" class="text-2xl font-bold hover:opacity-90 transition-opacity">
+          KalkulatorWynagrodzen.pl
+        </a>
+        <nav class="flex gap-6 text-sm">
+          <a href="/" class="hover:underline underline-offset-4">Kalkulator</a>
+          <a href="/faq/" class="hover:underline underline-offset-4">FAQ</a>
+          <a href="/regulamin/" class="hover:underline underline-offset-4">Regulamin</a>
+          <a href="/prywatnosc/" class="hover:underline underline-offset-4">Prywatność</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Treść -->
+    <main class="flex-1 max-w-6xl mx-auto px-4 py-8 w-full">
+      <slot />
+    </main>
+
+    <!-- Stopka -->
+    <footer class="bg-gray-800 text-gray-300 py-8 mt-auto">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+          <div>
+            <h3 class="text-white font-bold mb-3">KalkulatorWynagrodzen.pl</h3>
+            <p class="text-sm">
+              Bezpłatny kalkulator wynagrodzeń brutto-netto na rok 2026.
+              Oblicz swoje wynagrodzenie z uwzględnieniem składek ZUS,
+              składki zdrowotnej i podatku PIT.
+            </p>
+          </div>
+          <div>
+            <h3 class="text-white font-bold mb-3">Przydatne linki</h3>
+            <ul class="space-y-2 text-sm">
+              <li><a href="/" class="hover:text-white transition-colors">Kalkulator wynagrodzeń</a></li>
+              <li><a href="/faq/" class="hover:text-white transition-colors">Najczęściej zadawane pytania</a></li>
+              <li><a href="/regulamin/" class="hover:text-white transition-colors">Regulamin serwisu</a></li>
+              <li><a href="/prywatnosc/" class="hover:text-white transition-colors">Polityka prywatności</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-white font-bold mb-3">Informacje</h3>
+            <p class="text-sm">
+              Obliczenia oparte na przepisach obowiązujących w 2026 roku.
+              Kalkulator ma charakter informacyjny i nie stanowi porady podatkowej.
+            </p>
+          </div>
+        </div>
+        <div class="border-t border-gray-700 pt-4 text-center text-sm">
+          <p>&copy; {new Date().getFullYear()} KalkulatorWynagrodzen.pl — Wszelkie prawa zastrzeżone.</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

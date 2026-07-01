@@ -1,0 +1,153 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/global.css";
+---
+
+<Layout
+  title="FAQ — Najczęściej Zadawane Pytania | KalkulatorWynagrodzen.pl"
+  description="Odpowiedzi na najczęściej zadawane pytania dotyczące kalkulatora wynagrodzeń, składek ZUS, podatku PIT i wynagrodzenia netto w Polsce."
+  canonical="/faq/"
+>
+  <article class="prose prose-lg max-w-4xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+      Najczęściej Zadawane Pytania (FAQ)
+    </h1>
+
+    <div class="space-y-8">
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Jak obliczyć wynagrodzenie netto z brutto?
+        </h2>
+        <p>
+          Aby obliczyć wynagrodzenie netto z brutto, należy od kwoty brutto odjąć: składki
+          na ubezpieczenia społeczne ZUS (emerytalna 9,76%, rentowa 1,5%, chorobowa 2,45%),
+          składkę zdrowotną (9% od podstawy po odliczeniu ZUS) oraz zaliczkę na podatek
+          dochodowy PIT. Nasz kalkulator wykonuje te obliczenia automatycznie.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Ile wynosi podatek PIT w 2026 roku?
+        </h2>
+        <p>
+          W 2026 roku obowiązuje dwustopniowa skala podatkowa: <strong>12%</strong> od dochodu
+          do 120 000 PLN rocznie oraz <strong>32%</strong> od nadwyżki ponad tę kwotę. Kwota
+          wolna od podatku wynosi 30 000 PLN rocznie, co oznacza, że od dochodu do tej kwoty
+          nie płaci się podatku dochodowego.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Co to jest kwota wolna od podatku?
+        </h2>
+        <p>
+          Kwota wolna od podatku to kwota dochodu, od której nie nalicza się podatku
+          dochodowego. W 2026 roku wynosi <strong>30 000 PLN</strong> rocznie. Oznacza to,
+          że osoba zarabiająca do 30 000 PLN rocznie nie zapłaci ani złotówki podatku PIT.
+          Dla osób zarabiających więcej, kwota wolna przekłada się na ulgę podatkową
+          w wysokości 300 PLN miesięcznie (3 600 PLN rocznie).
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Ile wynoszą składki ZUS pracownika?
+        </h2>
+        <p>
+          Pracownik zatrudniony na umowę o pracę odprowadza łącznie <strong>13,71%</strong>
+          wynagrodzenia brutto na składki społeczne: składka emerytalna (9,76%), rentowa (1,5%)
+          i chorobowa (2,45%). Dodatkowo pobierana jest składka zdrowotna w wysokości 9%
+          od podstawy (brutto minus ZUS).
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Co to jest limit 30-krotności i jak wpływa na wynagrodzenie?
+        </h2>
+        <p>
+          Limit 30-krotności to roczny pułap podstawy wymiaru składek na ubezpieczenia
+          emerytalne i rentowe. W 2026 roku wynosi około <strong>235 000 PLN</strong>.
+          Po przekroczeniu tego limitu w ciągu roku, składki emerytalna i rentowa nie są
+          już naliczane, co skutkuje wyższym wynagrodzeniem netto w kolejnych miesiącach.
+          Składka chorobowa jest nadal pobierana bez ograniczeń.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Ile wynosi wynagrodzenie minimalne w 2026 roku?
+        </h2>
+        <p>
+          Prognozowane wynagrodzenie minimalne brutto w 2026 roku wynosi <strong>4 700 PLN</strong>
+          miesięcznie. Jest to najniższa kwota, jaką pracodawca może wypłacić pracownikowi
+          zatrudnionemu na pełen etat. Po odliczeniu składek i podatku, kwota netto
+          jest znacząco niższa — użyj naszego kalkulatora, aby ją obliczyć.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Co to są koszty uzyskania przychodu?
+        </h2>
+        <p>
+          Koszty uzyskania przychodu to kwota, o którą pomniejsza się przychód przed
+          obliczeniem podatku. Standardowe koszty wynoszą <strong>250 PLN</strong> miesięcznie.
+          Pracownicy dojeżdżający do pracy z innej miejscowości mogą stosować podwyższone
+          koszty w wysokości <strong>300 PLN</strong> miesięcznie. W naszym kalkulatorze
+          możesz wybrać odpowiednią opcję.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Co to jest PIT-2 i ulga podatkowa?
+        </h2>
+        <p>
+          PIT-2 to oświadczenie pracownika, na podstawie którego pracodawca stosuje miesięczną
+          ulgę podatkową (kwotę zmniejszającą podatek) w wysokości <strong>300 PLN</strong>.
+          Dzięki temu pracownik otrzymuje wyższe wynagrodzenie netto w ciągu roku, zamiast
+          czekać na zwrot podatku w rozliczeniu rocznym. Jeśli pracownik nie złoży PIT-2
+          u pracodawcy, ulga nie jest stosowana przy obliczaniu miesięcznych zaliczek.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Czym jest koszt pracodawcy?
+        </h2>
+        <p>
+          Koszt pracodawcy to całkowita kwota, jaką firma wydaje na zatrudnienie pracownika.
+          Oprócz wynagrodzenia brutto, pracodawca odprowadza dodatkowe składki: emerytalną
+          (9,76%), rentową (6,5%), wypadkową (~1,67%), Fundusz Pracy (2,45%) i FGŚP (0,10%).
+          Łącznie te składki wynoszą około <strong>20,48%</strong> wynagrodzenia brutto.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Czy kalkulator uwzględnia ulgę dla młodych (do 26 lat)?
+        </h2>
+        <p>
+          Obecna wersja kalkulatora wykonuje standardowe obliczenia dla umowy o pracę bez
+          uwzględnienia specjalnych ulg, takich jak ulga dla młodych (zerowy PIT do 26 roku
+          życia) czy ulga dla rodzin 4+. Planujemy dodać te opcje w przyszłych aktualizacjach.
+        </p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-xl font-bold text-[var(--color-primary)] mb-3">
+          Czy obliczenia kalkulatora są wiążące?
+        </h2>
+        <p>
+          Nie. Obliczenia mają charakter informacyjny i szacunkowy. Rzeczywista kwota
+          wynagrodzenia netto może się nieznacznie różnić w zależności od indywidualnych
+          okoliczności. W razie wątpliwości zalecamy konsultację z doradcą podatkowym
+          lub kontakt z urzędem skarbowym.
+        </p>
+      </section>
+    </div>
+  </article>
+</Layout>

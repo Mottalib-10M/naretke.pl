@@ -1,0 +1,230 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import "../../../styles/global.css";
+---
+
+<Layout
+  title="Składki ZUS Pracownika 2026 - Emerytalna, Rentowa, Chorobowa | KalkulatorWynagrodzen.pl"
+  description="Kompleksowy przewodnik po składkach ZUS odprowadzanych przez pracownika w 2026 roku. Składka emerytalna, rentowa, chorobowa - stawki, podstawy wymiaru i wpływ na wynagrodzenie netto."
+  canonical="/guides/skladki-zus-pracownik/"
+>
+  <!-- Breadcrumb -->
+  <nav aria-label="Breadcrumb" class="mb-8 text-sm text-[var(--color-muted)]">
+    <ol class="flex items-center gap-2 flex-wrap">
+      <li><a href="/" class="hover:text-[var(--color-primary)] transition-colors">Strona główna</a></li>
+      <li class="before:content-['/'] before:mx-2"><a href="/guides/" class="hover:text-[var(--color-primary)] transition-colors">Poradniki</a></li>
+      <li class="before:content-['/'] before:mx-2">Składki ZUS pracownika</li>
+    </ol>
+  </nav>
+
+  <article class="prose prose-lg max-w-4xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+      Składki ZUS pracownika w 2026 roku - kompletny przewodnik
+    </h1>
+
+    <p>
+      Każdy pracownik zatrudniony na umowę o pracę w Polsce podlega obowiązkowemu ubezpieczeniu społecznemu w Zakładzie Ubezpieczeń Społecznych (ZUS). Składki ZUS stanowią znaczącą część obciążeń wynagrodzenia brutto i bezpośrednio wpływają na kwotę netto otrzymywaną „na rękę". W tym poradniku szczegółowo omawiamy każdą ze składek, ich stawki, podstawy wymiaru oraz praktyczny wpływ na wynagrodzenie pracownika w 2026 roku.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">System ubezpieczeń społecznych w Polsce</h2>
+    <p>
+      Polski system ubezpieczeń społecznych obejmuje cztery podstawowe rodzaje ubezpieczeń: emerytalne, rentowe, chorobowe i wypadkowe. Pracownik na umowie o pracę jest obowiązkowo objęty wszystkimi czterema rodzajami ubezpieczeń. Składki finansowane są zarówno przez pracownika, jak i przez pracodawcę - przy czym stawki po stronie pracownika i pracodawcy różnią się dla poszczególnych ubezpieczeń.
+    </p>
+    <p>
+      System zarządzany jest przez Zakład Ubezpieczeń Społecznych, który odpowiada za pobieranie składek, prowadzenie kont ubezpieczonych, wypłatę świadczeń (emerytur, rent, zasiłków chorobowych) oraz kontrolę prawidłowości rozliczeń. Podstawą prawną jest ustawa z dnia 13 października 1998 r. o systemie ubezpieczeń społecznych.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Składki ZUS po stronie pracownika - stawki 2026</h2>
+    <p>
+      Pracownik zatrudniony na umowę o pracę odprowadza trzy rodzaje składek na ubezpieczenia społeczne. Ich łączna wysokość to <strong>13,71%</strong> wynagrodzenia brutto. Poniżej przedstawiamy szczegółowe stawki:
+    </p>
+
+    <div class="overflow-x-auto my-6">
+      <table class="w-full border-collapse border border-gray-300 text-sm">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="border border-gray-300 px-4 py-3 text-left">Rodzaj składki</th>
+            <th class="border border-gray-300 px-4 py-3 text-left">Stawka pracownika</th>
+            <th class="border border-gray-300 px-4 py-3 text-left">Stawka pracodawcy</th>
+            <th class="border border-gray-300 px-4 py-3 text-left">Łącznie</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="border border-gray-300 px-4 py-3">Emerytalna</td>
+            <td class="border border-gray-300 px-4 py-3 font-bold">9,76%</td>
+            <td class="border border-gray-300 px-4 py-3">9,76%</td>
+            <td class="border border-gray-300 px-4 py-3">19,52%</td>
+          </tr>
+          <tr class="bg-gray-50">
+            <td class="border border-gray-300 px-4 py-3">Rentowa</td>
+            <td class="border border-gray-300 px-4 py-3 font-bold">1,50%</td>
+            <td class="border border-gray-300 px-4 py-3">6,50%</td>
+            <td class="border border-gray-300 px-4 py-3">8,00%</td>
+          </tr>
+          <tr>
+            <td class="border border-gray-300 px-4 py-3">Chorobowa</td>
+            <td class="border border-gray-300 px-4 py-3 font-bold">2,45%</td>
+            <td class="border border-gray-300 px-4 py-3">-</td>
+            <td class="border border-gray-300 px-4 py-3">2,45%</td>
+          </tr>
+          <tr class="bg-gray-50">
+            <td class="border border-gray-300 px-4 py-3">Wypadkowa</td>
+            <td class="border border-gray-300 px-4 py-3">-</td>
+            <td class="border border-gray-300 px-4 py-3">~1,67%</td>
+            <td class="border border-gray-300 px-4 py-3">~1,67%</td>
+          </tr>
+          <tr>
+            <td class="border border-gray-300 px-4 py-3 font-bold">Razem ZUS społeczny</td>
+            <td class="border border-gray-300 px-4 py-3 font-bold text-[var(--color-primary)]">13,71%</td>
+            <td class="border border-gray-300 px-4 py-3 font-bold">~17,93%</td>
+            <td class="border border-gray-300 px-4 py-3 font-bold">~31,64%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Składka emerytalna - 9,76%</h2>
+    <p>
+      Składka emerytalna jest najwyższą składką odprowadzaną przez pracownika. Jej celem jest finansowanie przyszłej emerytury. Łącznie składka emerytalna wynosi 19,52% (9,76% pracownik + 9,76% pracodawca) i jest dzielona po równo między obie strony. Środki trafiają na indywidualne konto ubezpieczonego w ZUS i stanowią podstawę do obliczenia przyszłego świadczenia emerytalnego.
+    </p>
+    <p>
+      Ważną cechą składki emerytalnej jest <strong>limit 30-krotności</strong> - roczna podstawa wymiaru składek emerytalnych i rentowych nie może przekroczyć 30-krotności prognozowanego przeciętnego wynagrodzenia. W 2026 roku limit ten wynosi około <strong>235 680 PLN</strong>. Po jego przekroczeniu składka emerytalna i rentowa nie są już pobierane, co skutkuje wyższym wynagrodzeniem netto w pozostałych miesiącach roku.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Składka rentowa - 1,50%</h2>
+    <p>
+      Składka rentowa finansuje świadczenia w przypadku niezdolności do pracy (renty z tytułu niezdolności do pracy) oraz renty rodzinne dla członków rodziny po śmierci ubezpieczonego. Po stronie pracownika wynosi 1,50%, natomiast pracodawca odprowadza znacznie więcej - 6,50%. Łącznie składka rentowa to 8,00% wynagrodzenia brutto.
+    </p>
+    <p>
+      Składka rentowa podlega temu samemu limitowi 30-krotności co składka emerytalna. Oznacza to, że po przekroczeniu rocznego limitu podstawy wymiaru, zarówno składka emerytalna, jak i rentowa przestają być pobierane.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Składka chorobowa - 2,45%</h2>
+    <p>
+      Składka chorobowa finansuje świadczenia w przypadku choroby lub macierzyństwa: zasiłek chorobowy, zasiłek macierzyński, zasiłek opiekuńczy i świadczenie rehabilitacyjne. Jest to jedyna składka społeczna finansowana w całości przez pracownika - pracodawca nie dokłada do niej ani złotówki.
+    </p>
+    <p>
+      W odróżnieniu od składek emerytalnej i rentowej, składka chorobowa <strong>nie podlega limitowi 30-krotności</strong>. Oznacza to, że jest pobierana od pełnej kwoty wynagrodzenia brutto przez cały rok, niezależnie od wysokości zarobków. Dla osób o bardzo wysokich dochodach jest to istotne, gdyż składka chorobowa jest naliczana nawet po przekroczeniu limitu, podczas gdy pozostałe składki społeczne nie są już pobierane.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Składka wypadkowa - po stronie pracodawcy</h2>
+    <p>
+      Składka wypadkowa finansuje świadczenia z tytułu wypadków przy pracy i chorób zawodowych. Jest finansowana wyłącznie przez pracodawcę i nie obciąża wynagrodzenia pracownika. Jej stawka zależy od profilu działalności firmy i liczby zatrudnionych - dla większości przedsiębiorstw wynosi od 0,67% do 3,33%, przy średniej około 1,67%.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Przykład: składki ZUS przy wynagrodzeniu 8 000 PLN brutto</h2>
+    <p>
+      Zobaczmy, jak kształtują się składki ZUS pracownika przy wynagrodzeniu brutto <strong>8 000 PLN</strong>:
+    </p>
+    <ul class="list-disc ml-6 space-y-1">
+      <li>Składka emerytalna: 8 000 × 9,76% = <strong>780,80 PLN</strong></li>
+      <li>Składka rentowa: 8 000 × 1,50% = <strong>120,00 PLN</strong></li>
+      <li>Składka chorobowa: 8 000 × 2,45% = <strong>196,00 PLN</strong></li>
+      <li>Łącznie ZUS pracownika: <strong>1 096,80 PLN</strong> (13,71%)</li>
+    </ul>
+    <p>
+      Po odliczeniu składek ZUS, podstawa do obliczenia składki zdrowotnej i podatku wynosi 6 903,20 PLN. Jak widać, składki ZUS pochłaniają prawie 14% wynagrodzenia brutto, co stanowi znaczący element różnicy między kwotą brutto a kwotą netto.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Dodatkowe składki po stronie pracodawcy</h2>
+    <p>
+      Oprócz składek na ubezpieczenia społeczne, pracodawca odprowadza również:
+    </p>
+    <ul class="list-disc ml-6 space-y-2">
+      <li><strong>Fundusz Pracy (FP)</strong> - 2,45% wynagrodzenia brutto. Finansuje programy aktywizacji zawodowej, zasiłki dla bezrobotnych i inne instrumenty rynku pracy.</li>
+      <li><strong>Fundusz Gwarantowanych Świadczeń Pracowniczych (FGŚP)</strong> - 0,10% wynagrodzenia brutto. Gwarantuje wypłatę wynagrodzeń pracownikom w przypadku niewypłacalności pracodawcy.</li>
+      <li><strong>Fundusz Solidarnościowy</strong> - 1,45% (wchodzi w skład Funduszu Pracy). Finansuje świadczenia dla osób niepełnosprawnych i ich opiekunów.</li>
+    </ul>
+    <p>
+      Łącznie koszt pracodawcy (poza wynagrodzeniem brutto) wynosi około <strong>20,48%</strong> brutto, co oznacza, że przy wynagrodzeniu brutto 8 000 PLN pracodawca wydaje na zatrudnienie pracownika łącznie około 9 638 PLN.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Limit 30-krotności - szczegółowe wyjaśnienie</h2>
+    <p>
+      Limit 30-krotności to mechanizm ograniczający podstawę wymiaru składek na ubezpieczenia emerytalne i rentowe. Prognozowane przeciętne wynagrodzenie w 2026 roku stanowi bazę do obliczenia tego limitu. Kwota 30-krotności jest ogłaszana w obwieszczeniu ministra właściwego do spraw zabezpieczenia społecznego i publikowana w Monitorze Polskim.
+    </p>
+    <p>
+      Po przekroczeniu limitu w danym roku kalendarzowym, pracodawca zaprzestaje pobierania składki emerytalnej (9,76%) i rentowej (1,50%) z wynagrodzenia pracownika, co powoduje wzrost wynagrodzenia netto. Składka chorobowa (2,45%) jest nadal pobierana bez ograniczeń.
+    </p>
+    <p>
+      Dla pracownika zarabiającego np. 25 000 PLN brutto miesięcznie limit 30-krotności zostałby przekroczony w okolicach października, co oznacza wyższe wynagrodzenie netto w ostatnich miesiącach roku. Ten efekt jest szczególnie widoczny przy analizie rocznego rozkładu wynagrodzenia netto.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">ZUS a przyszła emerytura</h2>
+    <p>
+      Odprowadzane składki emerytalne są ewidencjonowane na indywidualnym koncie w ZUS i subkoncie prowadzonym przez ZUS. Wysokość przyszłej emerytury zależy od sumy zgromadzonych składek podzielonej przez dalszą oczekiwaną długość życia w momencie przejścia na emeryturę. Im dłużej pracujesz i im wyższe składki odprowadzasz, tym wyższa będzie Twoja emerytura.
+    </p>
+    <p>
+      Warto regularnie sprawdzać stan swojego konta w ZUS - można to zrobić przez Platformę Usług Elektronicznych ZUS (PUE ZUS) lub przez portal gov.pl. Informacja o stanie konta jest wysyłana raz w roku i zawiera zestawienie wszystkich wpłaconych składek oraz prognozowaną wysokość emerytury.
+    </p>
+
+    <h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">Podsumowanie</h2>
+    <p>
+      Składki ZUS pracownika w łącznej wysokości 13,71% wynagrodzenia brutto stanowią istotny element obciążeń płacowych. Składają się na nie: składka emerytalna (9,76%), rentowa (1,50%) i chorobowa (2,45%). Zrozumienie mechanizmu naliczania tych składek jest kluczowe dla prawidłowej interpretacji różnicy między wynagrodzeniem brutto a netto. Skorzystaj z naszego kalkulatora wynagrodzeń, aby dokładnie obliczyć wszystkie potrącenia i sprawdzić, ile pieniędzy otrzymasz na rękę.
+    </p>
+
+    <!-- Powiązane narzędzia -->
+    <div class="card p-6 mt-10 bg-blue-50 border-[var(--color-secondary)]">
+      <h3 class="text-lg font-bold text-[var(--color-secondary)] mb-3">Powiązane narzędzia</h3>
+      <ul class="space-y-2 text-sm">
+        <li><a href="/" class="text-[var(--color-secondary)] hover:underline font-medium">Kalkulator wynagrodzeń brutto-netto 2026</a> - oblicz wynagrodzenie netto z uwzględnieniem składek ZUS.</li>
+        <li><a href="/guides/skladka-zdrowotna/" class="text-[var(--color-secondary)] hover:underline font-medium">Składka zdrowotna</a> - dowiedz się, jak naliczana jest składka zdrowotna.</li>
+        <li><a href="/guides/progi-podatkowe-pit/" class="text-[var(--color-secondary)] hover:underline font-medium">Progi podatkowe PIT</a> - poznaj stawki podatku dochodowego.</li>
+      </ul>
+    </div>
+
+    <!-- Źródła -->
+    <div class="mt-10 pt-6 border-t border-gray-200">
+      <h3 class="text-lg font-bold text-gray-900 mb-3">Źródła</h3>
+      <ul class="space-y-1 text-sm text-[var(--color-muted)]">
+        <li>Ustawa z dnia 13 października 1998 r. o systemie ubezpieczeń społecznych (Dz.U. z 2024 r. poz. 497 ze zm.)</li>
+        <li>Zakład Ubezpieczeń Społecznych - <a href="https://www.zus.pl" class="text-[var(--color-secondary)] hover:underline" rel="noopener noreferrer" target="_blank">zus.pl</a></li>
+        <li>Obwieszczenie w sprawie kwoty ograniczenia rocznej podstawy wymiaru składek na ubezpieczenia emerytalne i rentowe w 2026 r.</li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- Schema.org BreadcrumbList -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Strona główna", "item": "https://kalkulatorwynagrodzen.pl/" },
+      { "@type": "ListItem", "position": 2, "name": "Poradniki", "item": "https://kalkulatorwynagrodzen.pl/guides/" },
+      { "@type": "ListItem", "position": 3, "name": "Składki ZUS pracownika", "item": "https://kalkulatorwynagrodzen.pl/guides/skladki-zus-pracownik/" }
+    ]
+  })} />
+
+  <!-- Schema.org FAQPage -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Ile wynoszą składki ZUS pracownika w 2026 roku?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pracownik na umowie o pracę odprowadza łącznie 13,71% wynagrodzenia brutto na składki społeczne: emerytalna 9,76%, rentowa 1,50% i chorobowa 2,45%. Dodatkowo pobierana jest składka zdrowotna 9% od podstawy po odliczeniu składek społecznych."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Co to jest limit 30-krotności i jak wpływa na składki ZUS?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Limit 30-krotności to roczny pułap podstawy wymiaru składek emerytalnych i rentowych wynoszący około 235 680 PLN w 2026 roku. Po jego przekroczeniu te składki nie są pobierane, co zwiększa wynagrodzenie netto w pozostałych miesiącach roku."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Czy składka chorobowa podlega limitowi 30-krotności?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nie. Składka chorobowa (2,45%) nie podlega limitowi 30-krotności i jest pobierana od pełnej kwoty wynagrodzenia brutto przez cały rok, niezależnie od wysokości zarobków."
+        }
+      }
+    ]
+  })} />
+</Layout>

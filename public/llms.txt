@@ -1,0 +1,24 @@
+# kalkulatorwynagrodzen.pl
+
+> Kalkulator wynagrodzeń — oblicz wynagrodzenie netto z brutto dla umów o pracę, zlecenie, o dzieło i B2B.
+
+## Overview
+
+kalkulatorwynagrodzen.pl is a free Polish salary calculator that computes net take-home pay from gross salary (and vice versa). It supports all major contract types in Poland: umowa o pracę (employment contract), umowa zlecenie (mandate contract), umowa o dzieło (contract for specific work), and B2B (self-employment). The calculator accounts for PIT income tax, ZUS social security contributions, NFZ health insurance, and applicable tax reliefs.
+
+## Main features
+
+- Gross-to-net and net-to-gross salary calculator
+- Support for umowa o pracę, umowa zlecenie, umowa o dzieło, and B2B contracts
+- ZUS contribution breakdown (emerytalne, rentowe, chorobowe, wypadkowe)
+- PIT income tax calculation (12% and 32% thresholds)
+- NFZ health insurance contribution
+- Tax relief options (ulga podatkowa, kwota wolna od podatku, ulga dla młodych)
+- Employer cost (koszt pracodawcy) calculation
+
+## Data sources
+
+- Ministry of Finance (Ministerstwo Finansów): podatki.gov.pl
+- Social Insurance Institution (ZUS): zus.pl
+- PIT tax scales and thresholds: oficjalne tabele podatkowe
+- ZUS contribution rates: annual announcements from zus.pl

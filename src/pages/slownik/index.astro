@@ -1,0 +1,110 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+---
+
+<Layout
+  title="Slownik - Pojecia zwiazane z wynagrodzeniem | KalkulatorWynagrodzen.pl"
+  description="Wyjasnienia wszystkich waznych pojec zwiazanych z wynagrodzeniem w Polsce: PIT, ZUS, skladki, koszty uzyskania przychodu i wiele innych."
+  canonical="/slownik/"
+>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Kalkulator", "item": "https://kalkulatorwynagrodzen.pl/" },
+      { "@type": "ListItem", "position": 2, "name": "Slownik", "item": "https://kalkulatorwynagrodzen.pl/slownik/" }
+    ]
+  })} />
+
+  <article class="prose prose-lg max-w-4xl mx-auto">
+    <nav class="text-sm text-gray-500 mb-6 not-prose">
+      <a href="/" class="hover:text-[var(--color-primary)]">Kalkulator</a>
+      <span class="mx-1">/</span>
+      <span class="text-gray-900">Slownik</span>
+    </nav>
+
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Slownik pojec zwiazanych z wynagrodzeniem</h1>
+    <p class="text-gray-600 mb-8 not-prose">
+      Wszystkie wazne pojecia zwiazane z wynagrodzeniem brutto, netto, skladkami ZUS i podatkiem PIT
+      w Polsce, wyjasnionne w prosty sposob.
+    </p>
+
+    <div class="space-y-6 not-prose">
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Wynagrodzenie Brutto</h2>
+        <p class="text-gray-600">Calkowita kwota wynagrodzenia zapisana w umowie o prace, przed odliczeniem jakichkolwiek skladek i podatkow. Obejmuje wynagrodzenie zasadnicze oraz ewentualne dodatki, premie i nagrody. Na podstawie kwoty brutto obliczane sa skladki na ubezpieczenia spoleczne i zaliczka na podatek dochodowy.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Wynagrodzenie Netto</h2>
+        <p class="text-gray-600">Kwota, ktora pracownik faktycznie otrzymuje na swoje konto bankowe po odliczeniu wszystkich obowiazkowych skladek (ZUS, zdrowotna) i zaliczki na podatek dochodowy PIT. Jest to kwota, ktora pracownik moze swobodnie dysponowac.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">PIT (Podatek Dochodowy od Osob Fizycznych)</h2>
+        <p class="text-gray-600">Podatek od dochodow osobistych w Polsce. Obliczany jest wedlug skali progresywnej: 12% od dochodu do 120 000 PLN rocznie i 32% od nadwyzki ponad te kwote. Pracodawca co miesiac potraca zaliczke na PIT z wynagrodzenia pracownika i odprowadza ja do urzedu skarbowego.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">ZUS (Zaklad Ubezpieczen Spolecznych)</h2>
+        <p class="text-gray-600">Instytucja odpowiedzialna za system ubezpieczen spolecznych w Polsce. Potocznie termin "ZUS" oznacza takze skladki na ubezpieczenia spoleczne, ktore pracownik i pracodawca oplacaja co miesiac. Skladki pracownika wyniesza lacznie 13,71% wynagrodzenia brutto.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Skladka Emerytalna</h2>
+        <p class="text-gray-600">Skladka na ubezpieczenie emerytalne, finansujaca przyszla emeryture pracownika. Wynosi 19,52% wynagrodzenia brutto, z czego polowe (9,76%) placi pracownik, a druga polowe (9,76%) pracodawca. Skladka jest naliczana do osiagniecia rocznego limitu 30-krotnosci prognozowanego przecietnego wynagrodzenia.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Skladka Rentowa</h2>
+        <p class="text-gray-600">Skladka na ubezpieczenie rentowe, zapewniajace swiadczenia w razie niezdolnosci do pracy. Wynosi lacznie 8% wynagrodzenia brutto, z czego pracownik placi 1,5%, a pracodawca 6,5%. Podlega temu samemu limitowi 30-krotnosci co skladka emerytalna.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Skladka Chorobowa</h2>
+        <p class="text-gray-600">Skladka na ubezpieczenie chorobowe, dajace prawo do zasilku chorobowego i macierzynskiego. Wynosi 2,45% wynagrodzenia brutto i jest w calosci finansowana przez pracownika. W odroznieniu od skladek emerytalnej i rentowej, nie podlega limitowi 30-krotnosci.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Skladka Zdrowotna</h2>
+        <p class="text-gray-600">Skladka na ubezpieczenie zdrowotne, finansujace publiczna opieke zdrowotna (NFZ). Wynosi 9% podstawy wymiaru (wynagrodzenie brutto minus skladki spoleczne). Od 2022 roku skladka zdrowotna nie jest juz odliczana od podatku, co oznacza, ze pracownik ponosi jej pelny koszt.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Koszty Uzyskania Przychodu</h2>
+        <p class="text-gray-600">Kwota, o ktora pomniejsza sie przychod przed obliczeniem podatku dochodowego. Standardowe koszty uzyskania przychodu dla pracownikow na umowe o prace wynosza 250 PLN miesiecznie. Pracownicy dojezdzajacy do pracy z innej miejscowosci moga stosowac podwyzszone koszty w wysokosci 300 PLN miesiecznie.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Kwota Wolna od Podatku</h2>
+        <p class="text-gray-600">Kwota dochodu, od ktorej nie nalicza sie podatku dochodowego. W 2026 roku wynosi 30 000 PLN rocznie. Oznacza to, ze osoba zarabiajaca do 30 000 PLN rocznie nie zaplaci podatku PIT. Dla osob zarabiajacych wiecej, kwota wolna przeksztalca sie w ulge podatkowa w wysokosci 300 PLN miesiecznie.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Ulga Podatkowa (Kwota Zmniejszajaca Podatek)</h2>
+        <p class="text-gray-600">Kwota, o ktora zmniejsza sie nalezny podatek dochodowy. Wynika z kwoty wolnej od podatku i wynosi 300 PLN miesiecznie (3 600 PLN rocznie). Aby pracodawca stosowal ulge przy obliczaniu miesiecznych zaliczek, pracownik musi zlozyc oswiadczenie PIT-2.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">PPK (Pracownicze Plany Kapitalowe)</h2>
+        <p class="text-gray-600">Dobrowolny system dlugoteminowego oszczedzania na emeryture. Podstawowa skladka pracownika wynosi 2% wynagrodzenia brutto, a pracodawcy 1,5%. Pracownik moze zrezygnowac z PPK lub zwiekszyc swoja skladke do 4%. Panstwowo doplaca 250 PLN rocznie.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Progi Podatkowe</h2>
+        <p class="text-gray-600">Granice dochodow, po ktorych przekroczeniu zmienia sie stawka podatkowa. W Polsce obowiazuja dwa progi: 12% od dochodu do 120 000 PLN rocznie i 32% od nadwyzki ponad te kwote. Oznacza to, ze wyzsze zarobki sa opodatkowane wyzsza stawka, ale tylko w czesci przekraczajacej prog.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Umowa o Prace</h2>
+        <p class="text-gray-600">Podstawowa forma zatrudnienia w Polsce, regulowana Kodeksem pracy. Zapewnia pracownikowi pelne ubezpieczenie spoleczne i zdrowotne, prawo do urlopu, ochrone przed zwolnieniem i inne swiadczenia pracownicze. Pracodawca odprowadza skladki ZUS i zaliczki na podatek PIT.</p>
+      </section>
+
+      <section class="card p-6">
+        <h2 class="text-lg font-bold text-[var(--color-primary)] mb-2">Umowa Zlecenie</h2>
+        <p class="text-gray-600">Umowa cywilnoprawna regulowana Kodeksem cywilnym. W odroznieniu od umowy o prace, nie zapewnia wszystkich swiadczen pracowniczych. Skladki ZUS sa obowiazkowe, jesli umowa zlecenie jest jedynym zrodlem ubezpieczenia. Mozna stosowac 20% koszty uzyskania przychodu (lub 50% przy prawach autorskich).</p>
+      </section>
+    </div>
+  </article>
+</Layout>

@@ -29,29 +29,95 @@ const canonicalUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content="pl_PL" />
+    <meta name="author" content="Mottalib Radif" />
     <title>{title}</title>
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Kalkulator Wynagrodzen",
+      "url": "https://kalkulatorwynagrodzen.pl",
+      "logo": "https://kalkulatorwynagrodzen.pl/favicon.svg",
+      "founder": {
+        "@type": "Person",
+        "name": "Mottalib Radif"
+      }
+    })} />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Mottalib Radif",
+      "jobTitle": "Ekspert ds. Finansów Osobistych i Technologii Podatkowej",
+      "description": "Absolwent MBA INSEAD, pasjonat polskich finansów osobistych. Specjalizacja w PIT, ZUS i optymalizacji wynagrodzeń.",
+      "alumniOf": { "@type": "EducationalOrganization", "name": "INSEAD" },
+      "image": "https://kalkulatorwynagrodzen.pl/team/mottalib-radif.jpg",
+      "url": "https://kalkulatorwynagrodzen.pl/o-nas/"
+    })} />
+
+    <!-- Plausible Analytics -->
+    <script defer data-domain="kalkulatorwynagrodzen.pl" src="https://plausible.io/js/script.js"></script>
+
+    <!-- Google Analytics 4 — replace G-XXXXXXXXXX with real ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
   </head>
   <body class="min-h-screen flex flex-col">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded-lg focus:shadow-lg focus:ring-2 focus:ring-blue-500">Skip to content</a>
     <!-- Pasek flagi polskiej -->
     <div class="polish-flag-bar"></div>
 
     <!-- Nagłówek -->
-    <header class="gradient-header text-white py-4 shadow-lg">
-      <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <header class="gradient-header text-white py-4 shadow-lg relative">
+      <div class="max-w-6xl mx-auto px-4 flex items-center justify-between">
         <a href="/" class="text-2xl font-bold hover:opacity-90 transition-opacity">
           KalkulatorWynagrodzen.pl
         </a>
-        <nav class="flex gap-6 text-sm">
+
+        <!-- Desktop nav -->
+        <nav class="hidden md:flex gap-6 text-sm">
           <a href="/" class="hover:underline underline-offset-4">Kalkulator</a>
+          <a href="/guides/" class="hover:underline underline-offset-4">Poradniki</a>
           <a href="/faq/" class="hover:underline underline-offset-4">FAQ</a>
           <a href="/regulamin/" class="hover:underline underline-offset-4">Regulamin</a>
           <a href="/prywatnosc/" class="hover:underline underline-offset-4">Prywatność</a>
         </nav>
+
+        <!-- Mobile hamburger button -->
+        <button
+          id="mobile-menu-btn"
+          class="md:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/20 transition-colors"
+          aria-label="Otwórz menu"
+          aria-expanded="false"
+        >
+          <span class="hamburger-line block w-6 h-0.5 bg-white rounded transition-all duration-300"></span>
+          <span class="hamburger-line block w-6 h-0.5 bg-white rounded mt-1.5 transition-all duration-300"></span>
+          <span class="hamburger-line block w-6 h-0.5 bg-white rounded mt-1.5 transition-all duration-300"></span>
+        </button>
       </div>
+
+      <!-- Mobile nav menu -->
+      <nav
+        id="mobile-menu"
+        class="md:hidden hidden absolute top-full left-0 right-0 bg-[var(--color-primary-dark)] shadow-lg z-50"
+      >
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-4 text-sm">
+          <a href="/" class="hover:underline underline-offset-4 py-2 border-b border-white/20">Kalkulator</a>
+          <a href="/guides/" class="hover:underline underline-offset-4 py-2 border-b border-white/20">Poradniki</a>
+          <a href="/faq/" class="hover:underline underline-offset-4 py-2 border-b border-white/20">FAQ</a>
+          <a href="/regulamin/" class="hover:underline underline-offset-4 py-2 border-b border-white/20">Regulamin</a>
+          <a href="/prywatnosc/" class="hover:underline underline-offset-4 py-2">Prywatność</a>
+        </div>
+      </nav>
     </header>
 
     <!-- Treść -->
-    <main class="flex-1 max-w-6xl mx-auto px-4 py-8 w-full">
+    <main id="main-content" class="flex-1 max-w-6xl mx-auto px-4 py-8 w-full">
       <slot />
     </main>
 
@@ -71,6 +137,7 @@ const canonicalUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
             <h3 class="text-white font-bold mb-3">Przydatne linki</h3>
             <ul class="space-y-2 text-sm">
               <li><a href="/" class="hover:text-white transition-colors">Kalkulator wynagrodzeń</a></li>
+              <li><a href="/guides/" class="hover:text-white transition-colors">Poradniki</a></li>
               <li><a href="/faq/" class="hover:text-white transition-colors">Najczęściej zadawane pytania</a></li>
               <li><a href="/regulamin/" class="hover:text-white transition-colors">Regulamin serwisu</a></li>
               <li><a href="/prywatnosc/" class="hover:text-white transition-colors">Polityka prywatności</a></li>
@@ -89,5 +156,31 @@ const canonicalUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
         </div>
       </div>
     </footer>
+
+    <!-- Mobile menu toggle script -->
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('mobile-menu-btn');
+        var menu = document.getElementById('mobile-menu');
+        if (btn && menu) {
+          btn.addEventListener('click', function() {
+            var isOpen = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden');
+            btn.setAttribute('aria-expanded', String(!isOpen));
+            btn.setAttribute('aria-label', isOpen ? 'Otwórz menu' : 'Zamknij menu');
+            var lines = btn.querySelectorAll('.hamburger-line');
+            if (!isOpen) {
+              lines[0].style.transform = 'rotate(45deg) translate(4px, 4px)';
+              lines[1].style.opacity = '0';
+              lines[2].style.transform = 'rotate(-45deg) translate(4px, -4px)';
+            } else {
+              lines[0].style.transform = '';
+              lines[1].style.opacity = '1';
+              lines[2].style.transform = '';
+            }
+          });
+        }
+      });
+    </script>
   </body>
 </html>

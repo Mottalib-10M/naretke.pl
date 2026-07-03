@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="404 - Strona nie znaleziona | KalkulatorWynagrodzen.pl"
+  description="Strona, ktorej szukasz, nie zostala znaleziona. Wroc do kalkulatora wynagrodzen."
+  canonical="/404/"
+>
+  <div class="py-20 text-center">
+    <h1 class="text-7xl font-extrabold text-[var(--color-primary)] mb-4">404</h1>
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">Strona nie znaleziona</h2>
+    <p class="text-gray-600 mb-8 max-w-md mx-auto">
+      Strona, ktorej szukasz, nie istnieje lub zostala przeniesiona.
+      Sprawdz adres URL lub wroc na strone glowna.
+    </p>
+    <a
+      href="/"
+      class="inline-flex items-center px-6 py-3 rounded-lg bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-dark)] transition-colors shadow-md"
+    >
+      Wroc na strone glowna
+    </a>
+  </div>
+</Layout>

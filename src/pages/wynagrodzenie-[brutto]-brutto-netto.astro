@@ -2,6 +2,15 @@
 import Layout from "../layouts/Layout.astro";
 import Calculator from "../components/Calculator.tsx";
 import { wynagrodzeniaData } from "../lib/wynagrodzenia-data.ts";
+import {
+  getBandContext,
+  buildFaqs,
+  getBudgetBreakdown,
+  getCareerInfo,
+  getTaxTips,
+  getHowTaxWorksText,
+  getUniqueComparisons,
+} from "../lib/salary-content.ts";
 
 export function getStaticPaths() {
   return wynagrodzeniaData.map((w) => ({
@@ -16,7 +25,7 @@ function formatPLN(value: number): string {
   return value.toLocaleString("pl-PL", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }) + " zł";
+  }) + " z\u0142";
 }
 
 function formatNumber(value: number): string {
@@ -28,6 +37,25 @@ const pageUrl = `${siteUrl}/wynagrodzenie-${data.slug}-brutto-netto/`;
 
 const otherSalaries = wynagrodzeniaData.filter((w) => w.slug !== data.slug);
 
+// Computed content
+const bandContext = getBandContext(data);
+const faqs = buildFaqs(data);
+const budget = getBudgetBreakdown(data.netto);
+const career = getCareerInfo(data.brutto);
+const taxTips = getTaxTips(data);
+const howTaxWorks = getHowTaxWorksText(data);
+const uniqueComparisons = getUniqueComparisons(data);
+
+// Computed values
+const roczne = data.brutto * 12;
+const roczneNetto = data.netto * 12;
+const roznica = data.brutto - data.netto;
+const procentNetto = ((data.netto / data.brutto) * 100).toFixed(1);
+const godzinowe = (data.brutto / 168).toFixed(2);
+const godzinnoweNetto = (data.netto / 168).toFixed(2);
+const dzienneNetto = (data.netto / 21).toFixed(2);
+
+// Schema.org
 const breadcrumbSchema = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -35,7 +63,7 @@ const breadcrumbSchema = {
     {
       "@type": "ListItem",
       "position": 1,
-      "name": "Kalkulator Wynagrodzeń",
+      "name": "Kalkulator Wynagrodze\u0144",
       "item": siteUrl,
     },
     {
@@ -50,7 +78,7 @@ const breadcrumbSchema = {
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "mainEntity": data.faq.map((f: { question: string; answer: string }) => ({
+  "mainEntity": faqs.map((f) => ({
     "@type": "Question",
     "name": f.question,
     "acceptedAnswer": {
@@ -58,6 +86,29 @@ const faqSchema = {
       "text": f.answer,
     },
   })),
+};
+
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": `${formatNumber(data.brutto)} PLN brutto ile to netto w 2026 roku`,
+  "author": {
+    "@type": "Person",
+    "name": "Mottalib Radif",
+    "jobTitle": "Ekspert ds. Finans\u00f3w Osobistych, MBA INSEAD",
+    "alumniOf": { "@type": "EducationalOrganization", "name": "INSEAD" },
+    "url": `${siteUrl}/o-nas/`
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "KalkulatorWynagrodzen.pl",
+    "url": siteUrl
+  },
+  "datePublished": "2026-01-15",
+  "dateModified": "2026-07-01",
+  "url": pageUrl,
+  "mainEntityOfPage": pageUrl,
+  "description": data.description,
 };
 ---
 
@@ -69,6 +120,7 @@ const faqSchema = {
   <!-- Schema.org structured data -->
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 
   <!-- Breadcrumb -->
   <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
@@ -83,44 +135,50 @@ const faqSchema = {
   <!-- Hero -->
   <section class="text-center mb-10">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-      <span class="text-[var(--color-primary)]">{formatNumber(data.brutto)} PLN</span> brutto - ile to netto w 2026?
+      <span class="text-[var(--color-primary)]">{formatNumber(data.brutto)} PLN</span> brutto &mdash; ile to netto w 2026?
     </h1>
-    <p class="text-lg text-[var(--color-muted)] max-w-2xl mx-auto">
+    <p class="text-lg text-[var(--color-muted)] max-w-2xl mx-auto mb-2">
       {data.description}
     </p>
+    <p class="text-xs text-gray-400">Autor: <strong>Mottalib Radif MBA INSEAD</strong> &mdash; ekspert ds. finans&oacute;w osobistych i optymalizacji podatkowej</p>
   </section>
 
-  <!-- Główne kwoty -->
-  <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-    <div class="card p-5 text-center">
-      <p class="text-sm text-[var(--color-muted)] mb-1">Brutto</p>
-      <p class="text-2xl font-bold text-gray-800">{formatPLN(data.brutto)}</p>
-      <p class="text-xs text-[var(--color-muted)]">rocznie: {formatPLN(data.brutto * 12)}</p>
+  <!-- Mini simulator stat cards -->
+  <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    <div class="card p-4 text-center">
+      <p class="text-xs text-[var(--color-muted)] mb-1">Netto na r&eogon;k&eogon;</p>
+      <p class="text-2xl font-bold text-[var(--color-primary)]">{formatPLN(data.netto)}</p>
+      <p class="text-xs text-[var(--color-muted)]">rocznie: {formatPLN(roczneNetto)}</p>
     </div>
-    <div class="card p-5 text-center border-2 border-[var(--color-primary)]">
-      <p class="text-sm text-[var(--color-muted)] mb-1">Netto (na rękę)</p>
-      <p class="text-3xl font-bold text-[var(--color-primary)]">{formatPLN(data.netto)}</p>
-      <p class="text-xs text-[var(--color-muted)]">rocznie: {formatPLN(data.netto * 12)}</p>
+    <div class="card p-4 text-center">
+      <p class="text-xs text-[var(--color-muted)] mb-1">Sk&lstrok;adki ZUS</p>
+      <p class="text-xl font-bold text-red-600">&minus;{formatPLN(data.zusRazem)}</p>
+      <p class="text-xs text-[var(--color-muted)]">13,71% brutto</p>
     </div>
-    <div class="card p-5 text-center">
-      <p class="text-sm text-[var(--color-muted)] mb-1">Koszt pracodawcy</p>
-      <p class="text-2xl font-bold text-gray-800">{formatPLN(data.kosztPracodawcy)}</p>
-      <p class="text-xs text-[var(--color-muted)]">rocznie: {formatPLN(data.kosztPracodawcy * 12)}</p>
+    <div class="card p-4 text-center">
+      <p class="text-xs text-[var(--color-muted)] mb-1">Zaliczka PIT</p>
+      <p class="text-xl font-bold text-red-600">&minus;{formatPLN(data.pit)}</p>
+      <p class="text-xs text-[var(--color-muted)]">stawka 12%</p>
+    </div>
+    <div class="card p-4 text-center">
+      <p class="text-xs text-[var(--color-muted)] mb-1">Sk&lstrok;adka NFZ</p>
+      <p class="text-xl font-bold text-red-600">&minus;{formatPLN(data.zdrowotna)}</p>
+      <p class="text-xs text-[var(--color-muted)]">9% podstawy</p>
     </div>
   </section>
 
-  <!-- Szczegółowa tabela -->
+  <!-- Szczeg&oacute;&lstrok;owa tabela rozk&lstrok;adu -->
   <section class="mb-10">
     <div class="card p-6">
       <h2 class="text-2xl font-bold text-gray-900 mb-6">
-        Szczegółowy rozkład wynagrodzenia {formatNumber(data.brutto)} PLN brutto
+        Szczeg&oacute;&lstrok;owy rozk&lstrok;ad wynagrodzenia {formatNumber(data.brutto)} PLN brutto
       </h2>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b-2 border-gray-200">
-              <th class="text-left py-3 pr-4 text-gray-600 font-semibold">Składnik</th>
-              <th class="text-right py-3 text-gray-600 font-semibold">Kwota miesięczna</th>
+              <th class="text-left py-3 pr-4 text-gray-600 font-semibold">Sk&lstrok;adnik</th>
+              <th class="text-right py-3 text-gray-600 font-semibold">Kwota miesi&eogon;czna</th>
               <th class="text-right py-3 pl-4 text-gray-600 font-semibold">Kwota roczna</th>
             </tr>
           </thead>
@@ -128,25 +186,25 @@ const faqSchema = {
             <tr class="border-b border-gray-100 bg-gray-50 font-semibold">
               <td class="py-3 pr-4">Wynagrodzenie brutto</td>
               <td class="py-3 text-right">{formatPLN(data.brutto)}</td>
-              <td class="py-3 text-right pl-4">{formatPLN(data.brutto * 12)}</td>
+              <td class="py-3 text-right pl-4">{formatPLN(roczne)}</td>
             </tr>
             <tr class="border-b border-gray-100">
-              <td class="py-2.5 pr-4 pl-4 text-gray-600">Składka emerytalna (9,76%)</td>
+              <td class="py-2.5 pr-4 pl-4 text-gray-600">Sk&lstrok;adka emerytalna (9,76%)</td>
               <td class="py-2.5 text-right text-red-600">-{formatPLN(data.emerytalne)}</td>
               <td class="py-2.5 text-right pl-4 text-red-600">-{formatPLN(data.emerytalne * 12)}</td>
             </tr>
             <tr class="border-b border-gray-100">
-              <td class="py-2.5 pr-4 pl-4 text-gray-600">Składka rentowa (1,5%)</td>
+              <td class="py-2.5 pr-4 pl-4 text-gray-600">Sk&lstrok;adka rentowa (1,5%)</td>
               <td class="py-2.5 text-right text-red-600">-{formatPLN(data.rentowe)}</td>
               <td class="py-2.5 text-right pl-4 text-red-600">-{formatPLN(data.rentowe * 12)}</td>
             </tr>
             <tr class="border-b border-gray-100">
-              <td class="py-2.5 pr-4 pl-4 text-gray-600">Składka chorobowa (2,45%)</td>
+              <td class="py-2.5 pr-4 pl-4 text-gray-600">Sk&lstrok;adka chorobowa (2,45%)</td>
               <td class="py-2.5 text-right text-red-600">-{formatPLN(data.chorobowe)}</td>
               <td class="py-2.5 text-right pl-4 text-red-600">-{formatPLN(data.chorobowe * 12)}</td>
             </tr>
             <tr class="border-b border-gray-200 font-semibold">
-              <td class="py-3 pr-4 pl-4">Składki ZUS łącznie (13,71%)</td>
+              <td class="py-3 pr-4 pl-4">Sk&lstrok;adki ZUS &lstrok;&aogonek;cznie (13,71%)</td>
               <td class="py-3 text-right text-red-600">-{formatPLN(data.zusRazem)}</td>
               <td class="py-3 text-right pl-4 text-red-600">-{formatPLN(data.zusRazem * 12)}</td>
             </tr>
@@ -156,7 +214,7 @@ const faqSchema = {
               <td class="py-2.5 text-right pl-4">{formatPLN(data.podstawaZdrowotna * 12)}</td>
             </tr>
             <tr class="border-b border-gray-200">
-              <td class="py-2.5 pr-4 pl-4 text-gray-600 font-semibold">Składka zdrowotna (9%)</td>
+              <td class="py-2.5 pr-4 pl-4 text-gray-600 font-semibold">Sk&lstrok;adka zdrowotna (9%)</td>
               <td class="py-2.5 text-right text-red-600 font-semibold">-{formatPLN(data.zdrowotna)}</td>
               <td class="py-2.5 text-right pl-4 text-red-600 font-semibold">-{formatPLN(data.zdrowotna * 12)}</td>
             </tr>
@@ -178,7 +236,7 @@ const faqSchema = {
             <tr class="bg-green-50 font-bold text-lg">
               <td class="py-4 pr-4">Wynagrodzenie netto</td>
               <td class="py-4 text-right text-green-700">{formatPLN(data.netto)}</td>
-              <td class="py-4 text-right pl-4 text-green-700">{formatPLN(data.netto * 12)}</td>
+              <td class="py-4 text-right pl-4 text-green-700">{formatPLN(roczneNetto)}</td>
             </tr>
             <tr class="border-t-2 border-gray-300">
               <td class="py-3 pr-4 font-semibold text-gray-600">Koszt pracodawcy</td>
@@ -193,49 +251,128 @@ const faqSchema = {
         <p class="text-sm text-[var(--color-muted)]">
           <strong>Efektywna stawka podatkowa:</strong>{" "}
           <span class="text-[var(--color-primary)] font-bold text-lg">{data.efektywnaStawka}%</span>
-          - tyle procent wynagrodzenia brutto przeznaczane jest na składki i podatki.
+          &mdash; tyle procent wynagrodzenia brutto przeznaczane jest na sk&lstrok;adki i podatki.
+          Stawka godzinowa brutto: {godzinowe} PLN, netto: {godzinnoweNetto} PLN.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- Kontekst -->
+  <!-- Kontekst bandowy (unikalna tre&sacute;&cacute;) -->
   <article class="prose prose-lg max-w-4xl mx-auto mb-10">
     <h2 class="text-2xl font-bold text-gray-900 mb-4">
-      {formatNumber(data.brutto)} PLN brutto - co warto wiedzieć?
+      {formatNumber(data.brutto)} PLN brutto &mdash; co warto wiedzie&cacute;?
     </h2>
-    <p>{data.context}</p>
+    <p>{bandContext}</p>
 
+    <!-- Jak dzia&lstrok;a system podatkowy -->
     <h3 class="text-xl font-bold text-gray-800 mb-3 mt-8">
-      Jak obliczono netto z {formatNumber(data.brutto)} PLN brutto?
+      Jak obliczono netto z {formatNumber(data.brutto)} PLN brutto? System podatkowy w Polsce 2026
+    </h3>
+    <p>{howTaxWorks}</p>
+
+    <!-- Kariera i rynek pracy -->
+    <h3 class="text-xl font-bold text-gray-800 mb-3 mt-8">
+      {career.title} &mdash; kto zarabia {formatNumber(data.brutto)} PLN brutto?
     </h3>
     <p>
-      Obliczenie netto z wynagrodzenia {formatNumber(data.brutto)} PLN brutto przebiega w kilku krokach.
-      Najpierw od kwoty brutto odejmujemy składki na ubezpieczenia społeczne ZUS: emerytalną ({formatPLN(data.emerytalne)}),
-      rentową ({formatPLN(data.rentowe)}) i chorobową ({formatPLN(data.chorobowe)}), co daje łącznie {formatPLN(data.zusRazem)}.
-      Następnie od podstawy {formatPLN(data.podstawaZdrowotna)} obliczana jest składka zdrowotna 9%, czyli {formatPLN(data.zdrowotna)}.
-      Podstawa opodatkowania to {formatPLN(data.podstawaOpodatkowania)}, od której naliczany jest podatek PIT.
-      Zaliczka na PIT po odliczeniu ulgi podatkowej wynosi {formatPLN(data.pit)}.
-      Końcowe netto to {formatPLN(data.brutto)} - {formatPLN(data.zusRazem)} - {formatPLN(data.zdrowotna)} - {formatPLN(data.pit)} = <strong>{formatPLN(data.netto)}</strong>.
+      Wynagrodzenie {formatNumber(data.brutto)} PLN brutto ({formatPLN(data.netto)} netto) jest charakterystyczne
+      dla os&oacute;b z {career.experience} do&sacute;wiadczenia zawodowego.
+      Typowe stanowiska w tej grupie to: {career.roles.join(", ")}.
+      Pensje na tym poziomie spotykane s&aogonek; najcz&eogon;&sacute;ciej w miastach takich jak: {career.cities.join(", ")},
+      w bran&zdot;ach: {career.industries.join(", ")}.
+      Ca&lstrok;kowity roczny koszt zatrudnienia takiego pracownika wynosi {formatPLN(data.kosztPracodawcy * 12)},
+      co jest istotnym czynnikiem przy planowaniu bud&zdot;etu personalnego przez dzia&lstrok; HR.
+      {career.progression}
     </p>
+
+    <!-- Unikalne por&oacute;wnania wynagrodzenia -->
+    <h3 class="text-xl font-bold text-gray-800 mb-3 mt-8">
+      Por&oacute;wnanie {formatNumber(data.brutto)} PLN brutto z innymi wynagrodzeniami
+    </h3>
+    <p>{uniqueComparisons}</p>
   </article>
 
-  <!-- Kalkulator -->
+  <!-- Bud&zdot;et miesi&eogon;czny -->
+  <section class="mb-10">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">
+        Przyk&lstrok;adowy bud&zdot;et miesi&eogon;czny przy netto {formatPLN(data.netto)}
+      </h2>
+      <p class="text-sm text-[var(--color-muted)] mb-6">
+        Poni&zdot;ej przedstawiamy rekomendowany podzia&lstrok; wynagrodzenia netto {formatPLN(data.netto)} wed&lstrok;ug zasady
+        50/30/20, dostosowan&aogonek; do polskich reali&oacute;w ekonomicznych w 2026 roku.
+        Opracowanie: Mottalib Radif MBA INSEAD.
+      </p>
+      <div class="card p-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2 border-gray-200">
+                <th class="text-left py-3 pr-4 text-gray-600 font-semibold">Kategoria wydatku</th>
+                <th class="text-right py-3 text-gray-600 font-semibold">Kwota (PLN)</th>
+                <th class="text-right py-3 pl-4 text-gray-600 font-semibold">Udzia&lstrok; (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {budget.map((row) => (
+                <tr class="border-b border-gray-100">
+                  <td class="py-2.5 pr-4 text-gray-700">{row.category}</td>
+                  <td class="py-2.5 text-right font-medium">{formatPLN(row.amount)}</td>
+                  <td class="py-2.5 text-right pl-4 text-[var(--color-muted)]">{row.percent}%</td>
+                </tr>
+              ))}
+              <tr class="border-t-2 border-gray-300 font-bold">
+                <td class="py-3 pr-4">Razem</td>
+                <td class="py-3 text-right">{formatPLN(data.netto)}</td>
+                <td class="py-3 text-right pl-4">100%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wskaz&oacute;wki optymalizacji podatkowej -->
+  <section class="mb-10">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">
+        Optymalizacja podatkowa przy {formatNumber(data.brutto)} PLN brutto &mdash; porady eksperta
+      </h2>
+      <p class="text-sm text-[var(--color-muted)] mb-6">
+        Przy efektywnej stawce podatkowej {data.efektywnaStawka}% i miesi&eogon;cznych potr&aogonek;ceniach {formatPLN(roznica)} PLN,
+        warto zna&cacute; legalne sposoby obni&zdot;enia obci&aogonek;&zdot;e&nacute; fiskalnych.
+        Poni&zdot;sze rekomendacje opracowa&lstrok; Mottalib Radif MBA INSEAD na podstawie
+        obowi&aogonek;zuj&aogonek;cych przepis&oacute;w podatkowych na 2026 rok.
+      </p>
+      <div class="space-y-4">
+        {taxTips.map((tip) => (
+          <div class="card p-5">
+            <h3 class="font-bold text-gray-900 mb-2">{tip.title}</h3>
+            <p class="text-sm text-gray-600 leading-relaxed">{tip.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Kalkulator interaktywny -->
   <section id="kalkulator" class="mb-10">
     <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-      Oblicz inne wynagrodzenie
+      Oblicz inne wynagrodzenie brutto-netto
     </h2>
     <Calculator client:idle />
   </section>
 
-  <!-- FAQ -->
+  <!-- FAQ z 6 pytaniami -->
   <section class="mb-10">
     <div class="max-w-4xl mx-auto">
       <h2 class="text-2xl font-bold text-gray-900 mb-6">
-        Najczęściej zadawane pytania - {formatNumber(data.brutto)} PLN brutto
+        Najcz&eogon;&sacute;ciej zadawane pytania &mdash; {formatNumber(data.brutto)} PLN brutto
       </h2>
       <div class="space-y-4">
-        {data.faq.map((f: { question: string; answer: string }) => (
+        {faqs.map((f) => (
           <details class="card p-5 group">
             <summary class="font-semibold text-gray-900 cursor-pointer list-none flex items-center justify-between">
               <span>{f.question}</span>
@@ -248,7 +385,7 @@ const faqSchema = {
     </div>
   </section>
 
-  <!-- Cross-links -->
+  <!-- Cross-links do innych wynagrodze&nacute; -->
   <section class="mb-10">
     <div class="max-w-4xl mx-auto">
       <h2 class="text-2xl font-bold text-gray-900 mb-6">
@@ -268,20 +405,29 @@ const faqSchema = {
     </div>
   </section>
 
-  <!-- Cross-links do regionów -->
+  <!-- Cross-links do region&oacute;w -->
   <section class="mb-10">
     <div class="max-w-4xl mx-auto">
       <h2 class="text-xl font-bold text-gray-900 mb-4">
-        Kalkulator wynagrodzeń wg województw
+        Kalkulator wynagrodze&nacute; wg wojew&oacute;dztw
       </h2>
       <div class="flex flex-wrap gap-2">
         <a href="/kalkulator-mazowieckie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Mazowieckie</a>
-        <a href="/kalkulator-malopolskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Małopolskie</a>
-        <a href="/kalkulator-slaskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Śląskie</a>
+        <a href="/kalkulator-malopolskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Ma&lstrok;opolskie</a>
+        <a href="/kalkulator-slaskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">&Sacute;l&aogonek;skie</a>
         <a href="/kalkulator-wielkopolskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Wielkopolskie</a>
-        <a href="/kalkulator-dolnoslaskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Dolnośląskie</a>
+        <a href="/kalkulator-dolnoslaskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Dolno&sacute;l&aogonek;skie</a>
         <a href="/kalkulator-pomorskie/" class="text-sm px-3 py-1.5 rounded-full bg-gray-100 hover:bg-red-50 hover:text-[var(--color-primary)] transition-colors">Pomorskie</a>
       </div>
     </div>
+  </section>
+
+  <!-- &Zacute;r&oacute;d&lstrok;a -->
+  <section class="mt-12 pt-8 border-t border-gray-200">
+    <h3 class="text-sm font-semibold text-gray-700 mb-2">&Zacute;r&oacute;d&lstrok;a</h3>
+    <ul class="text-xs text-gray-500 space-y-1">
+      <li><a href="https://www.podatki.gov.pl" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--color-primary)] transition-colors">Podatki.gov.pl</a> &mdash; Ministerstwo Finans&oacute;w, stawki PIT i progi podatkowe</li>
+      <li><a href="https://www.zus.pl" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--color-primary)] transition-colors">ZUS</a> &mdash; Zak&lstrok;ad Ubezpiecze&nacute; Spo&lstrok;ecznych, sk&lstrok;adki ubezpieczeniowe</li>
+    </ul>
   </section>
 </Layout>

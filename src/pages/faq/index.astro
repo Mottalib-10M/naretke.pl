@@ -150,4 +150,99 @@ import "../../styles/global.css";
       </section>
     </div>
   </article>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Jak obliczyć wynagrodzenie netto z brutto?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Aby obliczyć wynagrodzenie netto z brutto, należy od kwoty brutto odjąć: składki na ubezpieczenia społeczne ZUS (emerytalna 9,76%, rentowa 1,5%, chorobowa 2,45%), składkę zdrowotną (9% od podstawy po odliczeniu ZUS) oraz zaliczkę na podatek dochodowy PIT. Nasz kalkulator wykonuje te obliczenia automatycznie."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Ile wynosi podatek PIT w 2026 roku?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "W 2026 roku obowiązuje dwustopniowa skala podatkowa: 12% od dochodu do 120 000 PLN rocznie oraz 32% od nadwyżki ponad tę kwotę. Kwota wolna od podatku wynosi 30 000 PLN rocznie, co oznacza, że od dochodu do tej kwoty nie płaci się podatku dochodowego."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Co to jest kwota wolna od podatku?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Kwota wolna od podatku to kwota dochodu, od której nie nalicza się podatku dochodowego. W 2026 roku wynosi 30 000 PLN rocznie. Oznacza to, że osoba zarabiająca do 30 000 PLN rocznie nie zapłaci ani złotówki podatku PIT. Dla osób zarabiających więcej, kwota wolna przekłada się na ulgę podatkową w wysokości 300 PLN miesięcznie (3 600 PLN rocznie)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Ile wynoszą składki ZUS pracownika?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pracownik zatrudniony na umowę o pracę odprowadza łącznie 13,71% wynagrodzenia brutto na składki społeczne: składka emerytalna (9,76%), rentowa (1,5%) i chorobowa (2,45%). Dodatkowo pobierana jest składka zdrowotna w wysokości 9% od podstawy (brutto minus ZUS)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Co to jest limit 30-krotności i jak wpływa na wynagrodzenie?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Limit 30-krotności to roczny pułap podstawy wymiaru składek na ubezpieczenia emerytalne i rentowe. W 2026 roku wynosi około 235 000 PLN. Po przekroczeniu tego limitu w ciągu roku, składki emerytalna i rentowa nie są już naliczane, co skutkuje wyższym wynagrodzeniem netto w kolejnych miesiącach. Składka chorobowa jest nadal pobierana bez ograniczeń."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Ile wynosi wynagrodzenie minimalne w 2026 roku?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Prognozowane wynagrodzenie minimalne brutto w 2026 roku wynosi 4 700 PLN miesięcznie. Jest to najniższa kwota, jaką pracodawca może wypłacić pracownikowi zatrudnionemu na pełen etat. Po odliczeniu składek i podatku, kwota netto jest znacząco niższa."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Co to są koszty uzyskania przychodu?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Koszty uzyskania przychodu to kwota, o którą pomniejsza się przychód przed obliczeniem podatku. Standardowe koszty wynoszą 250 PLN miesięcznie. Pracownicy dojeżdżający do pracy z innej miejscowości mogą stosować podwyższone koszty w wysokości 300 PLN miesięcznie."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Co to jest PIT-2 i ulga podatkowa?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "PIT-2 to oświadczenie pracownika, na podstawie którego pracodawca stosuje miesięczną ulgę podatkową (kwotę zmniejszającą podatek) w wysokości 300 PLN. Dzięki temu pracownik otrzymuje wyższe wynagrodzenie netto w ciągu roku, zamiast czekać na zwrot podatku w rozliczeniu rocznym."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Czym jest koszt pracodawcy?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Koszt pracodawcy to całkowita kwota, jaką firma wydaje na zatrudnienie pracownika. Oprócz wynagrodzenia brutto, pracodawca odprowadza dodatkowe składki: emerytalną (9,76%), rentową (6,5%), wypadkową (~1,67%), Fundusz Pracy (2,45%) i FGŚP (0,10%). Łącznie te składki wynoszą około 20,48% wynagrodzenia brutto."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Czy kalkulator uwzględnia ulgę dla młodych (do 26 lat)?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Obecna wersja kalkulatora wykonuje standardowe obliczenia dla umowy o pracę bez uwzględnienia specjalnych ulg, takich jak ulga dla młodych (zerowy PIT do 26 roku życia) czy ulga dla rodzin 4+. Planujemy dodać te opcje w przyszłych aktualizacjach."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Czy obliczenia kalkulatora są wiążące?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nie. Obliczenia mają charakter informacyjny i szacunkowy. Rzeczywista kwota wynagrodzenia netto może się nieznacznie różnić w zależności od indywidualnych okoliczności. W razie wątpliwości zalecamy konsultację z doradcą podatkowym lub kontakt z urzędem skarbowym."
+        }
+      }
+    ]
+  })} />
 </Layout>

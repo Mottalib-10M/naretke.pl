@@ -330,4 +330,34 @@ import "../styles/global.css";
       które pomoże Ci podejmować świadome decyzje finansowe.
     </p>
   </article>
+
+  <!-- Źródła -->
+  <section class="mt-12 pt-8 border-t border-gray-200">
+    <h3 class="text-sm font-semibold text-gray-700 mb-2">Źródła</h3>
+    <ul class="text-xs text-gray-500 space-y-1">
+      <li><a href="https://www.podatki.gov.pl" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--color-primary)] transition-colors">Podatki.gov.pl</a> — Ministerstwo Finansów, stawki PIT i progi podatkowe</li>
+      <li><a href="https://www.zus.pl" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--color-primary)] transition-colors">ZUS</a> — Zakład Ubezpieczeń Społecznych, składki ubezpieczeniowe</li>
+    </ul>
+  </section>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Kalkulator Wynagrodzeń Brutto-Netto",
+    "description": "Kalkulator wynagrodzeń brutto-netto 2026. Oblicz wynagrodzenie netto, składki ZUS, zdrowotną, podatek PIT i koszt pracodawcy.",
+    "url": "https://kalkulatorwynagrodzen.pl/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "All",
+    "inLanguage": "pl",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PLN"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Mottalib Radif",
+      "url": "https://kalkulatorwynagrodzen.pl/o-nas/"
+    }
+  })} />
 </Layout>

@@ -1,0 +1,66 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatDecimal, formatNumber } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const K = P.ppk;
+const low = P.minimum_wage.monthly * K.low_income_multiple;
+const mult = formatDecimal(K.low_income_multiple, 1, lang);
+// Tableau moteur : net avec et sans PPK (taux de base) pour cinq salaires.
+const GS = [P.minimum_wage.monthly, low, 8000, 12000, 20000];
+const rows = GS.map((g) => { const a = uop({ gross: g, ppk: true }), b = uop({ gross: g }); const drop = b.net - a.net, into = a.ppkEmployee + a.ppkEmployer; return [$(g), $(b.net), $(a.net), $(drop), $(into), formatNumber(into / drop, 2, lang)]; });
+const a8 = uop({ gross: 8000, ppk: true }), b8 = uop({ gross: 8000 });
+const drop8 = b8.net - a8.net, into8 = a8.ppkEmployee + a8.ppkEmployer, tax8 = a8.pit - b8.pit;
+const ratio8 = formatNumber(into8 / drop8, 2, lang);
+const year8 = into8 * 12, year8first = year8 + K.state_welcome + K.state_annual;
+// Salaire minimum : 0,5 % au lieu de 2 %.
+const minG = P.minimum_wage.monthly;
+const m0 = uop({ gross: minG }), mBasic = uop({ gross: minG, ppk: true }), mLow = uop({ gross: minG, ppk: true, ppkEmployeeRate: K.employee_min });
+// Taux maximaux : 2 % + 2 % salarié, 1,5 % + 2,5 % employeur.
+const mx = uop({ gross: 8000, ppk: true, ppkEmployeeRate: K.employee_basic + K.employee_extra_max, ppkEmployerRate: K.employer_basic + K.employer_extra_max });
+const mxDrop = b8.net - mx.net, mxInto = mx.ppkEmployee + mx.ppkEmployer;
+const faqs = [
+  { q: `Zarabiam płacę minimalną. Czy mogę wpłacać do PPK mniej niż ${F.ppkEe}?`, a: `Tak. Jeśli Twoje wynagrodzenie nie przekracza ${F.ppkLowIncome} miesięcznie, czyli ${mult}-krotności płacy minimalnej, możesz obniżyć swoją wpłatę do ${F.ppkEeMin}. Przy ${F.minWage} brutto netto spada wtedy tylko o ${$2(m0.net - mLow.net)} zamiast o ${$2(m0.net - mBasic.net)}. Wpłata pracodawcy zostaje na poziomie ${F.ppkEr}.` },
+  { q: 'Po zapisaniu się do PPK zaliczka na podatek wzrosła. Skąd ta różnica?', a: `Wpłata pracodawcy do PPK jest Twoim przychodem i pracodawca dolicza ją do podstawy opodatkowania, choć pieniądze nie trafiają do Twojej wypłaty, tylko na konto PPK. Przy pensji ${$(8000)} brutto pracodawca wpłaca ${$2(a8.ppkEmployer)}, a zaliczka na PIT rośnie o ${$(tax8)} miesięcznie. Składek ZUS od tej wpłaty się nie płaci.` },
+  { q: `Ile pieniędzy zbierze się na moim koncie PPK przez rok przy pensji ${$(8000)}?`, a: `Przy stawkach podstawowych co miesiąc wpływa ${$2(into8)}: ${$2(a8.ppkEmployee)} z Twojej pensji i ${$2(a8.ppkEmployer)} od pracodawcy. Przez dwanaście miesięcy daje to ${$(year8)}, a w pierwszym roku z wpłatą powitalną ${F.ppkWelcome} i dopłatą roczną ${F.ppkAnnual} od państwa około ${$(year8first)}, przed zyskami lub stratami z inwestycji. Twoje netto spada w tym czasie o ${$(drop8 * 12)}.` },
+];
+---
+<GuideLayout lang={lang} id="ppk" breadcrumbLabel={label('ppk', lang)} title={`PPK ${F.year}: ile kosztuje i ile zyskujesz, kalkulator wpłat`} h1={`PPK w ${F.year} r.: ile wpłacasz, ile dokłada pracodawca i państwo`}
+  description={`PPK ${F.year}: wpłacasz ${F.ppkEe}, pracodawca ${F.ppkEr}, państwo ${F.ppkWelcome} plus ${F.ppkAnnual} rocznie. Przy ${$(8000)} brutto netto spada o ${$(drop8)}, a na konto trafia ${$(into8)}. Sprawdź.`}
+  intro={`Kalkulator porównuje wypłatę z PPK i bez niego: pokazuje, o ile spada netto i ile co miesiąc trafia na Twoje konto w PPK.`}
+  resume={`W Pracowniczych Planach Kapitałowych (PPK) pracownik wpłaca w ${F.year} r. ${F.ppkEe} pensji brutto, a pracodawca dokłada ${F.ppkEr}. Obie strony mogą zadeklarować wpłaty dodatkowe: pracownik do ${F.ppkEeExtra}, pracodawca do ${F.ppkErExtra}. Państwo dopłaca ${F.ppkWelcome} wpłaty powitalnej i ${F.ppkAnnual} dopłaty rocznej. Przy pensji ${$(8000)} brutto na konto PPK trafia co miesiąc ${$2(into8)}, a netto spada o ${$2(drop8)}, czyli mniej niż sama Twoja wpłata (${$2(a8.ppkEmployee)}) plus podatek od wpłaty pracodawcy. Ta wpłata jest bowiem Twoim przychodem: zwiększa podstawę opodatkowania, choć nie płaci się od niej składek ZUS. Twoja wpłata jest potrącana z pensji już po opodatkowaniu. Osoby zarabiające nie więcej niż ${F.ppkLowIncome} (${mult}-krotność płacy minimalnej) mogą obniżyć swoją wpłatę do ${F.ppkEeMin}. Kalkulator pokazuje wpłaty i różnicę w netto dla dowolnej pensji, a tabela niżej porównuje pięć poziomów wynagrodzenia.`}
+  faqs={faqs}
+  related={[{ href: route('employer', lang), name: label('employer', lang), description: `Wpłata ${F.ppkEr} w pełnym koszcie zatrudnienia.` }, { href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'Ile brutto potrzeba na to samo netto z PPK.' }, { href: route('home', lang), name: label('home', lang), description: 'Netto z PPK lub bez, dla każdej umowy.' }]}
+  sources={[src('ppk', lang), src('ppk_tax', lang), src('pit_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Netto z PPK i bez PPK dla pięciu pensji</h2>
+  <p>Stawki podstawowe: {F.ppkEe} pracownika i {F.ppkEr} pracodawcy, bez wpłat dodatkowych i bez dopłat państwa. Ostatnia kolumna mówi, ile złotych trafia na konto PPK na każdą złotówkę, o którą spada Twoje netto.</p>
+  <ContentTable headers={['Brutto', 'Netto bez PPK', 'Netto z PPK', 'Spadek netto', 'Wpłaty na konto', 'Wpłaty / spadek']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={2} />
+  <p>Wskaźnik w ostatniej kolumnie jest niemal stały, bo wszystkie wpłaty są procentem brutto. Przy {$(8000)} brutto za każdą złotówkę mniej w wypłacie na konto trafia {ratio8} zł, jeszcze przed dopłatami państwa i wynikami inwestycji. Drugi wiersz to granica {F.ppkLowIncome}, do której można obniżyć własną wpłatę.</p>
+
+  <h2>Dlaczego netto spada o więcej niż Twoja wpłata</h2>
+  <p>Na pasku wypłaty uczestnika PPK pojawiają się dwie zmiany. Pierwsza to potrącenie Twojej wpłaty {F.ppkEe}, które następuje po naliczeniu podatku, więc nie zmniejsza podstawy opodatkowania. Druga jest mniej oczywista: wpłata pracodawcy ({F.ppkEr} brutto) jest Twoim przychodem. Pracodawca dodaje ją do podstawy opodatkowania i pobiera od niej zaliczkę {F.pitLow}, choć same pieniądze idą prosto na konto PPK. Przy {$(8000)} brutto ta zaliczka rośnie o {$(tax8)} miesięcznie.</p>
+  <p>Od wpłaty pracodawcy nie płaci się natomiast składek emerytalnej i rentowej, bo nie wchodzi do ich podstawy. Nie wpływa też na składkę zdrowotną pracownika. Na pasku wypłaty wpłata pracodawcy widnieje zwykle jako pozycja informacyjna „PPK pracodawcy”, doliczona do przychodu, ale nie do kwoty do wypłaty.</p>
+
+  <h2>Wpłata obniżona do {F.ppkEeMin} przy niskich zarobkach</h2>
+  <p>Ustawa o PPK pozwala obniżyć wpłatę pracownika do {F.ppkEeMin}, jeśli jego wynagrodzenie nie przekracza {mult}-krotności płacy minimalnej, czyli {F.ppkLowIncome} miesięcznie. Przy płacy minimalnej {F.minWage} netto bez PPK wynosi {$2(m0.net)}, z PPK na stawce podstawowej {$2(mBasic.net)}, a z obniżoną wpłatą {$2(mLow.net)}. Pracodawca wpłaca w obu przypadkach tyle samo, więc obniżenie własnej wpłaty zmniejsza koszt uczestnictwa, nie odbierając dopłaty firmy.</p>
+
+  <h2>Maksymalne wpłaty: ile kosztują i ile dają</h2>
+  <p>Przy wpłatach dodatkowych pracownik odkłada łącznie do {formatDecimal((K.employee_basic + K.employee_extra_max) * 100, 2, lang)} %, a pracodawca do {formatDecimal((K.employer_basic + K.employer_extra_max) * 100, 2, lang)} % brutto. Przy {$(8000)} na konto trafia wtedy {$2(mxInto)} miesięcznie, a netto spada o {$2(mxDrop)}. O dodatkowej wpłacie pracodawcy decyduje firma, dlatego kalkulator domyślnie liczy tylko wpłaty podstawowe.</p>
+
+  <h2>Czego kalkulator PPK nie pokazuje</h2>
+  <p>Narzędzie liczy wyłącznie przepływy w miesiącu: Twoją wpłatę, wpłatę pracodawcy i ich wpływ na netto. Nie prognozuje stopy zwrotu z funduszu zdefiniowanej daty, opłat za zarządzanie ani wartości oszczędności w dniu wypłaty, bo te zależą od rynku i od decyzji instytucji finansowej. Nie uwzględnia też dopłat państwa w wyniku miesięcznym: {F.ppkWelcome} wpłaty powitalnej i {F.ppkAnnual} dopłaty rocznej trafia na konto na warunkach określonych w ustawie. Pełny koszt zatrudnienia z wpłatą pracodawcy pokazuje <a href={route('employer', lang)}>kalkulator kosztu pracodawcy</a>, a brutto potrzebne do utrzymania netto po zapisaniu się do PPK policzysz w <a href={route('nettobrutto', lang)}>kalkulatorze netto brutto</a>.</p>
+
+  <h2>Ile kosztuje pracodawcę Twój udział w PPK</h2>
+  <p>Wpisz pensję i wybierz PPK, żeby zobaczyć, jak wpłata {F.ppkEr} zmienia koszt zatrudnienia.</p>
+  <div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('employer', lang)} /></div>
+</GuideLayout>

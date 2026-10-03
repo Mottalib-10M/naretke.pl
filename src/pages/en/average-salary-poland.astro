@@ -1,0 +1,84 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const AVG = P.average_wage.forecast_2026, Q4 = P.average_wage.q4_2025_with_profits, MW = P.minimum_wage.monthly;
+const a = uop({ gross: AVG }), q = uop({ gross: Q4 });
+const capMult = formatNumber(P.zus.annual_cap / AVG, 0, lang);
+const b2bShare = pct(Math.round((P.b2b.zus_base_full / AVG) * 100) / 100, lang);
+const bands = P.b2b.health.ryczalt_bands;
+const bandShare = bands.map((b) => pct(Math.round((b.base / Q4) * 100) / 100, lang));
+const sickMult = formatNumber(P.b2b.sickness_base_max / AVG, 1, lang);
+const levels: Array<[string, number]> = [['Minimum wage', MW], [`${b2bShare} of the forecast (self-employed ZUS base)`, P.b2b.zus_base_full], ['Q4 2025 average incl. profit payouts', Q4], ['2026 forecast average', AVG], ['Twice the forecast', AVG * 2]];
+const rows = levels.map(([n, g]) => { const x = uop({ gross: g }); return [n, $(g), $(x.net), `${formatNumber((g / AVG) * 100, 0, lang)} %`]; });
+const x3 = AVG * 3, m3 = capMonth(x3);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const netShare = pct(Math.round((a.net / AVG) * 100) / 100, lang);
+const diff = AVG - Q4;
+const baseGap = $2(P.b2b.zus_base_full - (P.b2b.zus_base_full / AVG) * Q4);
+const faqs = [
+  { q: `Which average wage sets the ${capMult}x ZUS cap in ${F.year}?`, a: `The forecast average wage from the budget act, ${F.avgForecast}. The ministry published it in Monitor Polski (2025, item 1206) together with the cap: ${capMult} × ${F.avgForecast} = ${F.cap} of annual pension and disability contribution base. The Statistics Poland figure for Q4 2025 (${F.avgQ4}) plays no part in that cap.` },
+  { q: `Why is lump-sum health insurance based on ${F.avgQ4} and not on the forecast?`, a: `Because the health contribution of sole traders on the lump-sum tax (ryczałt) is tied to the average wage in the fourth quarter of the previous year, including profit payouts. For ${F.year} that is ${F.avgQ4}. ZUS takes ${bandShare[0]}, ${bandShare[1]} or ${bandShare[2]} of it as the base, depending on revenue. The ${F.avgForecast} forecast serves other purposes, such as the self-employed social contribution base.` },
+  { q: `What is the average salary in Poland after tax in ${F.year}?`, a: `On an employment contract, ${F.avgForecast} gross leaves ${$(a.net)} net a month, with standard work-related costs and PIT-2 filed. Social contributions take ${$(a.social)}, health ${$(a.health)} and the tax advance ${$(a.pit)}. At a salary equal to the Q4 2025 average (${F.avgQ4}), take-home pay is ${$(q.net)}.` },
+  { q: 'Do most people in Poland earn the average wage?', a: `That is not the right way to read it. An arithmetic mean rises when the best-paid earn more, so a typical salary is often lower. ${F.avgForecast} and ${F.avgQ4} are official indices that caps and contribution bases are tied to, not a description of what an ordinary worker earns. The calculator on this page shows where your own pay sits against the forecast.` },
+  { q: `Where does the ${F.b2bBaseFull} self-employed ZUS base come from?`, a: `It is ${b2bShare} of the forecast average wage of ${F.avgForecast}. That is the lowest base for full social contributions of a sole trader in ${F.year}. ZUS calculates ${F.b2bZusFull} a month from it with voluntary sickness insurance, or ${F.b2bZusFullNoSick} without. When next year's forecast rises, the base and the contributions rise with it.` },
+];
+---
+<GuideLayout lang={lang} id="average" breadcrumbLabel={label('average', lang)}
+  title={`Average Salary ${F.year} in Poland: ${F.avgForecast} and ${F.avgQ4}`}
+  h1={`Average salary in Poland ${F.year}: two figures and what they do`}
+  description={`Average salary in Poland ${F.year}: the ${F.avgForecast} forecast (ZUS cap, B2B base) and ${F.avgQ4} for Q4 2025 (lump-sum health). Net pay and how yours compares.`}
+  intro={`Polish rules for ${F.year} rely on two averages: the forecast average wage of ${F.avgForecast} and the Q4 2025 average including profit payouts, ${F.avgQ4}.`}
+  resume={`The forecast average wage for ${F.year} is ${F.avgForecast} gross a month, the figure adopted in the budget act. It drives the annual cap on pension and disability contributions (${capMult} times the average, so ${F.cap}) and the lowest base for full social contributions of the self-employed, ${F.b2bBaseFull} (${b2bShare} of the forecast). The second figure is the average wage in the fourth quarter of 2025 including profit payouts, published by the President of Statistics Poland (GUS): ${F.avgQ4}. It sets the three health contribution bands for sole traders on the lump-sum tax. On an employment contract, a salary equal to the forecast leaves ${$(a.net)} take-home pay, and one equal to the Q4 average ${$(q.net)}, with PIT-2 and standard costs. Neither number describes what a typical worker earns: they are indices that the law hangs caps and bases on. The calculator below shows your gross as a share of the forecast.`}
+  faqs={faqs}
+  related={[{ href: route('cap', lang), name: label('cap', lang), description: `${F.cap}: when pension and disability contributions stop.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Contributions on the ${F.b2bBaseFull} base and preferential ZUS.` }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} gross: net pay and employer cost.` }]}
+  sources={[src('cap', lang), src('gus_q4', lang), src('budget', lang), src('zus_b2b', lang)]}>
+  <div data-chrome><MiniSim client:load kind="average" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Two averages in the {F.year} rules</h2>
+  <p>Ask about the average salary in Poland and most people quote one number from the news. The contribution and tax rules for {F.year}, though, use two different figures, published by different bodies for different purposes. Mixing them up is the most common mistake when working out self-employed contributions.</p>
+  <p>The first is the <strong>forecast average wage</strong> (prognozowane przeciętne wynagrodzenie): {F.avgForecast}. It comes from the {F.year} budget act and from the ministry notice of 19 November 2025 (Monitor Polski 2025, item 1206). It is fixed in advance, before the year starts, so later statistics do not change it.</p>
+  <p>The second is the <strong>average wage in Q4 2025 including profit payouts</strong> (przeciętne wynagrodzenie w IV kwartale z wypłatami z zysku): {F.avgQ4}. The President of Statistics Poland announced it in Monitor Polski (2026, item 117). This one is measured, not forecast, and covers the last quarter of the previous year. The two differ by {$2(diff)}.</p>
+
+  <h2>What the {F.avgForecast} forecast is used for</h2>
+  <p>The most important use affects every well-paid employee. The annual base for pension and disability contributions is capped at {capMult} times the forecast average wage, which in {F.year} gives {F.cap}. Once your gross pay for the year passes that sum, your employer stops deducting those two contributions and net pay goes up. Spread over twelve months the cap equals {F.capMonthly}; anyone earning more will reach it before December.</p>
+  <p>Take a salary of three times the forecast, {$(x3)} gross. The cap is reached in {m3 ? MONTHS[m3 - 1] : 'no month this year'}, and from then on pension and disability contributions disappear from the payslip. What happens to the sickness contribution and how the month is counted is set out on our page about the <a href={route('cap', lang)}>ZUS contribution cap</a>. The second calculator at the bottom of this page finds the month for your salary.</p>
+  <p>The second use concerns people running their own business (działalność gospodarcza, often called B2B in Poland). The lowest base for full social contributions is {b2bShare} of the forecast, which is {F.b2bBaseFull}. ZUS derives {F.b2bZusFull} a month from it, voluntary sickness cover included. The forecast also sets the ceiling of the voluntary sickness base for the self-employed: {$2(P.b2b.sickness_base_max)} a month, or {sickMult} times {F.avgForecast}. The full breakdown is on the page about <a href={route('zusb2b', lang)}>ZUS for the self-employed</a>.</p>
+
+  <h2>What the Q4 figure of {F.avgQ4} is used for</h2>
+  <p>Within the scope of this site, this amount has one job, and it matters: it sets the health contribution of sole traders on the lump-sum tax (ryczałt ewidencjonowany). Their contribution does not depend on profit but on annual revenue, and takes one of three values. Each band's base is a percentage of the Q4 average.</p>
+  <ContentTable headers={['Annual revenue', 'Base', 'Share of Q4 average', 'Monthly contribution']} align={['l', 'r', 'r', 'r']} rows={[[`up to ${F.ryczaltLimit1}`, $2(bands[0].base), bandShare[0], F.ryczaltBand1], [`up to ${F.ryczaltLimit2}`, $2(bands[1].base), bandShare[1], F.ryczaltBand2], [`over ${F.ryczaltLimit2}`, $2(bands[2].base), bandShare[2], F.ryczaltBand3]]} />
+  <p>When GUS publishes the Q4 {F.year} average, next year's health bands will move with it. Choosing the right band and settling it during the year are covered in our guides to the <a href={route('health', lang)}>health contribution</a> and the <a href={route('ryczalt', lang)}>lump-sum tax</a>.</p>
+
+  <h2>Net pay at the average salary</h2>
+  <p>A gross salary equal to the forecast, {F.avgForecast}, gives {$(a.net)} take-home pay on an employment contract. The deductions are social contributions of {$2(a.social)}, a health contribution of {$2(a.health)} and a tax advance of {$(a.pit)}. Net pay is therefore {netShare} of gross. For the employer, the same salary costs {$2(a.er.cost)} a month once its own contributions and fund payments are added.</p>
+  <p>The table lines up several levels that appear in the rules with the corresponding net pay on an employment contract. The last column shows each amount as a share of the forecast.</p>
+  <ContentTable headers={['Level', 'Gross', 'Net (employment)', 'Against the forecast']} align={['l', 'r', 'r', 'r']} rows={rows} highlightRow={3} />
+  <p>Net figures are for a single month, before the second tax bracket or the contribution cap applies, with PIT-2 and {F.kup} costs. At twice the forecast, annual income passes {F.threshold}, so the tax advance rises late in the year. Our guide to <a href={route('brackets', lang)}>income tax brackets</a> shows when.</p>
+
+  <h2>Average versus typical pay</h2>
+  <p>The average wage is an arithmetic mean: total pay divided by the number of people. High earnings in a small group push it up noticeably, while low earnings across many people pull it down less than you might expect. In practice many employees earn below the average, and comparing your salary with {F.avgForecast} says less about where you stand than headlines suggest.</p>
+  <p>You will also see other averages in the Polish press, monthly or quarterly, for different groups of employers. None of them changes the contribution cap or the ZUS bases. For {F.year}, only the two figures described here are legally binding for the purposes this page covers.</p>
+  <p>If you are comparing a job offer with the average, check the contract type. The same gross on a mandate contract (umowa zlecenie) or as a B2B contractor gives a different net than on employment. A mandate contract has no {F.kup} employee costs; instead {F.kupContract} of income after contributions is deducted as costs, and a business pays fixed contributions of its own. Our <a href={route('compare', lang)}>B2B versus employment comparison</a> runs all three at one amount.</p>
+
+  <h2>Four common mix-ups</h2>
+  <p>The first is using the Q4 figure for the self-employed social contribution base. That base is {F.b2bBaseFull}, derived from the forecast; a base calculated from {F.avgQ4} would be {baseGap} a month too low, and the gap would mean underpaid contributions. The second is the reverse: taking the forecast as the reference for lump-sum health bands, which are tied to the Q4 average.</p>
+  <p>The third is reading the cap of {F.cap} as a monthly limit. It is an annual total of gross pay, counted from January, so a salary of {$(AVG * 2)} a month never reaches it, while a one-off bonus can bring it forward by several months. The fourth is comparing your take-home pay with {F.avgForecast}. That figure is gross; the matching net is {$(a.net)}, and only on an employment contract with PIT-2. Comparing net with gross makes almost every salary look worse than it is.</p>
+
+  <h2>The minimum wage as the other reference point</h2>
+  <p>The minimum wage, {F.minWage}, is {pct(Math.round((MW / AVG) * 100) / 100, lang)} of the forecast. It, rather than the average, sets the minimum health contribution of sole traders on the tax scale and flat tax ({F.healthMin}) and the preferential ZUS base ({F.b2bBasePref}). The average governs the upper caps and full contributions; the minimum wage governs the floors. More in our guide to the <a href={route('minimum', lang)}>minimum wage</a>.</p>
+
+  <h2>Your salary and the contribution cap</h2>
+  <p>The second calculator shows the month in which your cumulative gross passes {F.cap}. Enter your monthly salary: below {F.capMonthly}, you will not reach the cap in {F.year}.</p>
+  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
+  <p>It assumes the same salary all year with one employer. Bonuses paid during the year bring the month forward.</p>
+</GuideLayout>

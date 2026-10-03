@@ -1,0 +1,60 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { sickPay, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const S = P.sickness;
+const D = 10;
+const GS = [P.minimum_wage.monthly, 7000, 10000, 15000];
+const rows = GS.map((g) => { const s = sickPay({ gross: g, days: D }); return [$(g), $2(s.base), $2(s.daily), $(s.benefit), $(s.lostSalary), $(s.lostSalary - s.benefit), $2(s.health)]; });
+const s7 = sickPay({ gross: 7000, days: D });
+const s7full = sickPay({ gross: 7000, days: S.employer_days });
+const s7preg = sickPay({ gross: 7000, days: 30, rate: 1 }), s7std30 = sickPay({ gross: 7000, days: 30 });
+const floor = P.minimum_wage.monthly * (1 - S.base_reduction);
+const effective = pct(S.rate_standard * (1 - S.base_reduction), lang);
+const faqs = [
+  { q: 'I am 52. From which day of sick leave does ZUS pay me instead of my employer?', a: `An employee aged 50 or over receives employer-paid sick pay for only ${F.sickDays50} days of illness in a calendar year, not ${F.sickDays}. From the next day ZUS sickness benefit (zasiłek chorobowy) applies. It is calculated the same way, at ${F.sickRate} of the base, so usually only the payer changes, not the amount. The day count resets with each new calendar year.` },
+  { q: 'Are ZUS contributions deducted from sick pay in Poland?', a: `Pension, disability and sickness contributions are not deducted from sick pay or sickness benefit, but the ${F.health} health contribution and the income tax advance are. That is why your net pay falls by less than your gross. On ${$(7000)} and ${D} days off sick, the benefit is ${$(s7.benefit)} gross and the health contribution on it ${$2(s7.health)}.` },
+  { q: 'I am pregnant and on sick leave. How much will I get?', a: `Sick leave during pregnancy is paid at ${pct(1, lang)} of the base instead of ${F.sickRate} (article 92 of the Labour Code, then the Sickness Benefits Act). With an average salary of ${$(7000)} gross, 30 days off come to ${$(s7preg.benefit)} gross instead of ${$(s7std30.benefit)}. The base is the same: the ${S.base_months}-month average minus ${F.sickReduction} of employee contributions.` },
+];
+---
+<GuideLayout lang={lang} id="sick" breadcrumbLabel={label('sick', lang)} title={`Sick Pay Poland ${F.year}: ${F.sickRate} on L4 and When ZUS Takes Over`} h1={`Sick pay in Poland ${F.year}: what you get for days on sick leave`}
+  description={`Sick pay in Poland ${F.year}: ${F.sickRate} of the base, so ${$2(s7.daily)} per day of L4 on ${$(7000)} gross. The employer pays ${F.sickDays} days a year, then ZUS benefit. Free calculator.`}
+  intro={`The calculator works out sick pay for days on sick leave (L4) under an employment contract and shows how much less you get than your normal salary.`}
+  resume={`For days on medical sick leave, known in Poland as L4, an employee on an employment contract receives ${F.sickRate} of the benefit base in ${F.year}. The base is the average pay for the ${S.base_months} months before the month you fell ill, minus the employee's pension, disability and sickness contributions, that is minus ${F.sickReduction}; each day is worth 1/30 of that amount. On ${$(7000)} gross that gives ${$2(s7.daily)} a day, and ${$(s7.benefit)} gross for ${D} days instead of ${$(s7.lostSalary)}. For the first ${F.sickDays} days of illness in a calendar year the employer pays (wynagrodzenie chorobowe); for employees aged 50 and over, only ${F.sickDays50} days. After that, ZUS sickness benefit (zasiłek chorobowy) takes over, calculated the same way. No ZUS social contributions are deducted from it, but health contribution and income tax are. During pregnancy and after an accident on the way to or from work the rate is ${pct(1, lang)} of the base.`}
+  faqs={faqs}
+  related={[{ href: route('zus', lang), name: label('zus', lang), description: `The ${F.chorobowa} sickness contribution that funds benefits.` }, { href: route('home', lang), name: label('home', lang), description: 'Net pay on a full salary, without sick days.' }, { href: route('compare', lang), name: label('compare', lang), description: 'On B2B, sickness cover is voluntary only.' }]}
+  sources={[src('sickness', lang), src('labour_code', lang), src('health_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="sick" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Ten days of L4 on four salaries</h2>
+  <p>The table assumes the same salary over the last {S.base_months} months. "Normal pay for those days" is 1/30 of gross times the number of days, the amount you would have received had you not been ill.</p>
+  <ContentTable headers={['Gross', 'Base', 'Per day', `${D} days of L4`, 'Normal pay for those days', 'Gross difference', 'Health on the benefit']} align={['r', 'r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={1} />
+  <p>Your take-home loss is smaller than the "gross difference" column suggests, because pension, disability and sickness contributions are not deducted from sick pay. In practice the benefit equals about {effective} of gross pay for the same days ({F.sickRate} of an amount already reduced by {F.sickReduction}), but free of those contributions.</p>
+
+  <h2>How the base and daily rate are built</h2>
+  <p>The starting point is the average pay for the {S.base_months} full calendar months before the month in which incapacity began. The employee's contributions come off that average: pension {F.emerytalnaEe}, disability {F.rentowaEe} and sickness {F.chorobowa}, {F.sickReduction} in total. The result is divided by 30, and the daily rate is multiplied by {F.sickRate} and by the number of days on leave.</p>
+  <p>For full-time work the base cannot be lower than the minimum wage minus {F.sickReduction}, which is {$2(floor)}. If you received bonuses or variable allowances in recent months, part of them enters the average; the calculator cannot reproduce that, since it works from a single gross figure.</p>
+
+  <h2>{F.sickDays} days from the employer, then ZUS</h2>
+  <p>The Labour Code splits illness within a calendar year into two stages. For the first {F.sickDays} days (in total, even across several separate sick notes) the employer pays the benefit as sick pay. For an employee aged 50 or over that period is shortened to {F.sickDays50} days. From the following day, ZUS sickness benefit applies. The rate does not change: the Sickness Benefits Act also provides for {F.sickRate} of the base, so on {$(7000)} gross the full {F.sickDays} employer days come to {$(s7full.benefit)} gross, and each later ZUS day is worth the same {$2(s7.daily)}.</p>
+  <p>On a Polish payslip (pasek wypłaty) sick days usually appear as a separate line, "wynagrodzenie chorobowe" or "zasiłek chorobowy", while base salary for that month is reduced for the days of absence. If the total looks too low, compare the daily rate on the payslip with the calculator: a gap usually comes from bonuses or allowances that entered the average of recent months.</p>
+
+  <h2>When the rate is {pct(1, lang)} of the base</h2>
+  <p>The {F.sickRate} rate has exceptions. A full {pct(1, lang)} of the base applies to incapacity during pregnancy and to incapacity caused by an accident on the way to or from work. In the calculator, choose the number of days and multiply the result by {pct(1 / S.rate_standard, lang)} to get the amount for those cases; on {$(7000)} gross, 30 days give {$(s7preg.benefit)} instead of {$(s7std30.benefit)}.</p>
+
+  <h2>What the sick pay calculator does not cover</h2>
+  <p>The tool works out the benefit under an employment contract for a steady salary. It does not cover people on mandate contracts or the self-employed, whose right to benefit depends on a voluntary sickness contribution, nor cases where you have not yet completed {S.base_months} full months with your employer. It shows gross, not net, because tax on the benefit is settled together with the whole payslip for that month. Check net pay for a healthy month in the <a href={route('home', lang)}>salary calculator</a>, and read how benefits are funded in the guide to <a href={route('zus', lang)}>ZUS contributions</a>.</p>
+
+  <h2>Your sickness contribution</h2>
+  <p>Benefits are funded by the {F.chorobowa} sickness contribution, paid entirely by the employee every month. Check how much it is on your salary.</p>
+  <div data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('zus', lang)} /></div>
+</GuideLayout>

@@ -1,0 +1,90 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const HR = P.health.employee_rate;
+const raw = (g: number) => { const x = uop({ gross: g }); return Math.round((g - x.social) * HR * 100) / 100; };
+const G = 8000, u = uop({ gross: G });
+const effShare = pct(Math.round((u.health / G) * 1000) / 1000, lang);
+let capEdge = 0; for (let g = 100; g <= P.minimum_wage.monthly; g += 1) { if (uop({ gross: g }).health < raw(g) - 0.005) capEdge = g; }
+const small = 1000, us = uop({ gross: small });
+const smallRows = [600, 1000, 1500, 2000].map((g) => [$(g), $2(raw(g)), $2(uop({ gross: g }).health)]);
+const Z4 = $(4000), z = zlecenie({ gross: 4000 }), zst = zlecenie({ gross: 4000, student: true });
+const young = uop({ gross: 6000, under26: true }), old6 = uop({ gross: 6000 });
+const lin15 = b2b({ revenue: 15000, form: 'liniowy' }), lin6 = b2b({ revenue: 6000, form: 'liniowy' }), sk15 = b2b({ revenue: 15000, form: 'skala' });
+const linRate = pct(P.b2b.health.liniowy_rate, lang);
+const bands = P.b2b.health.ryczalt_bands;
+const lvl = [P.minimum_wage.monthly, 12000, 20000].map((g) => ({ g, h: uop({ gross: g }).health }));
+const ryczShare = pct(P.b2b.health.ryczalt_deductible_share, lang);
+const formRows = [
+  ['Employment, mandate contract', F.health, 'gross minus social contributions', 'no'],
+  ['Business, progressive scale', F.health, 'income, minimum based on the minimum wage', 'no'],
+  ['Business, flat tax', linRate, 'income, minimum based on the minimum wage', `yes, up to ${F.liniowyLimit} a year`],
+  ['Business, lump-sum tax', F.health, 'fixed base set by revenue band', `${ryczShare} of contributions from revenue`],
+];
+const faqs = [
+  { q: 'Can employees deduct the health contribution from income tax?', a: `No. The Personal Income Tax Act lets only sole traders on the flat tax, the lump-sum tax and the tax card deduct health contributions. Employees and mandate contractors pay the full ${F.health} and deduct it neither from income nor from tax. On ${$(G)} gross that is ${$2(u.health)} a month, all of which comes straight off take-home pay.` },
+  { q: `Why is my health contribution below ${F.health} on a very small salary?`, a: `Article 83 of the Act on publicly funded healthcare caps the contribution at the tax advance calculated under PIT rules as they stood on 31 December 2021. On ${$(small)} gross, the full ${F.health} would be ${$2(raw(small))}, but the employer deducts ${$2(us.health)}. On an employment contract the cap stops applying at around ${$(capEdge)} gross a month.` },
+  { q: 'Do students on a mandate contract pay health insurance?', a: `Not on the mandate contract, as a rule. A pupil or student under 26 is not compulsorily covered by pension and disability insurance on zlecenie, and the health obligation in article 66 of the healthcare act covers people who meet the conditions for social insurance. From a ${Z4} contract they therefore keep ${$(zst.net)}. If they also have an employment contract, health is deducted from that job as usual.` },
+  { q: `What is the minimum health contribution for the self-employed in ${F.year}?`, a: `On the progressive scale and the flat tax, ${F.healthMin} a month for February ${F.year} to January of the following year, because the base cannot be lower than the ${F.minWage} minimum wage. For January ${F.year} the minimum was ${F.healthMinJan}. The lump-sum tax has no minimum as such but three fixed amounts, the lowest being ${F.ryczaltBand1}.` },
+  { q: 'Which lump-sum health band applies to my business?', a: `Annual revenue decides. Up to ${F.ryczaltLimit1} you pay ${F.ryczaltBand1} a month, up to ${F.ryczaltLimit2} ${F.ryczaltBand2}, and above that ${F.ryczaltBand3}. The bases are percentages of the Q4 2025 average wage (${F.avgQ4}). You can deduct ${ryczShare} of the contributions paid from revenue, which softens the cost of a higher band.` },
+  { q: 'How much health contribution can I deduct on the flat tax?', a: `In ${F.year}, up to ${F.liniowyLimit} a year, from income rather than from tax. At ${linRate} and revenue of ${$(15000)} a month with no costs, the contribution is ${$2(lin15.health)} a month, so all of it fits under the limit. Higher contributions still reduce your take-home pay, but above the limit they no longer reduce tax.` },
+];
+---
+<GuideLayout lang={lang} id="health" breadcrumbLabel={label('health', lang)}
+  title={`Health Contribution ${F.year}: ${F.health} for Employees, B2B Rates`}
+  h1={`Health contribution in Poland ${F.year}: employees, contractors, B2B`}
+  description={`Polish health contribution ${F.year}: ${F.health} on employment and mandate contracts, not tax-deductible. B2B minimum ${F.healthMin}, ${linRate} flat tax, three lump-sum bands.`}
+  intro={`Employees in Poland pay a ${F.health} health contribution (składka zdrowotna) on gross pay minus social contributions, and cannot deduct it from income tax.`}
+  resume={`In ${F.year}, the health contribution on employment and mandate contracts is ${F.health} of the base, which is gross pay minus the employee's pension, disability and sickness contributions. On a salary of ${$(G)} gross that is ${$2(u.health)} a month, about ${effShare} of gross. Employees cannot deduct it from tax: the Personal Income Tax Act allows that only for sole traders on the flat tax, lump-sum tax or tax card. On very small salaries, the contribution is capped at the tax advance calculated under the rules in force at the end of 2021 (article 83 of the healthcare act), which on an employment contract applies up to about ${$(capEdge)} gross. A sole trader on the progressive scale pays ${F.health} of income and one on the flat tax ${linRate}, in both cases at least ${F.healthMin} a month; on the flat tax up to ${F.liniowyLimit} a year is deductible. On the lump-sum tax the contribution has three fixed levels, ${F.ryczaltBand1}, ${F.ryczaltBand2} or ${F.ryczaltBand3}, depending on annual revenue. The calculator works it out for four types of work.`}
+  faqs={faqs}
+  related={[{ href: route('zus', lang), name: label('zus', lang), description: `The ${F.socialEe} employee contributions that shape the health base.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} tax and ${linRate} health for sole traders.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Lump-sum tax rates and health bands.' }]}
+  sources={[src('health_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
+  <div data-chrome><MiniSim client:load kind="health" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Employees: {F.health} of gross after social contributions</h2>
+  <p>Article 79 of the Act on healthcare services financed from public funds sets the rate at {F.health} of the contribution base. For an employee, the base is the gross pay on which social contributions are charged, reduced by the part of those contributions the employee pays (article 81(6)). On {$(G)} gross, social contributions are {$2(u.social)}, leaving a base of {$2(G - u.social)} and a contribution of {$2(u.health)}.</p>
+  <p>Order matters. ZUS contributions come off gross first, the health contribution is charged on what remains, and the tax advance is worked out last. Yet the health contribution reduces neither the taxable base nor the tax itself. That is why a higher salary simply means a proportionally higher contribution, with no relief in PIT. The <a href={route('home', lang)}>salary calculator</a> runs the whole gross-to-net sequence.</p>
+  <p>There is no annual cap on the health contribution. Once gross pay passes {F.cap} for the year, pension and disability contributions stop, the health base grows by the amount they used to take, and the contribution goes up. A high earner therefore pays more health contribution in December than in January on the same salary.</p>
+
+  <h2>Why employees cannot deduct it</h2>
+  <p>On podatki.gov.pl, the Ministry of Finance lists who can deduct health contributions: sole traders taxed at the {F.liniowy} flat rate, on the lump-sum tax on recorded revenue, or on the tax card. Employees and mandate contractors are not on that list. The contribution only reduces take-home pay and does not come back in your annual return.</p>
+  <p>In practice, on {$(G)} gross more than {$(u.health * 12)} a year goes on health insurance with no effect on tax. It is the largest single deduction after ZUS contributions, and often larger than the income tax advance itself.</p>
+
+  <h2>Very small salaries: the article 83 cap</h2>
+  <p>Article 83(1) and (2b) of the healthcare act lower the contribution when it would exceed the tax advance worked out under the PIT rules as worded on 31 December 2021. Those old rules produced a lower advance on small incomes, so the cap only bites at modest amounts: on an employment contract with the standard {F.kup} costs, up to about {$(capEdge)} gross a month.</p>
+  <ContentTable headers={['Gross', `Full ${F.health}`, 'Contribution after the cap']} align={['r', 'r', 'r']} rows={smallRows} />
+  <p>Amounts like these appear with very short part-time hours or in a month in which someone worked only a few days. A full-time job on the minimum wage is already above the cap. A similar rule in article 83(2a) applies to income exempt from PIT, such as the youth relief: the comparison advance is calculated as if the income were not exempt.</p>
+
+  <h2>The youth relief does not cover health</h2>
+  <p>An employee under 26 pays no income tax advance up to {F.youthLimit} a year, but pays the full health contribution. On {$(6000)} gross the contribution is {$2(young.health)}, exactly the same as for an older colleague ({$2(old6.health)}). The difference in take-home pay comes from tax alone. See our page on the <a href={route('youth', lang)}>youth tax relief</a>.</p>
+
+  <h2>Mandate contracts and students</h2>
+  <p>On a mandate contract (umowa zlecenie) the rate and base are the same as for employees: {F.health} of pay after social contributions. On a {Z4} gross contract the health contribution is {$2(z.health)}. Contractors cannot deduct it from tax either.</p>
+  <p>Pupils and students under 26 are a different case. On a mandate contract they are not compulsorily covered by pension and disability insurance (article 6(4) of the Social Insurance System Act), and article 66(1)(1) of the healthcare act extends the health obligation to people who meet the conditions for social insurance. Read together, these provisions mean a student pays no health contribution on the mandate contract, and that is how our calculator treats it: from {Z4} they keep {$(zst.net)}. If your situation is less clear-cut, for example several contracts at once, ask the client or ZUS. The page on <a href={route('student', lang)}>students on zlecenie</a> has the numbers.</p>
+
+  <h2>Running a business: three ways to calculate</h2>
+  <p>For sole traders the contribution depends on the tax regime, and the contribution year runs from February to January. The table summarises the {F.year} rules.</p>
+  <ContentTable headers={['Regime', 'Rate', 'Base', 'Deduction']} align={['l', 'r', 'l', 'l']} rows={formRows} />
+  <p><strong>Progressive scale (skala).</strong> The contribution is {F.health} of the previous month's income, but no less than {F.healthMin} a month, because the base cannot fall below the {F.minWage} minimum wage. For January {F.year} the minimum was {F.healthMinJan}. On revenue of {$(15000)} a month with no costs, the average monthly contribution is {$2(sk15.health)}. Nothing is deductible on the scale.</p>
+  <p><strong>Flat tax (liniowy).</strong> The rate is lower, {linRate} of income, with the same {F.healthMin} minimum. On {$(15000)} of revenue the contribution is {$2(lin15.health)}; on {$(6000)} it is already at the minimum of {$2(lin6.health)}. You deduct the contributions paid from income, up to {F.liniowyLimit} a year in {F.year}. More on the <a href={route('liniowy', lang)}>flat tax</a> page.</p>
+  <p><strong>Lump-sum tax (ryczałt).</strong> Here the contribution depends not on income but on annual revenue, and has three levels: {F.ryczaltBand1} a month on revenue up to {F.ryczaltLimit1}, {F.ryczaltBand2} up to {F.ryczaltLimit2} and {F.ryczaltBand3} above. The bases are derived from the Q4 2025 average wage of {F.avgQ4}. You deduct {ryczShare} of the contributions paid from revenue. The lump-sum rates themselves are covered on the <a href={route('ryczalt', lang)}>lump-sum tax</a> page.</p>
+
+  <h2>Common mistakes</h2>
+  <p>The most frequent is charging {F.health} on full gross. On {$(G)} that would give {$2(G * HR)}, {$2(G * HR - u.health)} too much, because the base is gross after social contributions. The second is expecting part of the contribution back through tax: on employment, nothing comes back. The third concerns young workers who hear about "zero PIT" and assume they are also spared health insurance; they pay it in full.</p>
+  <p>For reference, on an employment contract the health contribution is {$2(lvl[0].h)} on the minimum wage, {$2(lvl[1].h)} on {$(lvl[1].g)} gross and {$2(lvl[2].h)} on {$(lvl[2].g)} gross a month. Sole traders make different mistakes: applying {F.health} instead of {linRate} on the flat tax, forgetting the {F.healthMin} minimum on the scale, or picking the lump-sum band by income instead of revenue. Each leads to an under- or overpayment that has to be corrected later.</p>
+
+  <h2>The flat tax in practice: contribution and deduction</h2>
+  <p>The second calculator shows how much a sole trader on the flat tax pays in health contributions and how much of it reduces the taxable base. Enter monthly revenue and costs.</p>
+  <div data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
+  <p>The result is a monthly average over the year, with full ZUS and no voluntary sickness cover. In reality the contribution moves with income from month to month, never dropping below {F.healthMin}.</p>
+</GuideLayout>

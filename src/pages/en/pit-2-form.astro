@@ -1,0 +1,85 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const RY = P.pit.tax_reducing_amount_year;
+// Same engine-built table as the Polish page.
+const rows = [4806, 6000, 8000, 12000].map((g) => { const a = uop({ gross: g }), b = uop({ gross: g, pit2: false }); return [$(g), $(b.net), $(a.net), $(a.net - b.net)]; });
+const r24 = $(RY / 24), r36 = $(RY / 36);
+const minShare = Math.round(((RY / 12) / uop({ gross: P.minimum_wage.monthly, pit2: false }).net) * 100);
+const z = zlecenie({ gross: 3000, pit2: true }), z0 = zlecenie({ gross: 3000 });
+const d = dzielo({ gross: 3000, pit2: true }), d0 = dzielo({ gross: 3000 });
+const split = [
+  ['One payer', '1/12', $(RY / 12), $(RY / 12), $(0)],
+  ['Two payers', '1/24 + 1/24', `${$(RY / 24)} + ${$(RY / 24)}`, $(RY / 12), $(0)],
+  ['Three payers', '1/36 × 3', `${$(RY / 36)} × 3`, $(RY / 12), $(0)],
+  ['Two payers', '1/24 + 1/36', `${$(RY / 24)} + ${$(RY / 36)}`, $(RY / 24 + RY / 36), $((RY / 12 - RY / 24 - RY / 36) * 12)],
+];
+const mixGap = $(RY / 12 - RY / 24 - RY / 36), mixYear = $((RY / 12 - RY / 24 - RY / 36) * 12);
+const y1 = uopYear({ gross: 6000 }).total.pit, y0 = uopYear({ gross: 6000, pit2: false }).total.pit;
+const half = $((RY / 12) * 6);
+const faqs = [
+  { q: 'Do I have to hand in a new PIT-2 every January?', a: `No. A PIT-2 statement stays valid until you change or withdraw it, so the one you gave your employer last year still works this year. You only need a new one when something changes: you want to split the ${F.reducingMonth} between two or three payers, you want the reduction stopped, or you start with a new employer, who cannot rely on the statement you gave the old one.` },
+  { q: 'I have two employment contracts. Can both employers apply PIT-2?', a: `Yes, as long as you split it. Article 31b of the PIT Act lets up to three payers apply the reduction: 1/24 of the annual amount (${r24}) each with two payers, or 1/36 (${r36}) each with three. If both employers apply the full ${F.reducingMonth}, you get twice the relief during the year and pay the excess back, up to ${F.reducingYear}, in your annual return.` },
+  { q: 'Does PIT-2 lower the tax I owe for the year?', a: `No. It only changes when you receive the relief. The ${F.reducingYear} tax-reducing amount is deducted in your annual return whether or not you filed PIT-2. Without the statement your employer withholds ${F.reducingMonth} more each month and the tax office pays the difference back after you file, usually the following spring. With it, the money stays in each payslip.` },
+  { q: 'Does PIT-2 work on a mandate or specific-work contract?', a: `Yes. Under article 31b read with article 41(1) of the PIT Act, the party paying you on an umowa zlecenie or umowa o dzieło can cut each advance by 1/12 of the annual amount once you file the statement. On a ${$(3000)} gross mandate contract that is ${$(z.net - z0.net)} more take-home pay. Contracts of up to ${F.smallContract} are taxed at a flat rate, so no reduction applies.` },
+  { q: 'When will my payslip start showing the PIT-2 reduction?', a: `At the latest from the month after the one in which your payer receives the statement. Hand it in during March and the ${F.reducingMonth} reduction must appear by the April payroll. Payroll does not go back and recalculate earlier months; the relief you missed before filing comes back as a refund once you file your annual tax return.` },
+  { q: 'I draw a Polish pension and also work. Should I give my employer a PIT-2?', a: `ZUS, as the pension authority, already applies the ${F.reducingMonth} reduction to your pension automatically. A full PIT-2 at work would double the relief and leave you with tax to pay in your return. You can split it instead, 1/24 for ZUS and 1/24 for the employer, which gives ${r24} at each. Or ask ZUS to stop the reduction and file a full PIT-2 at work.` },
+];
+---
+<GuideLayout lang={lang} id="pit2" breadcrumbLabel={label('pit2', lang)} title={`PIT-2 Form ${F.year}: ${F.reducingMonth} More Take-Home Pay a Month`} h1={`PIT-2 form in ${F.year}: what it does and when to file it`}
+  description={`The PIT-2 form cuts your tax advance by ${F.reducingMonth} a month in ${F.year}. Who files it, with how many payers, on which contracts and what you lose by skipping it.`}
+  intro={`PIT-2 is a short statement that lets your employer deduct 1/12 of the annual tax-reducing amount, ${F.reducingMonth}, from the income tax withheld every month.`}
+  resume={`Without PIT-2 your employer withholds ${F.reducingMonth} more income tax every month, and you only get that money back after filing your annual return. The tax-reducing amount (kwota zmniejszająca podatek) is ${F.reducingYear} a year in ${F.year}, which is ${F.pitLow} of the ${F.freeAmount} tax-free allowance. Polish payroll can spread it across your payslips only if you hand your payer the PIT-2 statement. You file it once and it stays valid until you change it. It also works on mandate and specific-work contracts, and you can split it between two or three payers at 1/24 or 1/36 of the annual amount each. On the ${F.minWage} gross minimum wage the statement is worth about ${minShare} % of take-home pay; on higher salaries it is still exactly ${F.reducingMonth}, because the amount does not shrink as income grows or when you reach the higher tax bracket. The calculator below shows your net pay with and without it.`}
+  faqs={faqs}
+  related={[{ href: route('home', lang), name: 'Polish salary calculator', description: 'Net pay on any contract, with or without PIT-2.' }, { href: route('allowance', lang), name: 'Tax-free allowance', description: `How the ${F.freeAmount} allowance works.` }, { href: route('zlecdzielo', lang), name: 'Zlecenie or dzieło?', description: 'Net pay on both contracts for the same amount.' }]}
+  sources={[src('pit2', lang), src('pit_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="pit2" lang={lang} href={route('home', lang)} /></div>
+  <h2>What PIT-2 is worth at different salaries</h2>
+  <ContentTable headers={['Gross', 'Net without PIT-2', 'Net with PIT-2', 'Difference']} align={['r', 'r', 'r', 'r']} rows={rows} />
+  <p>The gap never changes. Poland does not taper the tax-reducing amount away as income rises, so someone earning well into the {F.pitHigh} bracket keeps the same {F.reducingMonth} as someone on the minimum wage. In relative terms it matters most at the bottom of the scale.</p>
+  <p>You will not find a line called PIT-2 on your payslip (pasek wypłaty). It shows up inside the line for the income tax advance (zaliczka na podatek): payroll applies {F.pitLow} to the taxable base and then subtracts {F.reducingMonth}. If your tax line is higher than a colleague's on the same gross salary, check first whether HR ever received your statement.</p>
+
+  <h2>Who signs it and where it goes</h2>
+  <p>You sign it; your payer keeps it. In Polish tax law the payer (płatnik) is whoever calculates and sends your monthly tax advance to the tax office (urząd skarbowy, or US): your employer on an employment contract, the client on a mandate contract (umowa zlecenie), or the commissioning party on a specific-work contract (umowa o dzieło). The Ministry of Finance also lists management contracts and income from property rights such as licences.</p>
+  <p>There is no fixed format. The official PIT-2 template is on podatki.gov.pl, but many companies collect the statement through their HR or payroll portal or on their own form. What matters is that it states which fraction of the tax-reducing amount the payer should apply. You can file it at any point in the year, not just when you sign the contract.</p>
+  <p>Nothing goes to the tax office. Newcomers to Poland often expect to register the form somewhere; in fact it simply sits in your employer's payroll records. The tax office only sees the effect, in the lower advances your employer reports.</p>
+  <p>Pensioners are the exception that runs the other way. ZUS, acting as the pension authority (organ rentowy), applies the monthly reduction to Polish pensions automatically. A retiree who takes a job therefore already has the relief in use before talking to HR, and needs to decide where it should sit: split between ZUS and the employer, or moved entirely to the employer after asking ZUS to stop applying it.</p>
+
+  <h2>Splitting it between payers: 1/12, 1/24 or 1/36</h2>
+  <p>Article 31b allows the statement to be given to no more than three payers. In each one you choose whether that payer applies 1/12, 1/24 or 1/36 of the annual amount. The rule that holds it together: across all your payers, the reduction applied in any single month cannot exceed 1/12, which is {F.reducingMonth}.</p>
+  <ContentTable headers={['Situation', 'Fractions filed', 'Reduction per payer', 'Monthly total', 'Recovered in the annual return']} align={['l', 'l', 'r', 'r', 'r']} rows={split} />
+  <p>The last line is legal but leaves money idle. With 1/24 at one payer and 1/36 at the other, {mixGap} of relief goes unused every month, {mixYear} over a full year. You do get it back as an overpayment in the annual return, but it sits with the state until then. The tidy combinations are two halves or three thirds; the ministry also accepts uneven shares, as long as the monthly total stays within {F.reducingMonth}.</p>
+  <p>If one company pays you under two titles, say a job plus a side mandate contract, a single statement covers both, and that payer's combined reduction is capped at the fraction you named.</p>
+
+  <h2>Mandate and specific-work contracts</h2>
+  <p>Since 2023 clients and commissioning parties can apply the reduction exactly like employers. On a {$(3000)} gross mandate contract the take-home pay is {$(z0.net)} without a statement and {$(z.net)} with one. On a specific-work contract for the same amount, which carries no ZUS, the difference is {$(d.net - d0.net)}: {$(d0.net)} against {$(d.net)}.</p>
+  <p>For a freelancer with one steady contract this works like a salary. Short or irregular contracts are trickier. In a month where the tax due on the contract is below {F.reducingMonth}, the payer can only take the advance down to zero, and the unused part does not roll forward to next month. The annual return evens it out.</p>
+  <p>The statement is pointless on a contract worth up to {F.smallContract} signed with someone who is not the payer's employee. Such amounts are taxed at a flat {F.pitLow} of the full fee, with no costs and no reduction. Our guide to <a href={route('zlecdzielo', lang)}>mandate versus specific-work contracts</a> compares the two in detail, including ZUS and deductible costs.</p>
+
+  <h2>Changing or withdrawing the statement</h2>
+  <p>A statement filed once carries over into later years. The payer keeps applying it until you change or withdraw it, or until the legal relationship ends, for example when your employment contract terminates. It does not travel with you to the next employer.</p>
+  <p>The ministry's guidance says you are obliged to update the statement when circumstances change. Typical triggers are a second job, a new mandate contract, retirement, or starting a business taxed on the progressive scale, where you already use the full {F.reducingYear} yourself. A new statement with a different fraction replaces the old one.</p>
+  <p>Liability is simple. The payer is not responsible for under-withheld tax if it followed your statement. If the statement was out of date, the consequence, usually tax to pay in your return, is yours.</p>
+
+  <h2>Mistakes that cost people money</h2>
+  <p>The expensive one is a full PIT-2 with two employers at once. Each takes off {F.reducingMonth}, so over the year you receive twice the relief you are entitled to. The annual return counts the tax-reducing amount only once, and the excess, up to {F.reducingYear}, turns into tax due.</p>
+  <p>The common one is forgetting to file with a new employer. Many people assume the statement follows them; it does not. Change jobs mid-year, hand in the paperwork in June, and the reduction starts by July at the latest. The first half-year with the new employer can leave up to {half} waiting for you until the next spring.</p>
+  <p>Self-employed people on the progressive scale should be careful too. When you calculate your own business advances you use the full tax-reducing amount from the first month. Add a full PIT-2 at a salaried job and your relief for the year exceeds {F.reducingYear}, which can mean tax to pay. The ministry confirms that someone whose business is on the {F.liniowy} flat tax can file PIT-2 with an employer without that issue.</p>
+  <p>Finally, do not expect the statement to help on very small contracts: at {F.smallContract} or less the tax is flat and there is nothing to reduce.</p>
+
+  <div data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('allowance', lang)} /></div>
+
+  <h2>How PIT-2 plays out in your PIT-37 return</h2>
+  <p>The annual PIT-37 return works out tax on your whole year's income, subtracts the {F.reducingYear} tax-reducing amount once, and compares the result with the advances your payers withheld. PIT-2 only changes that second figure. On {$(6000)} gross a month for the full year, your employer withholds {$(y1)} with the statement or {$(y0)} without it. The tax due in the return is the same in both cases, so the person without PIT-2 gets roughly {$(y0 - y1)} back.</p>
+  <p>So the real choice is between money every month and a lump sum a year later. For most people with one job, filing PIT-2 is the sensible default. Skipping it can make sense when you know the return will show tax due anyway because you have several sources of income, or when you deliberately treat the refund as forced savings.</p>
+  <p>If you worked for several payers during the year, your return adds up income and advances from all of them and subtracts the tax-reducing amount just once, however many statements you filed. That is why the reductions applied during the year should not add up to more than {F.reducingYear}. The allowance itself is explained in our guide to the <a href={route('allowance', lang)}>tax-free allowance</a>, and the <a href={route('home', lang)}>salary calculator</a> gives net pay on any contract.</p>
+</GuideLayout>

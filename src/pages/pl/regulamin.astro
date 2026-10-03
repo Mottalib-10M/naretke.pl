@@ -1,0 +1,53 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import LegalIdentity from '../../components/LegalIdentity.astro';
+import { AUTHOR_NAME, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const title = `Regulamin i nota prawna serwisu KalkulatorWynagrodzen.pl`;
+const description = `Kto wydaje serwis i gdzie jest hostowany, czym są wyniki kalkulatora na ${F.year} r. (szacunek, nie doradztwo podatkowe), odpowiedzialność, prawa autorskie i widget.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('terms', lang), path: route('terms', lang) }])]}
+  breadcrumbs={[{ label: label('terms', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Regulamin i nota prawna</h1>
+    <p class="lead">Korzystając z serwisu, akceptujesz poniższe zasady. Dotyczą one wszystkich stron, kalkulatora oraz widgetu osadzanego na innych stronach. Korzystanie jest bezpłatne i nie wymaga rejestracji.</p>
+
+    <h2>Nota prawna</h2>
+    <h3>Wydawca</h3>
+    <LegalIdentity lang={lang} />
+    <p>Odpowiedzialny za treść: {AUTHOR_NAME}.</p>
+    <h3>Hosting</h3>
+    <LegalIdentity mode="hosting" lang={lang} />
+
+    <h2>Czym jest serwis, a czym nie jest</h2>
+    <p>Serwis udostępnia bezpłatny kalkulator wynagrodzeń dla umowy o pracę, umowy zlecenia, umowy o dzieło i działalności B2B oraz poradniki objaśniające składki ZUS, składkę zdrowotną i podatek PIT. <strong>Wyniki są szacunkowe i nie stanowią doradztwa podatkowego</strong> w rozumieniu przepisów o doradztwie podatkowym, porady prawnej ani finansowej. Opierają się na przepisach i stawkach obowiązujących w {F.year} r., opublikowanych przez ZUS, Ministerstwo Finansów, w Dzienniku Ustaw i Monitorze Polskim, oraz na założeniach opisanych w <a href={route('method', lang)}>metodologii</a>.</p>
+    <p>Kwota, którą faktycznie otrzymasz, zależy od rozliczenia płatnika, Twoich pozostałych dochodów, ulg i oświadczeń, a ostateczne zobowiązanie podatkowe ustala się w zeznaniu rocznym. Serwis jest niezależny: nie jest powiązany z ZUS, Ministerstwem Finansów, Krajową Administracją Skarbową ani żadnym innym organem i nie działa w ich imieniu.</p>
+
+    <h2>Dokładność i odpowiedzialność</h2>
+    <p>Aktualizujemy parametry przy każdej zmianie przepisów i testujemy silnik na przypadkach kontrolnych, ale nie gwarantujemy, że wyniki są wolne od błędów ani że obejmują każdą sytuację. Kalkulator nie uwzględnia między innymi zbiegu kilku tytułów do ubezpieczeń, pracy za granicą ani indywidualnych ustaleń z pracodawcą. W najszerszym zakresie dozwolonym przez prawo nie odpowiadamy za szkody wynikające z decyzji podjętej wyłącznie na podstawie wyniku kalkulatora ani za przerwy w działaniu serwisu. Nie wyłącza to odpowiedzialności, której zgodnie z prawem wyłączyć nie można. Jeśli zauważysz błąd, napisz przez stronę <a href={route('contact', lang)}>kontaktu</a>; sposób korekty opisuje <a href={route('editorial', lang)}>polityka redakcyjna</a>.</p>
+
+    <h2>Prawa autorskie</h2>
+    <p>Teksty, układ graficzny, zestawienia danych i kod źródłowy serwisu są chronione prawem autorskim i należą do wydawcy. Ich kopiowanie lub ponowne wykorzystanie bez zgody jest zabronione, z wyjątkiem krótkich cytatów z podaniem źródła i linkiem do cytowanej strony. Akty prawne i dokumenty urzędowe, na które się powołujemy, nie są przedmiotem prawa autorskiego wydawcy.</p>
+
+    <h2>Osadzanie kalkulatora</h2>
+    <p>Możesz bezpłatnie osadzić kalkulator w ramce iframe na swojej stronie, pod warunkiem że widoczny link do tego serwisu pozostanie na miejscu, a sposób prezentacji nie sugeruje, że narzędzie jest oficjalną usługą urzędu ani Twoim własnym produktem. Kod i szczegółowe warunki znajdziesz na stronie <a href={route('widget', lang)}>widgetu</a>.</p>
+
+    <h2>Linki do innych stron</h2>
+    <p>Linki do stron urzędów i aktów prawnych umieszczamy po to, żebyś mógł sprawdzić nasze źródła. Nie kontrolujemy treści tych stron i nie odpowiadamy za nią.</p>
+
+    <h2>Dane osobowe i cookies</h2>
+    <p>Dane wpisane do kalkulatora nie opuszczają Twojej przeglądarki. Zasady przetwarzania danych opisuje <a href={route('privacy', lang)}>polityka prywatności</a>, a informacje o plikach cookies (obecnie żadnych) strona <a href={route('cookies', lang)}>cookies</a>.</p>
+
+    <h2>Prawo właściwe i zmiany regulaminu</h2>
+    <p>Regulamin podlega prawu francuskiemu, właściwemu dla siedziby wydawcy. Nie pozbawia to konsumentów ochrony, jaką zapewniają im bezwzględnie obowiązujące przepisy państwa ich zwykłego pobytu. Regulamin może się zmieniać; obowiązuje wersja opublikowana na tej stronie, z datą poniżej.</p>
+    <p>Wersja z dnia {updated}.</p>
+  </div>
+</PageLayout>

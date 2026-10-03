@@ -1,0 +1,86 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const Z = P.zus;
+const CAP = Z.annual_cap;
+const MONTHS = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
+const LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const inMonth = (m: number) => `${LOC[m - 1].startsWith('w') ? 'we' : 'w'} ${LOC[m - 1]}`;
+const eeRate = Z.emerytalna_employee + Z.rentowa_employee, erRate = Z.emerytalna_employer + Z.rentowa_employer;
+// Miesiąc przekroczenia i skutki dla netto (moteur, pensja stała przez cały rok).
+const rows = [25000, 30000, 40000, 50000].map((g) => {
+  const y = uopYear({ gross: g }), m = capMonth(g);
+  return [$(g), m ? MONTHS[m - 1] : '–', $((12 * g - CAP) * eeRate), $(y.months[0].health), $(y.months[11].health), $(y.months[0].net), $(y.months[11].net)];
+});
+// Rok miesiąc po miesiącu przy 30 000 zł brutto.
+const G = 30000, y30 = uopYear({ gross: G }), c30 = capMonth(G) ?? 12;
+const yearRows = y30.months.map((m) => [MONTHS[m.month - 1], $(m.emerytalna + m.rentowa), $(m.chorobowa), $(m.health), $(m.pit), $(m.net)]);
+const firstFull = y30.months[c30] ?? y30.months[11];
+const before = y30.months[c30 - 2];
+const BON = 20000, bonusY = uopYear({ gross: BON, months: [...Array(11).fill(BON), BON * 4] });
+const bonusDec = bonusY.months[11], bonusUncapped = $(BON * 4 * eeRate), bonusUnder = $(CAP - BON * 11);
+const minGross = $(CAP / 12);
+const b2bYear = $(P.b2b.zus_base_full * 12);
+const erSaved30 = $((12 * G - CAP) * erRate);
+const faqs = [
+  { q: 'Pracuję u dwóch pracodawców i razem przekroczę limit. Co muszę zrobić?', a: `Zawiadomić wszystkich płatników, że Twoja roczna podstawa wymiaru przekroczyła ${F.cap} (art. 19 ust. 6 ustawy o systemie ubezpieczeń społecznych). Każdy pracodawca widzi tylko swoje wypłaty, więc bez tej informacji będzie pobierał składki dalej. Za skutki błędnego zawiadomienia, które doprowadziłoby do nieopłacenia należnych składek emerytalnych i rentowych, odpowiadasz Ty, a nie płatnik.` },
+  { q: 'Czy po przekroczeniu limitu płacę jeszcze składkę chorobową i zdrowotną?', a: `Tak. Limit ${F.cap} dotyczy wyłącznie składek emerytalnej i rentowej. Składka chorobowa ${F.chorobowa} jest pobierana od pełnego brutto do końca roku, a składka zdrowotna ${F.health} nawet rośnie, bo jej podstawą jest brutto po odjęciu składek społecznych. Przy ${$(G)} brutto zdrowotna wynosi ${$(y30.months[0].health)} w styczniu i ${$(y30.months[11].health)} w grudniu.` },
+  { q: 'Czy limit 30-krotności przechodzi na kolejny rok?', a: `Nie. Ustawa mówi o rocznej podstawie wymiaru w danym roku kalendarzowym, więc licznik zeruje się w styczniu. Od pierwszej wypłaty nowego roku pracodawca znowu pobiera składki emerytalną i rentową od całego brutto, aż do nowego limitu, ogłaszanego co roku w Monitorze Polskim. W ${F.year} r. wynosi on ${F.cap}, czyli trzydziestokrotność prognozowanego przeciętnego wynagrodzenia ${F.avgForecast}.` },
+  { q: 'Czy okres bez składek emerytalnych liczy się do stażu emerytalnego?', a: `Tak. Art. 19 ust. 7 ustawy systemowej stanowi, że okres nieopłacania składek emerytalnej i rentowej z powodu przekroczenia limitu traktuje się jak okres ubezpieczenia w rozumieniu przepisów o emeryturach i rentach. Od nadwyżki ponad ${F.cap} składki nie powstają, więc nie zasilają konta w ZUS, ale same miesiące nie wypadają z historii ubezpieczenia.` },
+  { q: 'Pracodawca pobrał składki po przekroczeniu limitu. Czy odzyskam pieniądze?', a: `Składki emerytalne i rentowe opłacone po przekroczeniu ${F.cap} są nienależnie opłacone; ustawa (art. 19 ust. 6a) odsyła do zasad zwrotu z art. 24. Jeśli ZUS sam stwierdzi nadpłatę, informuje płatników i Ciebie za ich pośrednictwem (art. 19 ust. 6b). W praktyce zacznij od płatnika: to on koryguje raporty i deklaracje, a data otrzymania korekty przez ZUS jest datą stwierdzenia nadpłaty.` },
+];
+---
+<GuideLayout lang={lang} id="cap" breadcrumbLabel={label('cap', lang)} title={`Limit 30-krotności ZUS ${F.year}: ${F.cap} i wyższe netto`} h1={`Limit 30-krotności ZUS w ${F.year} r.: ${F.cap}`}
+  description={`Limit 30-krotności ${F.year} to ${F.cap}. Po jego przekroczeniu znika składka emerytalna i rentowa, a netto rośnie. Sprawdź miesiąc przy Twojej pensji i co dalej.`}
+  intro={`Limit 30-krotności ogranicza roczną podstawę składek emerytalnej i rentowej: od nadwyżki ponad ${F.cap} w ${F.year} r. tych składek się nie pobiera.`}
+  resume={`W ${F.year} r. składki emerytalną i rentową płaci się tylko od pierwszych ${F.cap} przychodu w roku. To trzydziestokrotność prognozowanego przeciętnego wynagrodzenia ${F.avgForecast}, ogłoszona w Monitorze Polskim. Kto zarabia ponad ${minGross} brutto miesięcznie, przekroczy limit przed końcem roku: przy ${$(30000)} ${inMonth(capMonth(30000) ?? 12)}, przy ${$(50000)} już ${inMonth(capMonth(50000) ?? 12)}. Od tego momentu z paska znikają składka emerytalna ${F.emerytalnaEe} i rentowa ${F.rentowaEe}, a pracodawca przestaje płacić swoją część, ${F.emerytalnaEr} i ${F.rentowaEr}. Składka chorobowa ${F.chorobowa} i zdrowotna ${F.health} są pobierane dalej, a zdrowotna nawet rośnie, bo jej podstawa się zwiększa. Netto po przekroczeniu limitu jest wyższe, choć efekt często zjada drugi próg podatkowy, w który wchodzi się mniej więcej w tym samym czasie. Przy kilku pracodawcach limit liczy się łącznie, a o jego przekroczeniu musisz powiadomić płatników sam. Mini-kalkulator pokazuje miesiąc przekroczenia przy Twojej pensji.`}
+  faqs={faqs}
+  related={[{ href: route('zus', lang), name: label('zus', lang), description: `Stawki: ${F.emerytalnaEe}, ${F.rentowaEe}, ${F.chorobowa} po stronie pracownika.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `Kiedy wchodzisz w ${F.pitHigh} i jak to się łączy z limitem.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Każdy miesiąc roku osobno, z limitem i progiem.' }]}
+  sources={[src('cap', lang), src('sus_act', lang), src('zus_rates', lang)]}>
+  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
+
+  <h2>Skąd się bierze {F.cap}</h2>
+  <p>Art. 19 ust. 1 ustawy o systemie ubezpieczeń społecznych stanowi, że roczna podstawa wymiaru składek emerytalnej i rentowej nie może przekroczyć trzydziestokrotności prognozowanego przeciętnego wynagrodzenia miesięcznego z ustawy budżetowej. Na {F.year} r. ta prognoza wynosi {F.avgForecast}, więc limit to {F.cap}. Minister właściwy do spraw zabezpieczenia społecznego ogłasza go co roku obwieszczeniem w Monitorze Polskim.</p>
+  <p>Limit dotyczy podstawy wymiaru, czyli oskładkowanego przychodu, a nie kwoty netto ani podstawy opodatkowania. Wliczają się do niego premie, nagrody i inne składniki, od których pobiera się składki. W przeliczeniu na równą pensję próg to {minGross} brutto miesięcznie: kto zarabia mniej, nigdy go nie osiągnie, kto więcej, przekroczy go w którymś miesiącu.</p>
+  <p>Na pasku wypłaty przekroczenie widać w miesiącu przejściowym jako niższą niż zwykle składkę emerytalną i rentową, bo liczy się je tylko od części brutto mieszczącej się w limicie. Od następnego miesiąca te dwa wiersze pokazują zero.</p>
+
+  <h2>Miesiąc przekroczenia przy różnych pensjach</h2>
+  <ContentTable headers={['Brutto miesięcznie', 'Limit przekroczony', 'Mniej składek w roku', 'Zdrowotna w styczniu', 'Zdrowotna w grudniu', 'Netto w styczniu', 'Netto w grudniu']} align={['r', 'l', 'r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Kolumna „mniej składek w roku” to emerytalna i rentowa pracownika, których nie pobrano od nadwyżki ponad limit. Grudniowe netto bywa jednak niższe niż styczniowe. Powód nie leży w ZUS, tylko w podatku: przy tak wysokich pensjach dochód od początku roku przekracza {F.threshold} i od nadwyżki pracodawca pobiera zaliczkę {F.pitHigh} zamiast {F.pitLow}. Oba zjawiska nakładają się na siebie w drugiej połowie roku.</p>
+
+  <h2>Co znika z paska, a co zostaje</h2>
+  <p>Po przekroczeniu limitu płatnik ma obowiązek przestać obliczać i przekazywać składki emerytalne i rentowe (art. 19 ust. 5). Dotyczy to obu części: pracownika, {F.emerytalnaEe} i {F.rentowaEe}, oraz pracodawcy, {F.emerytalnaEr} i {F.rentowaEr}. Przy {$(G)} brutto pracodawca oszczędza w ten sposób {erSaved30} w roku, co obniża koszt zatrudnienia w ostatnich miesiącach.</p>
+  <p>Zostaje składka chorobowa {F.chorobowa}, bo limit jej nie dotyczy, oraz składka zdrowotna. Ta druga rośnie, ponieważ liczy się ją od brutto pomniejszonego o składki społeczne; gdy składek jest mniej, podstawa zdrowotnej jest większa. Przy {$(G)} brutto zdrowotna wzrasta z {$(y30.months[0].health)} do {$(y30.months[11].health)} miesięcznie. Rośnie też podstawa opodatkowania, bo składki społeczne odlicza się od przychodu, więc część zysku z niższych składek wraca do urzędu skarbowego jako wyższa zaliczka.</p>
+
+  <h2>Rok przy {$(G)} brutto, miesiąc po miesiącu</h2>
+  <ContentTable headers={['Miesiąc', 'Emerytalna i rentowa', 'Chorobowa', 'Zdrowotna', 'Zaliczka PIT', 'Netto']} align={['l', 'r', 'r', 'r', 'r', 'r']} rows={yearRows} highlightRow={c30 - 1} />
+  <p>Tabela pokazuje trzy fazy. Na początku roku netto wynosi {$(y30.months[0].net)}. Potem dochód przekracza próg podatkowy i wypłata spada, w najniższym punkcie do {$(before.net)}. {inMonth(c30).replace(/^w/, 'W')} przychód od początku roku przekracza {F.cap}, składki emerytalna i rentowa są liczone tylko od części brutto, a od następnego miesiąca znikają: netto wraca do {$(firstFull.net)}. Wyróżniony wiersz to miesiąc przekroczenia.</p>
+  <p>Jeśli porównujesz oferty pracy, licz roczne netto, a nie styczniowe. Miesięczna kwota z pierwszego paska zawyża wynik przy wysokich pensjach, a kwota z lata go zaniża. Rachunek całego roku robi <a href={route('annual', lang)}>kalkulator wynagrodzenia rocznego</a>.</p>
+
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('brackets', lang)} /></div>
+
+  <h2>Premia roczna, podwyżka i limit</h2>
+  <p>Limit liczy wszystkie oskładkowane wypłaty, więc może go uruchomić premia roczna, nawet gdy sama pensja nigdy by do niego nie dotarła. Weźmy {$(BON)} brutto miesięcznie i grudniową wypłatę {$(BON * 4)} razem z premią. Po listopadzie przychód od początku roku wynosi {$(BON * 11)}, czyli wciąż mniej niż {F.cap}. W grudniu w limicie mieści się już tylko {bonusUnder}, więc składki emerytalna i rentowa na grudniowym pasku wynoszą {$(bonusDec.emerytalna + bonusDec.rentowa)} zamiast {bonusUncapped}, które zapłaciłbyś bez limitu.</p>
+  <p>Podobnie działa podwyżka w trakcie roku: limit zostanie przekroczony wcześniej, niż wynikałoby z rachunku opartego na styczniowej pensji. Przy jednym pracodawcy nie musisz niczego zgłaszać, bo dział płac co miesiąc sumuje rzeczywistą podstawę od początku roku i sam zatrzymuje składki we właściwym momencie.</p>
+  <p>Z tego samego powodu tabela powyżej, liczona dla równej pensji, jest tylko punktem wyjścia. Kto dostaje zmienne wynagrodzenie, prowizje albo nagrody kwartalne, powinien patrzeć na sumę narastającą na paskach, a nie na liczbę miesięcy.</p>
+
+  <h2>Kilku płatników: limit na osobę, nie na umowę</h2>
+  <p>Limit dotyczy ubezpieczonego, nie umowy. Jeśli w {F.year} r. masz dwa etaty albo etat i zlecenie, przychody ze wszystkich tytułów objętych składkami emerytalną i rentową sumują się do jednego limitu {F.cap}. Każdy płatnik widzi jednak tylko swoje wypłaty i bez informacji od Ciebie będzie pobierał składki do końca roku.</p>
+  <p>Ustawa przenosi ten obowiązek na pracownika: przy więcej niż jednym płatniku to ubezpieczony zawiadamia wszystkich płatników o przekroczeniu limitu (art. 19 ust. 6). Za skutki błędnego zawiadomienia, które spowodowałoby nieopłacenie należnych składek, odpowiada ubezpieczony. Warto więc liczyć narastająco i zgłaszać przekroczenie dopiero wtedy, gdy rzeczywiście nastąpi, z podaniem miesiąca i kwot.</p>
+  <p>Gdy składki zostały już opłacone ponad limit, ustawa traktuje je jak nienależnie opłacone i odsyła do art. 24 ust. 6a–8. ZUS, który sam wykryje nadwyżkę, informuje płatników, a za ich pośrednictwem ubezpieczonego. Procedurę zwrotu i jej terminy najlepiej ustalić z działem płac i z ZUS, bo zależą od tego, kiedy płatnik złoży dokumenty korygujące.</p>
+
+  <h2>Emerytura, przedsiębiorcy i kolejny rok</h2>
+  <p>Od nadwyżki ponad limit składki emerytalne nie powstają, więc nie zwiększają kapitału na koncie w ZUS. Same miesiące nie wypadają jednak z historii ubezpieczenia: art. 19 ust. 7 każe traktować okres nieopłacania składek z powodu przekroczenia limitu jak okres ubezpieczenia.</p>
+  <p>Przedsiębiorców opłacających składki od podstawy {F.b2bBaseFull} limit w praktyce nie dotyczy, bo dwanaście takich podstaw daje {b2bYear}, daleko poniżej {F.cap}. Na kontrakcie B2B zarabiający bardzo dużo nie mają więc „grudniowej premii” z ZUS, ale też od początku płacą składki od niskiej, stałej podstawy. Obie formy zatrudnienia przy tej samej kwocie zestawia porównanie <a href={route('compare', lang)}>B2B czy umowa o pracę</a>, a stawki wszystkich składek opisuje poradnik o <a href={route('zus', lang)}>składkach ZUS</a>.</p>
+  <p>Przy zmianie pracy w trakcie roku licznik nie zeruje się wraz z umową, bo limit dotyczy roku kalendarzowego i ubezpieczonego. Nowy pracodawca nie zna jednak wypłat poprzedniego, więc jeśli suma z obu firm przekroczy {F.cap}, o przekroczeniu informujesz go sam, tak jak przy dwóch równoległych etatach.</p>
+  <p>W styczniu licznik startuje od zera i pierwsze paski nowego roku znowu są niższe. To nie błąd działu płac, tylko powrót pełnych składek emerytalnej i rentowej.</p>
+</GuideLayout>

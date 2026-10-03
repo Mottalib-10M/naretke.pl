@@ -1,0 +1,66 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, b2b, PARAMS as P, type B2bForm } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const R12 = P.b2b.ryczalt_rates[0].rate;
+const netB2b = (rev: number, form: B2bForm) => b2b({ revenue: rev, form, ...(form === 'ryczalt' ? { ryczaltRate: R12 } : {}) }).net;
+// Employment net: monthly average over the year (second bracket and cap apply above roughly PLN 10,000).
+const uopAvg = (g: number) => uopYear({ gross: g }).total.net / 12;
+// Bisection: monthly B2B revenue giving the same average net as an employment gross.
+const breakEven = (target: number, form: B2bForm) => { let lo = 0, hi = target * 4; for (let k = 0; k < 60; k++) { const mid = (lo + hi) / 2; if (netB2b(mid, form) < target) lo = mid; else hi = mid; } return hi; };
+const XS = [8000, 12000, 15000, 20000, 30000];
+const same = XS.map((x) => [$(x), $(uopAvg(x)), $(netB2b(x, 'liniowy')), $(netB2b(x, 'ryczalt')), $(netB2b(x, 'skala'))]);
+const need = XS.map((x) => { const t = uopAvg(x); return [$(x), $(t), $(breakEven(t, 'liniowy')), $(breakEven(t, 'ryczalt')), $(breakEven(t, 'skala'))]; });
+const t15 = uopAvg(15000), l15 = breakEven(t15, 'liniowy'), r15 = breakEven(t15, 'ryczalt');
+const t8 = uopAvg(8000), r8 = breakEven(t8, 'ryczalt');
+const cost15 = uop({ gross: 15000 }).er.cost;
+const b2bAtCost = netB2b(cost15, 'liniowy'), b2bAtCostR = netB2b(cost15, 'ryczalt');
+const sickCost = P.b2b.zus_month_full - P.b2b.zus_month_full_no_sickness;
+const zus8 = b2b({ revenue: 8000, form: 'ryczalt', ryczaltRate: R12 });
+const faqs = [
+  { q: 'At what invoice amount does B2B start to beat a Polish employment contract?', a: `There is no single threshold, because it depends on the tax regime. To match, on average, an employment contract paying ${$(15000)} gross (${$(t15)} take-home), you need to invoice about ${$(l15)} a month on the flat tax or ${$(r15)} on the ${pct(R12, lang)} lump sum, with full ZUS and no business costs. At lower amounts employment wins by more, because a self-employed person's ZUS is a fixed sum.` },
+  { q: 'My company offers to switch me to B2B at the same figure as my gross salary. Is that fair?', a: `Usually not. On employment the company pays its own contributions on top of gross, so a ${$(15000)} salary costs it ${$(cost15)}. An invoice equal to your old gross saves the company money while you lose paid holiday and sick pay. A fair starting point is the full employer cost: invoicing ${$(cost15)} on the flat tax leaves you ${$(b2bAtCost)} a month.` },
+  { q: 'Do I get paid when I am sick on a B2B contract?', a: `Only if you voluntarily join ZUS sickness insurance. On full ZUS in ${F.year} that raises your social contributions from ${F.b2bZusFullNoSick} to ${F.b2bZusFull} a month, an extra ${formatMoney(sickCost, 2, lang)}. Without it, days off sick bring in nothing, and the employer-paid sick pay that employees receive does not exist on B2B at all. The calculator assumes no sickness insurance.` },
+];
+---
+<GuideLayout lang={lang} id="compare" breadcrumbLabel={label('compare', lang)} title={`B2B vs Employment Contract ${F.year}: Net Pay and Break-Even`} h1={`B2B vs employment contract in Poland ${F.year}: which pays more`}
+  description={`B2B vs employment contract ${F.year}: ${$(15000)} gross on a Polish contract averages ${$(t15)} net; on flat-tax B2B you must invoice ${$(l15)}. Compare regimes.`}
+  intro={`See how much you keep from the same amount on an employment contract and on a B2B contract, and what you need to invoice to come out even.`}
+  resume={`For the same amount of money, employment and B2B leave different take-home pay, and the break-even point depends on the tax regime. An employment contract (umowa o pracę) paying ${$(15000)} gross gives an average of ${$(t15)} a month net in ${F.year}, once the ${F.pitHigh} bracket later in the year is included. On B2B with full ZUS, no voluntary sickness insurance and no business costs, matching that requires invoices of about ${$(l15)} a month on the ${F.liniowy} flat tax (liniowy) or ${$(r15)} on the ${pct(R12, lang)} lump-sum tax (ryczałt) used for software work. The gap comes from the fixed social contributions a self-employed person pays (${F.b2bZusFullNoSick} a month) and the separate health contribution rules for each regime. In exchange, B2B gives you no paid holiday, no sick pay and none of the Labour Code's protection against dismissal. The calculator shows both sides for the amount you enter, and the tables below give break-even invoices for five salary levels.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: label('b2b', lang), description: 'Net from an invoice, with costs and ZUS reliefs.' }, { href: route('employer', lang), name: label('employer', lang), description: 'The company budget for a job, a sound basis for negotiation.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Lump-sum rates and health contribution by revenue.' }]}
+  sources={[src('zus_b2b', lang), src('ryczalt_act', lang), src('pit_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('b2b', lang)} /></div></div>
+
+  <h2>The same amount on a payslip and on an invoice</h2>
+  <p>The first table treats the employment gross and the monthly invoice revenue (excluding VAT) as the same number. Employment net is the average of twelve months, because higher salaries are taxed at {F.pitHigh} in the later part of the year, and pension and disability contributions stop once gross pay passes {F.cap}.</p>
+  <ContentTable headers={['Gross = revenue', 'Employment (average)', 'B2B flat tax', `B2B lump sum ${pct(R12, lang)}`, 'B2B tax scale']} align={['r', 'r', 'r', 'r', 'r']} rows={same} />
+  <p>At {$(8000)}, B2B loses clearly under every regime. The self-employed person's social contributions are a fixed amount and the lump-sum health contribution at that revenue is {$(zus8.health)}, so together they eat a large share of a modest invoice. As the amount grows, those fixed costs weigh less and the advantage of the lump sum and the flat tax builds quickly.</p>
+
+  <h2>How much you need to invoice to break even</h2>
+  <p>The second table turns the question round: for each employment gross it finds the B2B revenue at which average net from invoicing equals average net from the job. The same engine as the calculator does the work, by successive approximation.</p>
+  <ContentTable headers={['Employment gross', 'Employment net (average)', 'Revenue needed: flat tax', `Lump sum ${pct(R12, lang)}`, 'Tax scale']} align={['r', 'r', 'r', 'r', 'r']} rows={need} highlightRow={2} />
+  <p>At low amounts the revenue needed is well above the salary: replacing an {$(8000)} job takes {$(r8)} of invoices on the lump sum. At high amounts the relationship flips and B2B delivers the same net from revenue below the employment gross. What the table cannot price is holiday, sick pay and job security.</p>
+
+  <h2>What B2B will not pay for</h2>
+  <p>Part of the value of an employment contract never shows up in the net column. Paid annual leave belongs to employees only; on B2B a day off is a day without an invoice, unless your contract provides for a paid break. An employee who falls ill receives {F.sickRate} of pay from the first day, while a self-employed person gets something only if they pay the voluntary sickness contribution. Employees are also protected by notice periods and the Labour Code rules on ending a contract; on B2B only what the parties wrote into the contract applies.</p>
+  <p>Add to that overtime supplements, employer payments into PPK and accident insurance funded by the company. A contractor also handles bookkeeping, pays ZUS and the tax office (urząd skarbowy) on time, and carries the risk of a client paying late.</p>
+
+  <h2>Where to start the rate negotiation</h2>
+  <p>A company that moves an employee to B2B stops paying its own contributions. A {$(15000)} gross salary costs it {$(cost15)} a month, and that figure, not the gross, is a sensible opening for an invoice discussion. Invoicing {$(cost15)} leaves you {$(b2bAtCost)} on the flat tax and {$(b2bAtCostR)} on the {pct(R12, lang)} lump sum, which is more than the job paid and makes up for some of the lost benefits. Run your own numbers in the <a href={route('employer', lang)}>employer cost calculator</a>.</p>
+
+  <h2>Assumptions behind the comparison</h2>
+  <p>Employment: one employer, PIT-2 filed, work costs of {F.kup}, no PPK, no under-26 relief. B2B: full ZUS (base {F.b2bBaseFull}) without voluntary sickness insurance, no business costs, lump sum at {pct(R12, lang)}. The calculator ignores the start-up relief and preferential ZUS for new businesses, which noticeably improve the B2B result early on. Business costs such as equipment, office and accounting reduce tax on the flat tax and the tax scale, but not on the lump sum. For an exact invoice net with costs, use the <a href={route('b2b', lang)}>B2B calculator</a>.</p>
+
+  <h2>Take-home at other lump-sum rates</h2>
+  <p>The lump-sum rate depends on the kind of service you provide. Check how net pay changes if your work does not qualify for {pct(R12, lang)}.</p>
+  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('ryczalt', lang)} /></div>
+</GuideLayout>

@@ -1,0 +1,60 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, overtime, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const H = 168;
+const netExtra = (g: number, extra: number) => uop({ gross: g + extra }).net - uop({ gross: g }).net;
+// Tableau moteur : 10 heures à 50 % et 8 heures à 100 % pour quatre salaires.
+const GS = [P.minimum_wage.monthly, 7000, 10000, 15000];
+const rows = GS.map((g) => { const a = overtime({ gross: g, hoursInMonth: H, h50: 10, h100: 0 }), b = overtime({ gross: g, hoursInMonth: H, h50: 0, h100: 8 }); return [$(g), $2(a.hourly), $(a.extra), $(netExtra(g, a.extra)), $(b.extra), $(netExtra(g, b.extra))]; });
+const o7 = overtime({ gross: 7000, hoursInMonth: H, h50: 10, h100: 0 }); const n7 = netExtra(7000, o7.extra);
+const o7b = overtime({ gross: 7000, hoursInMonth: 160, h50: 10, h100: 0 });
+// Décembre au second próg : 10 h à 50 % sur 15 000 zł.
+const o15 = overtime({ gross: 15000, hoursInMonth: H, h50: 10, h100: 0 });
+const y15 = uopYear({ gross: 15000 }), y15o = uopYear({ gross: 15000, months: [...Array(11).fill(15000), 15000 + o15.extra] });
+const dec15 = y15o.months[11].net - y15.months[11].net, jan15 = netExtra(15000, o15.extra);
+const faqs = [
+  { q: 'Ile dostanę na rękę za 10 nadgodzin przy pensji 7 000 zł brutto?', a: `Przy ${formatNumber(H, 0, lang)} godzinach pracy w miesiącu stawka za godzinę to ${$2(o7.hourly)}. Dziesięć nadgodzin w zwykły dzień roboczy, z dodatkiem ${F.ot50}, daje ${$(o7.extra)} brutto ponad pensję, a po potrąceniu składek i zaliczki na PIT około ${$(n7)} netto. W miesiącu ze 160 godzinami stawka rośnie do ${$2(o7b.hourly)}, więc te same nadgodziny są warte ${$(o7b.extra)} brutto.` },
+  { q: `Kiedy za nadgodziny należy się dodatek ${F.ot100}, a kiedy ${F.ot50}?`, a: `Według art. 151¹ Kodeksu pracy dodatek ${F.ot100} przysługuje za nadgodziny w nocy, w niedziele i święta niebędące dla pracownika dniami pracy oraz w dniu wolnym udzielonym w zamian za pracę w niedzielę lub święto. W każdy inny dzień dodatek wynosi ${F.ot50}. Dodatek należy się oprócz normalnego wynagrodzenia, więc godzina z dodatkiem ${F.ot100} jest warta dwie zwykłe godziny brutto.` },
+  { q: 'Dlaczego te same nadgodziny w grudniu dają mniej na rękę niż na początku roku?', a: `Bo wynagrodzenie za nadgodziny dolicza się do pensji z danego miesiąca i opodatkowuje razem z nią. Jeśli do grudnia skumulowana podstawa przekroczyła ${F.threshold}, nadwyżka jest opodatkowana stawką ${F.pitHigh}. Przy pensji ${$(15000)} brutto dziesięć nadgodzin z dodatkiem ${F.ot50} daje w styczniu ${$(jan15)} netto, a w grudniu tylko ${$(dec15)}.` },
+];
+---
+<GuideLayout lang={lang} id="overtime" breadcrumbLabel={label('overtime', lang)} title={`Nadgodziny ${F.year}: dodatek ${F.ot50} i ${F.ot100}, kalkulator netto`} h1={`Nadgodziny ${F.year}: ile zarobisz za godziny ponad normę`}
+  description={`Nadgodziny ${F.year}: dodatek ${F.ot50} lub ${F.ot100} z Kodeksu pracy. Przy ${$(7000)} brutto 10 nadgodzin to ${$(o7.extra)} brutto i ${$(n7)} na rękę. Policz własne nadgodziny.`}
+  intro={`Kalkulator liczy wynagrodzenie za nadgodziny razem z dodatkiem i pokazuje, ile z tej kwoty zostanie po składkach i podatku.`}
+  resume={`Za każdą nadgodzinę na umowie o pracę należy się normalne wynagrodzenie za godzinę plus dodatek: ${F.ot100} za pracę w nocy, w niedziele i święta oraz w dniu wolnym udzielonym za pracę w niedzielę lub święto, a ${F.ot50} w pozostałe dni (art. 151¹ Kodeksu pracy). Przy pensji ${$(7000)} brutto i ${formatNumber(H, 0, lang)} godzinach w miesiącu stawka godzinowa wynosi ${$2(o7.hourly)}, więc dziesięć nadgodzin z dodatkiem ${F.ot50} to ${$(o7.extra)} brutto, a na rękę około ${$(n7)}. Wynagrodzenie za nadgodziny jest częścią pensji: pobiera się od niego składki ZUS, składkę zdrowotną i zaliczkę na PIT, a w miesiącach po przekroczeniu progu ${F.threshold} stawka podatku rośnie do ${F.pitHigh}. Kalkulator dzieli pensję przez liczbę godzin w miesiącu, mnoży przez liczbę nadgodzin i dodatek, a potem przelicza całą wypłatę na netto. Tabela niżej porównuje nadgodziny z dodatkiem ${F.ot50} i ${F.ot100} dla czterech pensji.`}
+  faqs={faqs}
+  related={[{ href: route('hourly', lang), name: label('hourly', lang), description: 'Z pensji na stawkę za godzinę i odwrotnie.' }, { href: route('annual', lang), name: label('annual', lang), description: 'Netto każdego miesiąca, z drugim progiem podatkowym.' }, { href: route('home', lang), name: label('home', lang), description: 'Netto z pensji podstawowej, bez dodatków.' }]}
+  sources={[src('labour_code', lang), src('pit_act', lang), src('zus_rates', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="overtime" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Nadgodziny z dodatkiem {F.ot50} i {F.ot100} dla czterech pensji</h2>
+  <p>Przykład: dziesięć nadgodzin w zwykłe dni robocze albo osiem godzin w nocy lub w święto. Stawka godzinowa to pensja podzielona przez {formatNumber(H, 0, lang)} godzin; kwoty netto pokazują, o ile wzrośnie przelew w miesiącu przed drugim progiem.</p>
+  <ContentTable headers={['Brutto', 'Stawka/h', `10 h z dodatkiem ${F.ot50}`, 'Netto', `8 h z dodatkiem ${F.ot100}`, 'Netto']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={1} />
+  <p>Z każdej złotówki za nadgodziny zostaje mniej więcej {pct(n7 / o7.extra, lang)} na rękę, niezależnie od pensji, dopóki cała podstawa mieści się w pierwszym progu. Osiem godzin z dodatkiem {F.ot100} daje więcej niż dziesięć z dodatkiem {F.ot50}, bo każda z nich liczy się podwójnie.</p>
+
+  <h2>Kiedy dodatek wynosi {F.ot100}, a kiedy {F.ot50}</h2>
+  <p>Kodeks pracy wymienia przypadki z wyższym dodatkiem zamkniętą listą. {F.ot100} należy się za nadgodziny przypadające w nocy, w niedziele i święta, które nie są dla pracownika dniami pracy według jego rozkładu, oraz w dniu wolnym udzielonym w zamian za pracę w niedzielę lub święto. Każda inna nadgodzina, w tym zwykłe przedłużenie dnia pracy we wtorek czy czwartek, daje dodatek {F.ot50}.</p>
+  <p>Dodatek liczy się od normalnego wynagrodzenia, a nie zamiast niego. Godzina z dodatkiem {F.ot50} jest więc warta półtorej zwykłej godziny, a z dodatkiem {F.ot100} dwie. Na pasku wypłaty oba składniki często widnieją osobno: „wynagrodzenie za godziny nadliczbowe” i „dodatek {F.ot50}” lub „dodatek {F.ot100}”.</p>
+
+  <h2>Skąd kalkulator bierze stawkę za godzinę</h2>
+  <p>Narzędzie dzieli miesięczną pensję brutto przez liczbę godzin pracy w miesiącu. W okienku przyjęto {formatNumber(H, 0, lang)} godzin, ale wymiar czasu pracy zmienia się z miesiąca na miesiąc, a z nim stawka: przy {$(7000)} brutto i 160 godzinach wynosi już {$2(o7b.hourly)}. Jeśli Twoje wynagrodzenie obejmuje stałe dodatki albo jest liczone stawką godzinową, wynik może się różnić od tego, co wyliczy dział kadr. Kalkulator zakłada też, że nadgodziny są wypłacane w pieniądzu w tym samym miesiącu.</p>
+  <p>Nie sprawdza natomiast, czy nadgodziny mieszczą się w limitach czasu pracy. To kwestia przepisów o czasie pracy i regulaminu w Twojej firmie, a nie rachunku płacowego.</p>
+
+  <h2>Nadgodziny a próg podatkowy i składki</h2>
+  <p>Wynagrodzenie za nadgodziny trafia do tej samej podstawy co pensja. Na początku roku jest opodatkowane stawką {F.pitLow}, ale u osób, które w trakcie roku przekraczają {F.threshold} podstawy, późniejsze nadgodziny podlegają stawce {F.pitHigh}. Przy {$(15000)} brutto dziesięć nadgodzin daje {$(jan15)} netto w styczniu i {$(dec15)} w grudniu. Nadgodziny przybliżają też moment przekroczenia progu, bo podnoszą skumulowaną podstawę.</p>
+  <p>Składki ZUS i zdrowotna są pobierane od pełnej kwoty, dopóki suma brutto w roku nie przekroczy limitu {F.cap}. Kalkulator liczy wyłącznie wynagrodzenie i dodatek za nadgodziny. Innych składników, które mogą przysługiwać za te same godziny na podstawie odrębnych przepisów lub regulaminu wynagradzania, nie dolicza.</p>
+
+  <h2>Twoja stawka godzinowa przy innej liczbie godzin</h2>
+  <p>Sprawdź, jak zmienia się wartość godziny pracy, gdy miesiąc ma mniej lub więcej godzin.</p>
+  <div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('hourly', lang)} /></div>
+</GuideLayout>

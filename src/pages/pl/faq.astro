@@ -1,0 +1,50 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import MiniSim from '../../components/calc/MiniSim';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { t } from '../../i18n/ui';
+import { facts, src } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { faqSchema, webPageSchema, breadcrumbSchema } from '../../lib/seo';
+import { LAST_UPDATED, LANG_TAGS, AUTHOR_NAME, CONTACT_EMAIL } from '../../data/site-config';
+
+const lang = 'pl';
+const F = facts(lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+
+const faqs = [
+  { q: 'Czy kalkulator jest bezpłatny i czy trzeba zakładać konto?', a: `Tak, jest bezpłatny i nie wymaga rejestracji, logowania ani podawania adresu e-mail. Wszystkie kalkulatory i poradniki są dostępne od razu, w wersji polskiej i angielskiej. Serwis utrzymuje się bez płatnych funkcji: nie ma wersji premium, limitu obliczeń ani wyników ukrytych za formularzem. Możesz liczyć dowolną liczbę wariantów, zmieniać umowy i opcje oraz wracać do kalkulatora tak często, jak potrzebujesz.` },
+  { q: 'Czy wpisane przeze mnie kwoty są gdzieś wysyłane?', a: 'Nie. Obliczenia wykonuje Twoja przeglądarka, a silnik działa bez połączenia z serwerem. Wpisane kwoty i opcje trafiają jedynie do adresu strony w pasku przeglądarki, żeby można było skopiować link z gotowym wynikiem. Nie zapisujemy ich w bazie danych i nie łączymy z Twoją tożsamością. Jeśli nie chcesz, by kwota została w historii przeglądarki, użyj okna prywatnego.' },
+  { q: 'Jak często aktualizujecie stawki?', a: `Stawki sprawdzamy na źródłach urzędowych przed każdą publikacją i przy każdej zmianie przepisów: rozporządzeniu o płacy minimalnej, obwieszczeniu o limicie składek, ustawie budżetowej czy komunikatach ZUS. Obecne wartości na ${F.year} r. zweryfikowaliśmy ${updated}; ta data widnieje na każdej stronie. Nowe stawki wprowadzamy wtedy, gdy są opublikowane w Dzienniku Ustaw lub Monitorze Polskim, a nie na podstawie projektów.` },
+  { q: 'Dlaczego wynik różni się od kwoty na moim pasku wypłaty?', a: 'Najczęściej z czterech powodów: pracodawca nie stosuje Twojego PIT-2, rozlicza inne koszty uzyskania przychodu, w danym miesiącu wypłacił premię lub nadgodziny albo potrąca pozycje spoza podatków, takie jak składka związkowa czy ubezpieczenie grupowe. Różnica rzędu złotówki wynika z zaokrągleń. Porównuj pozycja po pozycji: składki, zdrowotną, zaliczkę, a dopiero na końcu kwotę przelewu.' },
+  { q: 'Jakie rodzaje umów można policzyć?', a: `Cztery: umowę o pracę, umowę zlecenie, umowę o dzieło i jednoosobową działalność na B2B w trzech formach opodatkowania (skala, podatek liniowy ${F.liniowy}, ryczałt). Do tego osobne kalkulatory: netto na brutto, koszt pracodawcy, wynagrodzenie roczne, stawka godzinowa, nadgodziny, chorobowe, PPK i premia. Każdy korzysta z tego samego silnika obliczeń i tych samych stawek na ${F.year} r.` },
+  { q: 'Czego kalkulator nie potrafi policzyć?', a: 'Nie łączy dochodów od kilku pracodawców, nie zna ulgi na powrót, dla rodzin 4+ i dla seniorów, przyjmuje podstawową stawkę składki wypadkowej i stawki podstawowe PPK. Działalność B2B liczy jako średnią z roku. Nie zna też potrąceń spoza prawa podatkowego. Pełna lista ograniczeń, z wyjaśnieniem, jak wpływają na wynik, znajduje się w metodologii kalkulatora.' },
+  { q: 'Czy mogę zapisać albo wysłać komuś swój wynik?', a: 'Tak. Po każdej zmianie kalkulator zapisuje kwotę i wybrane opcje w adresie strony. Wystarczy skopiować link z paska przeglądarki i wysłać go mailem lub komunikatorem: osoba, która go otworzy, zobaczy te same ustawienia i ten sam wynik. Wydruk zrobisz zwykłym poleceniem drukowania w przeglądarce, razem z rozbiciem na składki.' },
+  { q: 'Czy wynik mogę przedstawić w urzędzie skarbowym albo u pracodawcy?', a: 'Wynik ma charakter szacunkowy i nie jest dokumentem. Wiążące są lista płac pracodawcy, rozliczenia z ZUS oraz Twoje zeznanie roczne. Kalkulator dobrze sprawdza się przy negocjowaniu pensji, porównywaniu ofert i kontroli paska wypłaty, ale w sprawach spornych lub nietypowych warto zapytać doradcę podatkowego albo zadzwonić na infolinię Krajowej Informacji Skarbowej.' },
+  { q: 'Czy kalkulator jest dostępny po angielsku?', a: 'Tak. Każda strona ma wersję angielską z tymi samymi obliczeniami, przygotowaną dla cudzoziemców pracujących w Polsce. Polskie pojęcia, takie jak umowa zlecenie, pasek wypłaty czy urząd skarbowy, są tam objaśnione, a kwoty zapisane w formacie angielskim. Język zmienisz przełącznikiem w nagłówku strony, a przepisy i stawki są w obu wersjach identyczne.' },
+  { q: 'Kto przygotowuje kalkulator i poradniki?', a: `Serwis wydaje ${AUTHOR_NAME}, wydawca bezpłatnych kalkulatorów wynagrodzeń. Każdą stawkę przypisujemy do konkretnego aktu prawnego lub strony ZUS i Ministerstwa Finansów, a obliczenia sprawdzamy testami automatycznymi. Zasady doboru źródeł, aktualizacji i poprawiania błędów opisuje polityka redakcyjna. Serwis nie jest powiązany z ZUS, Ministerstwem Finansów ani żadnym biurem rachunkowym.` },
+  { q: 'Mogę umieścić kalkulator na swojej stronie?', a: 'Tak, udostępniamy bezpłatny widżet, który osadzisz na stronie firmowej, blogu lub w intranecie jednym fragmentem kodu. Widżet liczy tym samym silnikiem co serwis, więc stawki aktualizują się u Ciebie automatycznie, bez żadnej pracy po Twojej stronie. Instrukcję osadzenia i podgląd znajdziesz na stronie „Kalkulator na Twoją stronę”.' },
+  { q: 'Znalazłem błąd w obliczeniu. Co zrobić?', a: `Napisz na ${CONTACT_EMAIL}, podając kwotę brutto, rodzaj umowy, zaznaczone opcje i wynik, jakiego się spodziewałeś, najlepiej z odpowiednimi pozycjami paska wypłaty bez danych osobowych. Każde zgłoszenie sprawdzamy na przepisach. Jeśli błąd się potwierdzi, poprawiamy silnik, dopisujemy ten przypadek do testów automatycznych i aktualizujemy datę weryfikacji na stronach.` },
+];
+
+const title = `Kalkulator wynagrodzeń ${F.year}: pytania i odpowiedzi o netto`;
+const description = `Pytania o kalkulator wynagrodzeń ${F.year}: czy jest darmowy, czy dane są wysyłane, jak często zmieniamy stawki i dlaczego netto różni się od paska wypłaty.`;
+const path = route('faq', lang);
+const h1 = 'Pytania o kalkulator wynagrodzeń';
+const jsonLd = [webPageSchema({ name: h1, description, path, lang }), breadcrumbSchema([{ name: t(lang).breadcrumbHome, path: route('home', lang) }, { name: label('faq', lang), path }]), faqSchema(faqs, lang)];
+---
+<PageLayout title={title} description={description} lang={lang} jsonLd={jsonLd} faqs={faqs} breadcrumbs={[{ label: label('faq', lang) }]}
+  sources={[src('pit_act', lang), src('zus_rates', lang), src('minimum', lang)]}
+  related={[{ href: route('home', lang), name: 'Kalkulator wynagrodzeń', description: 'Netto dla czterech umów i rok miesiąc po miesiącu.' }, { href: route('method', lang), name: 'Metodologia', description: 'Wzory, zaokrąglenia, ograniczenia i testy silnika.' }, { href: route('widget', lang), name: 'Kalkulator na Twoją stronę', description: 'Bezpłatny widżet z aktualnymi stawkami.' }]}>
+  <article>
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-navy-900 md:text-4xl">{h1}</h1>
+      <p class="mt-3 text-lg text-navy-600">Jak działa serwis, co dzieje się z wpisanymi kwotami i skąd biorą się wyniki.</p>
+    </header>
+    <div class="prose prose-slate max-w-none">
+      <p>Tu zebraliśmy pytania o sam serwis i narzędzie: koszty, prywatność, aktualizacje, zakres i granice obliczeń. Pytania o konkretne przepisy, takie jak PIT-2, ulga dla młodych, składka zdrowotna czy umowa zlecenie, mają własne poradniki z kalkulatorami, do których prowadzi menu. Wzory, według których liczymy, opisuje <a href={route('method', lang)}>metodologia kalkulatora</a>, a samo narzędzie znajdziesz na <a href={route('home', lang)}>stronie głównej</a>.</p>
+      <div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('nettobrutto', lang)} /></div>
+    </div>
+  </article>
+</PageLayout>

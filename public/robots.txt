@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
-Sitemap: https://kalkulatorwynagrodzen.pl/sitemap.xml
 
 Disallow: /*?*
+
+Sitemap: https://kalkulatorwynagrodzen.pl/sitemap-index.xml

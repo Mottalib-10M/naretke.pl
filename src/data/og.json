@@ -1,0 +1,20 @@
+{
+ "accent": "#DC143C",
+ "symbol": "zł",
+ "variants": [
+  {
+   "file": "og-pl.png",
+   "title": "Kalkulator wynagrodzeń 2026\nbrutto netto",
+   "subtitle": "Umowa o pracę · zlecenie · o dzieło · B2B · ZUS · PIT 12 % / 32 %",
+   "badge": "Stawki ZUS i PIT 2026",
+   "brand": "KalkulatorWynagrodzen.pl"
+  },
+  {
+   "file": "og-en.png",
+   "title": "Polish salary calculator 2026\ngross to net",
+   "subtitle": "Employment contract · zlecenie · dzieło · B2B · ZUS · PIT",
+   "badge": "ZUS and PIT rates 2026",
+   "brand": "KalkulatorWynagrodzen.pl"
+  }
+ ]
+}

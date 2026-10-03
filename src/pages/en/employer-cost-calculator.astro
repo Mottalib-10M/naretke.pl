@@ -1,0 +1,71 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatDecimal, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const G = 8000;
+const e = uop({ gross: G }).er, ePpk = uop({ gross: G, ppk: true }).er;
+const detail = [
+  ['Pension (emerytalna), employer share', F.emerytalnaEr, $2(e.emerytalna)],
+  ['Disability (rentowa), employer share', F.rentowaEr, $2(e.rentowa)],
+  ['Accident insurance (wypadkowa)', F.wypadkowa, $2(e.wypadkowa)],
+  ['Labour Fund + Solidarity Fund (FP + FS)', `${F.fp} + ${F.fs}`, $2(e.fp)],
+  ['Guaranteed Employee Benefits Fund (FGŚP)', F.fgsp, $2(e.fgsp)],
+  ['Total without PPK', pct(e.total / G, lang), $2(e.total)],
+  ['Employer PPK (if the employee participates)', F.ppkEr, $2(ePpk.ppk)],
+];
+const GROSSES = [P.minimum_wage.monthly, 6000, 8000, 10000, 15000, 20000];
+const rows = GROSSES.map((g) => { const m = uop({ gross: g }), p = uop({ gross: g, ppk: true }); return [$(g), $(m.er.total), $(m.er.cost), $(p.er.cost), formatDecimal(m.er.cost / g, 3, lang)]; });
+const min = uop({ gross: P.minimum_wage.monthly });
+const c8 = uop({ gross: G });
+const wMin = uop({ gross: G, wypadkowaRate: P.zus.wypadkowa_min }).er.cost, wMax = uop({ gross: G, wypadkowaRate: P.zus.wypadkowa_max }).er.cost;
+const HI = 30000;
+const yHi = uopYear({ gross: HI }); const janHi = yHi.months[0].er.cost, decHi = yHi.months[11].er.cost;
+const capSaving = janHi * 12 - yHi.total.cost;
+const faqs = [
+  { q: 'What percentage on top of gross salary does a Polish employer pay?', a: `Without PPK and with accident insurance at ${F.wypadkowa}, the employer adds ${pct(c8.er.total / G, lang)} of gross: ${F.emerytalnaEr} pension, ${F.rentowaEr} disability, accident insurance, ${F.fpfs} for the Labour and Solidarity Funds and ${F.fgsp} for FGŚP. On ${$(G)} gross that makes a monthly cost of ${$(c8.er.cost)}. With PPK the basic ${F.ppkEr} employer payment brings it to ${$(uop({ gross: G, ppk: true }).er.cost)}.` },
+  { q: 'Why is the accident insurance rate at my company different from the calculator?', a: `Because the rate is set for each employer individually and the law allows anything from ${F.wypadkowaMin} to ${F.wypadkowaMax} of gross. The calculator uses ${F.wypadkowa}, the same rate ZUS uses in its worked examples. On a ${$(G)} salary the total cost therefore ranges from ${$(wMin)} to ${$(wMax)}. Your employer's own rate appears in its ZUS settlement documents.` },
+  { q: 'Does the cost of a very high salary fall towards the end of the year?', a: `Yes. Once an employee's gross pay for the year passes ${F.cap}, the employer stops paying its share of pension and disability contributions, while accident insurance, the funds and any PPK continue. At ${$(HI)} gross a month, January costs ${$(janHi)} and December ${$(decHi)}. Over the year the company pays ${$(capSaving)} less than twelve times the January figure.` },
+];
+---
+<GuideLayout lang={lang} id="employer" breadcrumbLabel={label('employer', lang)} title={`Employer Cost Poland ${F.year}: ${$(G)} Gross Costs ${$(c8.er.cost)}`} h1={`Employer cost in Poland ${F.year}: what an employee really costs`}
+  description={`Employer cost in Poland ${F.year}: a ${$(G)} gross salary costs the company ${$(c8.er.cost)} a month, minimum wage ${$(min.er.cost)}. ZUS, FP, FS, FGŚP and PPK. Full breakdown.`}
+  intro={`The gross salary in an employment contract is only part of what the company spends: the employer adds its own social insurance and fund contributions on top.`}
+  resume={`Employing someone on ${$(G)} gross in Poland costs the employer ${$(c8.er.cost)} a month in ${F.year}; on the minimum wage of ${F.minWage} the cost is ${$(min.er.cost)}. The gap between gross pay and total cost consists only of contributions the company pays itself: pension ${F.emerytalnaEr}, disability ${F.rentowaEr}, accident insurance (${F.wypadkowa} by default, anywhere from ${F.wypadkowaMin} to ${F.wypadkowaMax} depending on the firm), the Labour Fund ${F.fp}, the Solidarity Fund ${F.fs} and the Guaranteed Employee Benefits Fund ${F.fgsp}. Together that is ${pct(c8.er.total / G, lang)} of gross. If the employee saves in PPK, the employer adds a basic ${F.ppkEr} and may voluntarily add up to ${F.ppkErExtra}. The employee's own contributions and income tax do not raise the company's cost, because they are deducted from gross pay. The calculator shows the total for any salary, with or without PPK, and the table below itemises every contribution.`}
+  faqs={faqs}
+  related={[{ href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'The gross salary behind a given take-home.' }, { href: route('zus', lang), name: label('zus', lang), description: 'Employee and employer contributions, rate by rate.' }, { href: route('ppk', lang), name: label('ppk', lang), description: 'PPK payments by employee, employer and state.' }]}
+  sources={[src('zus_rates', lang), src('budget', lang), src('ppk', lang), src('sus_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Employer contributions on a {$(G)} salary</h2>
+  <p>Every contribution uses the same base, the gross salary. The amounts in the third column are for one month, before the annual cap comes into play.</p>
+  <ContentTable headers={['Contribution', 'Rate', `Amount on ${$(G)}`]} align={['l', 'r', 'r']} rows={detail} highlightRow={5} />
+  <p>The Labour Fund and the Solidarity Fund are two separate levies in the Budget Act, but ZUS declarations and most payroll printouts show them together as {F.fpfs}. FGŚP protects wages if an employer becomes insolvent. Pension contributions are split equally with the employee; disability contributions are not, with the company paying {F.rentowaEr} and the employee {F.rentowaEe}. Sickness insurance is funded entirely by the employee and accident insurance entirely by the employer.</p>
+
+  <h2>Total cost of employment for six salaries</h2>
+  <ContentTable headers={['Gross', 'Employer contributions', 'Cost without PPK', 'Cost with PPK', 'Cost / gross']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={2} />
+  <p>The multiplier in the last column is the same on every row, because all employer contributions are a percentage of gross with no threshold or fixed amount in the early months of the year. That sets employer cost apart from the employee's net pay, where fixed allowances make the ratio drift. A company planning its payroll budget can safely multiply total salaries by this factor, provided no salary approaches the {F.cap} annual cap.</p>
+
+  <h2>When the cost changes during the year</h2>
+  <p>High salaries are the exception. When an employee's cumulative gross since January passes {F.cap}, the employer stops paying its share of pension and disability contributions. At {$(HI)} gross a month, January costs {$(janHi)} and December {$(decHi)}. The funds, accident insurance and PPK continue on the full amount, since the cap does not apply to them. The employer's PPK payment, for its part, is excluded from the pension and disability contribution base, so it does not push up any other contribution.</p>
+  <p>The other variable is the accident insurance rate. The law allows a range from {F.wypadkowaMin} to {F.wypadkowaMax}, and the rate belongs to a specific employer. On {$(G)} gross the total cost can therefore sit anywhere between {$(wMin)} and {$(wMax)}. The calculator uses {F.wypadkowa}, as ZUS does in its sample calculations.</p>
+
+  <h2>What the calculator does not add</h2>
+  <p>The result covers mandatory contributions and PPK only. It excludes the bridging pension fund (Fundusz Emerytur Pomostowych), which applies solely to work in special conditions or of a special nature. It also applies no exemptions from FP and FS: it always charges them on full gross, so if an employee at your company is exempt, the real cost will be lower. Non-wage spending is out of scope as well: training, equipment, benefits, medical checks, the social fund allowance or a thirteenth salary in the public sector. Their size is a company decision, not a statutory rate, so no single formula can capture them.</p>
+  <p>Mandate and B2B contracts are not covered here either. On a mandate contract (umowa zlecenie) some contributions depend on whether the contractor has other insurance, and on B2B the client simply pays the invoice. The <a href={route('compare', lang)}>B2B vs employment contract comparison</a> deals with those cases.</p>
+
+  <h2>Finding the employer cost on a payslip</h2>
+  <p>Employees rarely see employer contributions, because a Polish payslip (pasek wypłaty) starts at gross and works down to take-home pay. Some companies print a section at the bottom headed "składki finansowane przez pracodawcę" or "koszt pracodawcy". Adding that section to gross pay should land close to the calculator's figure. A gap of more than a few złoty usually means a different accident rate, an additional PPK payment or a crossed annual cap. To see how much of this budget actually reaches the employee, use the <a href={route('home', lang)}>salary calculator</a>.</p>
+
+  <h2>How much of it goes into PPK</h2>
+  <p>Enter a salary to see how much the employer pays into the employee's PPK account and how much the employee's net pay drops.</p>
+  <div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('ppk', lang)} /></div>
+</GuideLayout>

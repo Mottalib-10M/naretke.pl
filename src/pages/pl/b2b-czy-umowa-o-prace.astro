@@ -1,0 +1,67 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, b2b, PARAMS as P, type B2bForm } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const R12 = P.b2b.ryczalt_rates[0].rate;
+const netB2b = (rev: number, form: B2bForm) => b2b({ revenue: rev, form, ...(form === 'ryczalt' ? { ryczaltRate: R12 } : {}) }).net;
+// Netto UoP : moyenne mensuelle de l'année (le second próg et le plafond jouent au-delà de 10 000 zł).
+const uopAvg = (g: number) => uopYear({ gross: g }).total.net / 12;
+// Dichotomie : przychód B2B mensuel qui donne le même net moyen qu'un brut UoP.
+const breakEven = (target: number, form: B2bForm) => { let lo = 0, hi = target * 4; for (let k = 0; k < 60; k++) { const mid = (lo + hi) / 2; if (netB2b(mid, form) < target) lo = mid; else hi = mid; } return hi; };
+const XS = [8000, 12000, 15000, 20000, 30000];
+const same = XS.map((x) => [$(x), $(uopAvg(x)), $(netB2b(x, 'liniowy')), $(netB2b(x, 'ryczalt')), $(netB2b(x, 'skala'))]);
+const need = XS.map((x) => { const t = uopAvg(x); const l = breakEven(t, 'liniowy'), r = breakEven(t, 'ryczalt'), s = breakEven(t, 'skala'); return [$(x), $(t), $(l), $(r), $(s)]; });
+const t15 = uopAvg(15000), l15 = breakEven(t15, 'liniowy'), r15 = breakEven(t15, 'ryczalt');
+const t8 = uopAvg(8000), r8 = breakEven(t8, 'ryczalt');
+// Budget de l'employeur : ce que coûte 15 000 zł brut, payé en facture B2B.
+const cost15 = uop({ gross: 15000 }).er.cost;
+const b2bAtCost = netB2b(cost15, 'liniowy'), b2bAtCostR = netB2b(cost15, 'ryczalt');
+const sickCost = P.b2b.zus_month_full - P.b2b.zus_month_full_no_sickness;
+const zus8 = b2b({ revenue: 8000, form: 'ryczalt', ryczaltRate: R12 });
+const faqs = [
+  { q: 'Od jakiej kwoty faktury B2B opłaca się bardziej niż etat?', a: `Nie ma jednej granicy, bo zależy ona od formy opodatkowania. Żeby co miesiąc mieć średnio tyle, ile daje etat za ${$(15000)} brutto (${$(t15)} na rękę), trzeba fakturować około ${$(l15)} na liniowym albo ${$(r15)} na ryczałcie ${pct(R12, lang)}, bez kosztów firmy i z pełnym ZUS. Przy niższych kwotach przewaga etatu rośnie, bo ZUS przedsiębiorcy jest kwotą stałą.` },
+  { q: 'Firma proponuje mi B2B za tyle samo, ile wynosiła pensja brutto. Czy to uczciwa oferta?', a: `Zwykle nie. Przy etacie firma płaci ponad brutto swoje składki, więc pensja ${$(15000)} brutto kosztuje ją ${$(cost15)}. Faktura na tę samą kwotę co brutto oznacza dla niej oszczędność, a dla Ciebie utratę płatnego urlopu i wynagrodzenia chorobowego. Uczciwy punkt wyjścia to cały koszt pracodawcy: przy ${$(cost15)} faktury na liniowym zostaje ${$(b2bAtCost)} miesięcznie.` },
+  { q: 'Czy na B2B mam prawo do chorobowego?', a: `Tylko jeśli dobrowolnie przystąpisz do ubezpieczenia chorobowego w ZUS. Przy pełnym ZUS w ${F.year} r. podnosi to składki z ${F.b2bZusFullNoSick} do ${F.b2bZusFull} miesięcznie, czyli o ${formatMoney(sickCost, 2, lang)}. Bez tej składki za dni choroby nie dostajesz nic, a wynagrodzenia chorobowego płaconego przez pracodawcę przez pierwsze dni na B2B nie ma w ogóle. Kalkulator liczy wariant bez chorobowego.` },
+];
+---
+<GuideLayout lang={lang} id="compare" breadcrumbLabel={label('compare', lang)} title={`B2B czy umowa o pracę ${F.year}: porównanie netto i stawki`} h1={`B2B czy umowa o pracę w ${F.year} r.: co się bardziej opłaca`}
+  description={`B2B czy umowa o pracę ${F.year}: etat ${$(15000)} brutto daje średnio ${$(t15)} netto, na B2B liniowym trzeba fakturować ${$(l15)}. Porównaj trzy formy opodatkowania.`}
+  intro={`Porównanie pokazuje, ile zostaje na rękę z tej samej kwoty na etacie i na kontrakcie B2B, oraz jaką fakturę trzeba wystawić, żeby wyjść na swoje.`}
+  resume={`Przy tej samej kwocie etat i B2B dają różne netto, a próg opłacalności zależy od formy opodatkowania. Umowa o pracę za ${$(15000)} brutto daje w ${F.year} r. średnio ${$(t15)} na rękę miesięcznie (po uwzględnieniu progu ${F.pitHigh}). Na B2B z pełnym ZUS, bez dobrowolnego chorobowego i bez kosztów firmy, ten sam wynik wymaga faktur na około ${$(l15)} miesięcznie na podatku liniowym ${F.liniowy} albo ${$(r15)} na ryczałcie ${pct(R12, lang)}, stosowanym m.in. w programowaniu. Różnica wynika z tego, że przedsiębiorca płaci składki społeczne kwotą stałą (${F.b2bZusFullNoSick} miesięcznie), a składkę zdrowotną według własnych zasad dla każdej formy. W zamian B2B nie daje płatnego urlopu, wynagrodzenia za czas choroby ani ochrony przed wypowiedzeniem z Kodeksu pracy. Kalkulator pokazuje oba warianty dla wpisanej kwoty, a tabele poniżej podają progi opłacalności dla pięciu poziomów pensji.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: label('b2b', lang), description: 'Netto z faktury z kosztami i ulgami ZUS.' }, { href: route('employer', lang), name: label('employer', lang), description: 'Budżet firmy na etat, od którego warto zacząć negocjacje.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Stawki ryczałtu i składka zdrowotna według przychodu.' }]}
+  sources={[src('zus_b2b', lang), src('ryczalt_act', lang), src('pit_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('b2b', lang)} /></div></div>
+
+  <h2>Ta sama kwota na etacie i na fakturze</h2>
+  <p>Pierwsza tabela traktuje brutto z umowy o pracę i miesięczny przychód z faktury (bez VAT) jako tę samą liczbę. Netto z etatu to średnia z dwunastu miesięcy, bo przy wyższych pensjach druga część roku jest opodatkowana stawką {F.pitHigh}, a po przekroczeniu limitu {F.cap} znikają składki emerytalna i rentowa.</p>
+  <ContentTable headers={['Brutto = przychód', 'Etat (średnio)', 'B2B liniowy', `B2B ryczałt ${pct(R12, lang)}`, 'B2B skala']} align={['r', 'r', 'r', 'r', 'r']} rows={same} />
+  <p>Przy {$(8000)} B2B przegrywa wyraźnie w każdej formie. Składki społeczne przedsiębiorcy to stała kwota, a składka zdrowotna na ryczałcie przy takim przychodzie wynosi {$(zus8.health)}, więc razem z ZUS zabierają dużą część niewielkiej faktury. Im wyższa kwota, tym mniejszy udział tych stałych kosztów i tym szybciej rośnie przewaga ryczałtu i liniowego.</p>
+
+  <h2>Ile trzeba fakturować, żeby wyjść na swoje</h2>
+  <p>Druga tabela odwraca pytanie: dla każdej pensji brutto szuka przychodu B2B, przy którym średnie netto z faktury jest równe średniemu netto z etatu. Obliczenie wykonuje ten sam silnik co kalkulator, metodą kolejnych przybliżeń.</p>
+  <ContentTable headers={['Brutto na etacie', 'Netto na etacie (średnio)', 'Potrzebny przychód: liniowy', `Ryczałt ${pct(R12, lang)}`, 'Skala']} align={['r', 'r', 'r', 'r', 'r']} rows={need} highlightRow={2} />
+  <p>Przy niskich kwotach potrzebny przychód jest znacznie wyższy od pensji: zastąpienie etatu za {$(8000)} wymaga faktury na {$(r8)} na ryczałcie. Przy wysokich kwotach relacja się odwraca i B2B daje to samo netto przy przychodzie niższym niż brutto. Tabela nie zawiera jednak niczego, co trudno przeliczyć na złotówki: urlopu, chorobowego i stabilności zatrudnienia.</p>
+
+  <h2>Czego B2B nie zapłaci za Ciebie</h2>
+  <p>Na etacie część wartości pensji to świadczenia, które nie pojawiają się w kolumnie „netto”. Płatny urlop wypoczynkowy przysługuje tylko pracownikowi: na B2B dzień wolny to dzień bez faktury, chyba że kontrakt przewiduje płatną przerwę. Za czas choroby pracownik dostaje {F.sickRate} wynagrodzenia od pierwszego dnia, a przedsiębiorca tylko wtedy, gdy opłaca dobrowolną składkę chorobową. Pracownika chroni też okres wypowiedzenia i przepisy o rozwiązywaniu umów; na B2B obowiązuje wyłącznie to, co strony zapisały w kontrakcie.</p>
+  <p>Do tego dochodzą dodatki za nadgodziny, wpłaty pracodawcy do PPK i ubezpieczenie wypadkowe opłacane przez firmę. Przedsiębiorca odpowiada też sam za księgowość, terminowe wpłaty do ZUS i urzędu skarbowego oraz za ryzyko, że zleceniodawca zapłaci z opóźnieniem.</p>
+
+  <h2>Od czego zacząć negocjacje stawki</h2>
+  <p>Firma, która przenosi pracownika na B2B, przestaje płacić swoje składki. Pensja {$(15000)} brutto kosztuje ją {$(cost15)} miesięcznie i właśnie ta kwota, a nie brutto, jest rozsądnym punktem wyjścia rozmowy o fakturze. Przy przychodzie {$(cost15)} zostaje Ci {$(b2bAtCost)} na liniowym i {$(b2bAtCostR)} na ryczałcie {pct(R12, lang)}, czyli więcej niż na etacie, co rekompensuje część utraconych świadczeń. Policz własny przypadek w <a href={route('employer', lang)}>kalkulatorze kosztu pracodawcy</a>.</p>
+
+  <h2>Założenia porównania</h2>
+  <p>Etat: jeden pracodawca, złożony PIT-2, koszty {F.kup}, bez PPK i bez ulgi dla młodych. B2B: pełny ZUS (podstawa {F.b2bBaseFull}) bez dobrowolnego chorobowego, brak kosztów prowadzenia firmy, ryczałt w stawce {pct(R12, lang)}. Kalkulator nie uwzględnia ulgi na start ani preferencyjnego ZUS dla nowych firm, które w pierwszym okresie działalności wyraźnie poprawiają wynik B2B. Koszty firmy (sprzęt, biuro, księgowość) obniżają podatek na liniowym i skali, ale nie na ryczałcie. Dokładne netto z faktury z kosztami policzysz w <a href={route('b2b', lang)}>kalkulatorze B2B</a>.</p>
+
+  <h2>Ile zostaje na ryczałcie w innych stawkach</h2>
+  <p>Stawka ryczałtu zależy od rodzaju usług. Sprawdź, jak zmienia się netto, jeśli Twoja działalność nie mieści się w {pct(R12, lang)}.</p>
+  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('ryczalt', lang)} /></div>
+</GuideLayout>

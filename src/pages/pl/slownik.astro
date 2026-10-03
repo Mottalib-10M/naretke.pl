@@ -1,0 +1,86 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { PARAMS as P } from '../../lib/engine/pl';
+import { pct } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const ryczaltIt = pct(P.b2b.ryczalt_rates[0].rate, lang);
+const ryczaltTrade = pct(P.b2b.ryczalt_rates[6].rate, lang);
+interface Term { id: string; term: string; def: string; link?: { id: string; text: string } }
+const groups: Array<{ h: string; terms: Term[] }> = [
+  { h: 'Wynagrodzenie i pasek wypłaty', terms: [
+    { id: 'brutto', term: 'Brutto', def: `Kwota wynagrodzenia zapisana w umowie, zanim płatnik potrąci składki i zaliczkę na podatek. Płaca minimalna w ${F.year} r. to ${F.minWage} brutto miesięcznie, a minimalna stawka godzinowa na zleceniu ${F.minHourly}.`, link: { id: 'minimum', text: 'płaca minimalna' } },
+    { id: 'netto', term: 'Netto (na rękę)', def: `To, co faktycznie wpływa na konto: brutto pomniejszone o składki społeczne, składkę zdrowotną i zaliczkę na PIT. Przy płacy minimalnej na umowie o pracę wychodzi ${F.minNet}.`, link: { id: 'nettobrutto', text: 'przelicz netto na brutto' } },
+    { id: 'pasek', term: 'Pasek wypłaty', def: 'Zestawienie od pracodawcy pokazujące drogę od brutto do netto w danym miesiącu: każda składka osobno, podstawa składki zdrowotnej, koszty uzyskania przychodu, podstawa opodatkowania i pobrana zaliczka. Pierwsze miejsce, w którym warto szukać różnicy względem kalkulatora.', link: { id: 'home', text: 'porównaj z kalkulatorem' } },
+  ] },
+  { h: 'Składki ZUS i fundusze', terms: [
+    { id: 'zus', term: 'ZUS', def: `Zakład Ubezpieczeń Społecznych, a w mowie potocznej także same składki. Pracownik oddaje z brutto łącznie ${F.socialEe} na trzy ubezpieczenia: emerytalne, rentowe i chorobowe.`, link: { id: 'zus', text: 'składki ZUS krok po kroku' } },
+    { id: 'emerytalna', term: 'Składka emerytalna', def: `${F.emerytalnaTotal} podstawy, płacona po połowie: ${F.emerytalnaEe} pracownik i ${F.emerytalnaEr} pracodawca. Pobiera się ją tylko do rocznego limitu trzydziestokrotności.` },
+    { id: 'rentowa', term: 'Składka rentowa', def: `${F.rentowaTotal} podstawy, podzielona nierówno: ${F.rentowaEe} płaci pracownik, ${F.rentowaEr} pracodawca. Ten sam roczny limit co przy emerytalnej.` },
+    { id: 'chorobowa', term: 'Składka chorobowa', def: `${F.chorobowa} podstawy, finansowana w całości przez ubezpieczonego. Na umowie o pracę obowiązkowa, na zleceniu dobrowolna. Daje prawo do zasiłku chorobowego, który zwykle wynosi ${F.sickRate} podstawy.`, link: { id: 'sick', text: 'kalkulator chorobowego' } },
+    { id: 'wypadkowa', term: 'Składka wypadkowa', def: `Płaci ją wyłącznie pracodawca. Stopa różni się między pracodawcami i mieści się w przedziale od ${F.wypadkowaMin} do ${F.wypadkowaMax}; kalkulator przyjmuje ${F.wypadkowa}, czyli stopę z przykładów ZUS.` },
+    { id: 'fp', term: 'Fundusz Pracy (FP)', def: `${F.fp} podstawy, płacone przez pracodawcę na podstawie ustawy budżetowej. Nie zmniejsza pensji netto, ale podnosi koszt zatrudnienia.`, link: { id: 'employer', text: 'koszt pracodawcy' } },
+    { id: 'fs', term: 'Fundusz Solidarnościowy (FS)', def: `${F.fs} podstawy, również po stronie pracodawcy. Razem z Funduszem Pracy daje ${F.fpfs}, i tak te dwie pozycje często występują łącznie w zestawieniach ZUS.` },
+    { id: 'fgsp', term: 'FGŚP', def: `Fundusz Gwarantowanych Świadczeń Pracowniczych: ${F.fgsp} podstawy, płacone przez pracodawcę. Z tego funduszu wypłaca się zaległe pensje, gdy pracodawca staje się niewypłacalny.` },
+    { id: 'zdrowotna', term: 'Składka zdrowotna', def: `${F.health} podstawy, którą jest brutto pomniejszone o składki społeczne pracownika. Pracownik nie odlicza jej od podatku. Przedsiębiorca na podatku liniowym płaci ${F.healthLiniowy} dochodu, nie mniej niż ${F.healthMin} miesięcznie.`, link: { id: 'health', text: 'składka zdrowotna w szczegółach' } },
+    { id: 'limit-30', term: 'Limit 30-krotności', def: `Roczny limit podstawy składek emerytalnej i rentowej: ${F.cap} w ${F.year} r. Po jego przekroczeniu te dwie składki przestają być pobierane do końca roku i netto rośnie.`, link: { id: 'cap', text: 'limit 30-krotności' } },
+    { id: 'ppk', term: 'PPK', def: `Pracownicze Plany Kapitałowe: dobrowolne oszczędzanie na emeryturę. Pracownik wpłaca ${F.ppkEe} brutto (dobrowolnie do ${F.ppkEeExtra} więcej), pracodawca ${F.ppkEr} (dobrowolnie do ${F.ppkErExtra}), państwo dopłaca ${F.ppkWelcome} na powitanie i ${F.ppkAnnual} rocznie.`, link: { id: 'ppk', text: 'kalkulator PPK' } },
+  ] },
+  { h: 'Podatek PIT i formularze', terms: [
+    { id: 'pit', term: 'PIT', def: `Podatek dochodowy od osób fizycznych. Według skali wynosi ${F.pitLow} do ${F.threshold} dochodu rocznie i ${F.pitHigh} od nadwyżki.`, link: { id: 'brackets', text: 'progi podatkowe' } },
+    { id: 'skala', term: 'Skala podatkowa', def: `Domyślny sposób opodatkowania z dwoma stawkami (${F.pitLow} i ${F.pitHigh}) i kwotą wolną. Obowiązuje każdego pracownika i zleceniobiorcę; przedsiębiorca może zamiast niej wybrać podatek liniowy albo ryczałt.` },
+    { id: 'zaliczka', term: 'Zaliczka na podatek', def: 'Część rocznego podatku, którą płatnik pobiera co miesiąc z wypłaty i przekazuje do urzędu skarbowego. Ostateczny podatek wylicza się dopiero w zeznaniu rocznym, które wyrównuje nadpłatę albo niedopłatę.' },
+    { id: 'kwota-wolna', term: 'Kwota wolna od podatku', def: `${F.freeAmount} dochodu rocznie, od których nie płaci się podatku. Technicznie realizuje ją kwota zmniejszająca podatek.`, link: { id: 'allowance', text: 'kwota wolna od podatku' } },
+    { id: 'kwota-zmniejszajaca', term: 'Kwota zmniejszająca podatek', def: `${F.reducingYear} rocznie, czyli ${F.pitLow} od kwoty wolnej. Pracodawca odejmuje od zaliczki 1/12 tej kwoty, ${F.reducingMonth}, jeśli złożysz mu PIT-2.` },
+    { id: 'pit-2', term: 'PIT-2', def: `Oświadczenie składane płatnikowi, żeby co miesiąc pomniejszał zaliczkę o ${F.reducingMonth}. Działa do odwołania; można je złożyć także na zleceniu i dziele.`, link: { id: 'pit2', text: 'PIT-2 w praktyce' } },
+    { id: 'pit-11', term: 'PIT-11', def: 'Informacja, którą płatnik (pracodawca, zleceniodawca, zamawiający) sporządza po zakończeniu roku dla podatnika i urzędu skarbowego: przychody, koszty, składki i pobrane zaliczki. Na jej podstawie wypełnia się zeznanie roczne.' },
+    { id: 'pit-37', term: 'PIT-37', def: 'Zeznanie roczne dla osób, które w roku uzyskały dochody wyłącznie za pośrednictwem płatnika (umowa o pracę, zlecenie, dzieło) opodatkowane według skali i nie prowadzą działalności gospodarczej.' },
+    { id: 'kup', term: 'Koszty uzyskania przychodu (KUP)', def: `Kwota odejmowana od przychodu przed naliczeniem podatku. Pracownik: ${F.kup} miesięcznie (${F.kupRaised} przy dojazdach z innej miejscowości). Zlecenie i dzieło: ${F.kupContract} przychodu, przy pracy twórczej ${F.kupAuthors}.`, link: { id: 'kup', text: 'koszty uzyskania przychodu' } },
+    { id: 'koszty-autorskie', term: 'Koszty autorskie 50 %', def: `Podwyższone koszty uzyskania (${F.kupAuthors}) od wynagrodzenia za przeniesienie praw autorskich. Łącznie w roku nie mogą przekroczyć ${F.kupAuthorsLimit}.`, link: { id: 'authors', text: 'koszty autorskie' } },
+    { id: 'ulga-dla-mlodych', term: 'Ulga dla młodych', def: `Zwolnienie z PIT przychodów do ${F.youthLimit} rocznie dla osób przed ukończeniem 26 lat, z umowy o pracę i zlecenia. Ulga dotyczy tylko podatku: składki pobiera się na zwykłych zasadach.`, link: { id: 'youth', text: 'ulga dla młodych' } },
+  ] },
+  { h: 'Umowy i działalność', terms: [
+    { id: 'umowa-o-prace', term: 'Umowa o pracę', def: `Stosunek pracy z Kodeksu pracy: pełne składki, pracownicze koszty uzyskania, płatny urlop i wynagrodzenie chorobowe od pracodawcy (${F.sickRate} przez pierwsze ${F.sickDays} dni choroby w roku).`, link: { id: 'home', text: 'kalkulator wynagrodzeń' } },
+    { id: 'zlecenie', term: 'Umowa zlecenie', def: `Umowa cywilna o wykonywanie usług. Składki emerytalna, rentowa i zdrowotna są obowiązkowe, chorobowa dobrowolna, koszty uzyskania wynoszą ${F.kupContract}. Uczeń lub student przed 26. rokiem życia nie płaci na zleceniu składek ZUS.`, link: { id: 'zlecenie', text: 'kalkulator umowy zlecenie' } },
+    { id: 'dzielo', term: 'Umowa o dzieło', def: `Umowa o konkretny rezultat (tekst, projekt, program). Kalkulator liczy ją bez składek ZUS i zdrowotnej, jak typową umowę z zamawiającym, który nie jest Twoim pracodawcą. Koszty uzyskania: ${F.kupContract} albo ${F.kupAuthors} przy przeniesieniu praw autorskich.`, link: { id: 'dzielo', text: 'kalkulator umowy o dzieło' } },
+    { id: 'b2b', term: 'B2B / JDG', def: `Współpraca w ramach jednoosobowej działalności gospodarczej: wystawiasz fakturę zamiast dostawać pensję, sam płacisz składki (pełny ZUS to ${F.b2bZusFull} miesięcznie z chorobową) i wybierasz formę opodatkowania.`, link: { id: 'b2b', text: 'kalkulator B2B' } },
+    { id: 'liniowy', term: 'Podatek liniowy', def: `${F.liniowy} od dochodu bez względu na jego wysokość, bez kwoty wolnej. Składka zdrowotna ${F.healthLiniowy}, a jej odliczenie jest ograniczone do ${F.liniowyLimit} rocznie.`, link: { id: 'liniowy', text: 'podatek liniowy' } },
+    { id: 'ryczalt', term: 'Ryczałt ewidencjonowany', def: `Podatek od przychodu, bez odliczania kosztów, ze stawką zależną od rodzaju działalności: na przykład ${ryczaltIt} dla programistów i ${ryczaltTrade} w handlu. Składka zdrowotna jest stała w trzech progach przychodu, od ${F.ryczaltBand1} miesięcznie.`, link: { id: 'ryczalt', text: 'ryczałt ewidencjonowany' } },
+    { id: 'preferencyjny', term: 'Preferencyjny ZUS', def: `Obniżone składki społeczne liczone od ${F.b2bBasePref} zamiast ${F.b2bBaseFull}. Łącznie ${F.b2bZusPref} miesięcznie z chorobową.`, link: { id: 'zusb2b', text: 'ZUS przedsiębiorcy' } },
+    { id: 'maly-zus-plus', term: 'Mały ZUS plus', def: `Ulga, w której podstawa składek społecznych przedsiębiorcy zależy od jego dochodu i mieści się między ${F.b2bBasePref} a ${F.b2bBaseFull}. Warunki skorzystania określa ZUS.` },
+    { id: 'ulga-na-start', term: 'Ulga na start', def: 'Zwolnienie nowego przedsiębiorcy ze składek na ubezpieczenia społeczne na początku działalności. Składka zdrowotna jest należna przez cały ten czas.', link: { id: 'zusb2b', text: 'składki przedsiębiorcy' } },
+  ] },
+];
+const count = groups.reduce((s, g) => s + g.terms.length, 0);
+const few = count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14);
+const nouns = `${count} ${few ? 'pojęcia' : 'pojęć'}`;
+const title = `Słownik płacowy ${F.year}: brutto, netto, ZUS, PIT i rodzaje umów`;
+const description = `${nouns} z paska wypłaty i umów na ${F.year} r.: od brutto i netto przez składki ZUS (${F.socialEe}) i PIT-2 po ryczałt i Mały ZUS plus, krótko, z aktualnymi stawkami.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('glossary', lang), path: route('glossary', lang) }])]}
+  breadcrumbs={[{ label: label('glossary', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Słownik wynagrodzeń, składek i podatku</h1>
+    <p class="lead">{nouns}, które pojawiają się na pasku wypłaty, w umowie i w kalkulatorze. Każda definicja jest krótka, a stawki pochodzą z tego samego pliku danych co obliczenia, więc zgadzają się z wynikiem kalkulatora na {F.year} r.</p>
+    <p class="text-sm">Przejdź do: {groups.map((g, i) => <>{i > 0 && ' · '}<a href={`#g${i + 1}`}>{g.h}</a></>)}</p>
+    {groups.map((g, i) => (
+      <section>
+        <h2 id={`g${i + 1}`}>{g.h}</h2>
+        <dl>
+          {g.terms.map((t) => (
+            <>
+              <dt id={t.id} class="font-semibold text-navy-900">{t.term}</dt>
+              <dd class="mb-4 ml-0">{t.def}{t.link && <> <a href={`${route(t.link.id, lang)}`}>Więcej: {t.link.text}</a>.</>}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+    ))}
+    <p>Brakuje jakiegoś pojęcia? Napisz przez stronę <a href={route('contact', lang)}>kontaktu</a>. Sposób liczenia opisuje <a href={route('method', lang)}>metodologia</a>.</p>
+  </div>
+</PageLayout>

@@ -1,0 +1,76 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, grossForNet } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const ratio = (g: number, n: number) => formatNumber(g / n, 3, lang);
+// Engine-computed table: gross needed for five net targets (typical month, PIT-2, 250 zł costs).
+const NETS = [4000, 5000, 6000, 8000, 10000];
+const rows = NETS.map((n) => { const g = grossForNet(n); const m = uop({ gross: g }); return [$(n), $(g), ratio(g, n), pct((g - n) / g, lang), $(m.er.cost)]; });
+const g4 = grossForNet(4000), g6 = grossForNet(6000), g7 = grossForNet(7000), g10 = grossForNet(10000);
+const m6 = uop({ gross: g6 });
+const share4 = pct((g4 - 4000) / g4, lang), share10 = pct((g10 - 10000) / g10, lang);
+const g6ppk = grossForNet(6000, { ppk: true }), g6raised = grossForNet(6000, { kup: 'raised' }), g6young = grossForNet(6000, { under26: true }), g6nopit2 = grossForNet(6000, { pit2: false });
+const y10 = uopYear({ gross: g10 });
+const dec10 = y10.months[11].net;
+const firstHigh = y10.months.find((x) => x.secondBracket);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const monthHigh = firstHigh ? MONTHS[firstHigh.month - 1] : 'December';
+const raiseNet = uop({ gross: g6 + 1000 }).net - m6.net;
+const raiseCost = uop({ gross: g6 + 1000 }).er.cost - m6.er.cost;
+const spread6 = g6nopit2 - g6young;
+const faqs = [
+  { q: 'A recruiter in Poland asks for my salary expectations. Should I give net or gross?', a: `Give a monthly gross figure for an employment contract (umowa o pracę), because that is what goes into the contract and what HR compares between candidates. If you want ${$(6000)} take-home, your expectation is about ${$(g6)} gross, assuming a PIT-2 form and the standard ${F.kup} costs. Net figures confuse the conversation: your take-home depends on age, PPK and commuting, which the employer does not know.` },
+  { q: 'How much extra gross do I need to take home PLN 1,000 more?', a: `More than PLN 1,000. Moving from ${$(6000)} to ${$(7000)} net means raising gross pay from ${$(g6)} to ${$(g7)}, a rise of ${$(g7 - g6)}. Every extra złoty loses ${F.socialEe} in employee ZUS, ${F.health} health contribution and ${F.pitLow} tax, while the fixed deductions (work costs and the tax-reducing amount) stay the same as your pay grows.` },
+  { q: 'Can I use this to convert net to gross for a mandate contract or B2B?', a: `No. It covers the employment contract only, where net and gross are linked by one fixed formula. On a mandate contract (umowa zlecenie) contributions depend on student status and other insurance, and on B2B the word "netto" usually means the invoice amount before VAT, not money in your account. Use the dedicated calculators and adjust the amount until the result matches.` },
+  { q: 'Why does my payslip show a different net than the calculator for the same gross?', a: `Usually one of three reasons: no PIT-2 on file (the tax advance is ${F.reducingMonth} higher), PPK membership (a ${F.ppkEe} deduction from gross), or allowances and deductions the calculator cannot see. Without PIT-2, a ${$(6000)} take-home needs ${$(g6nopit2)} gross. Also check whether your cumulative taxable income this year has already passed ${F.threshold}.` },
+];
+---
+<GuideLayout lang={lang} id="nettobrutto" breadcrumbLabel={label('nettobrutto', lang)} title={`Net to Gross Salary ${F.year}: Gross Pay for ${$(6000)} Take-Home`} h1={`Net to gross salary in Poland ${F.year}: the gross behind your take-home`}
+  description={`Net to gross salary ${F.year} for Polish employment contracts: ${$(6000)} take-home needs ${$(g6)} gross and ${$(10000)} needs ${$(g10)}. Enter your target net pay.`}
+  intro={`Type the amount you want in your bank account each month and the calculator runs Polish payroll in reverse to find the gross salary to ask for.`}
+  resume={`To take home ${$(6000)} a month on a Polish employment contract (umowa o pracę) in ${F.year}, you need ${$(g6)} gross; for ${$(10000)} net the figure is ${$(g10)}. The calculator searches for the gross salary at which every payroll deduction leaves exactly the net you typed: employee pension, disability and sickness contributions to ZUS (${F.socialEe} together), the ${F.health} health contribution and the ${F.pitLow} income tax advance reduced by ${F.reducingMonth} thanks to the PIT-2 form. The result describes a month before your cumulative taxable income passes ${F.threshold}, with standard work costs of ${F.kup}, no PPK pension plan and no under-26 relief. The ratio is not constant: at ${$(4000)} net, deductions take ${share4} of gross; at ${$(10000)} net they take ${share10}, because fixed allowances matter less as pay rises. Below you will find a table for five targets, variants with PPK or commuting, and advice on negotiating in gross terms.`}
+  faqs={faqs}
+  related={[{ href: route('home', lang), name: label('home', lang), description: 'The other direction: gross to net for every contract type.' }, { href: route('employer', lang), name: label('employer', lang), description: 'What the gross you ask for costs your employer.' }, { href: route('pit2', lang), name: 'PIT-2 form', description: `${F.reducingMonth} more each month once the form is filed.` }]}
+  sources={[src('pit_act', lang), src('zus_rates', lang), src('health_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Gross salary needed for common take-home targets</h2>
+  <p>Each row assumes PIT-2 is filed and work costs of {F.kup} apply, which matches most people with a single employer. The last column shows the full cost to the company, a useful number when you discuss the budget for a role.</p>
+  <ContentTable headers={['Net', 'Gross needed', 'Gross / net', 'Deductions as % of gross', 'Employer cost']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={2} />
+  <p>The multiplier in the third column climbs with every row. A rule of thumb such as "net times 1.4" overshoots for modest salaries and undershoots for high ones.</p>
+
+  <h2>Why the multiplier keeps rising</h2>
+  <p>If every deduction were a fixed percentage of gross pay, one conversion factor would do. Polish payroll does not work that way. Social contributions ({F.socialEe}) and the health contribution ({F.health} of gross minus those contributions) are proportional, but the tax advance is not: a flat {F.kup} of work costs comes off the taxable base, and a flat {F.reducingMonth} comes off the tax itself. Neither amount grows with your salary, so they shelter a large part of a {$(4000)} take-home and only a sliver of a {$(10000)} one.</p>
+  <p>The second reason only appears over a full year. The calculator models a month in which your whole taxable base sits in the first bracket. A gross of {$(g10)} gives {$(10000)} net in January, yet cumulative taxable income passes {F.threshold} in {monthHigh}. From then on the excess is taxed at {F.pitHigh}, and December's transfer drops to {$(dec10)}. If a stable take-home matters to you, negotiate with a margin or check the yearly average in the <a href={route('annual', lang)}>annual salary calculator</a>.</p>
+  <p>A third threshold affects high earners: once gross pay for the year passes {F.cap} (an average of {F.capMonthly} a month), pension and disability contributions stop and net pay rises. The monthly result here ignores that effect.</p>
+
+  <h2>Same net pay, different gross</h2>
+  <p>The widget shows the most common case. Your circumstances may call for a different gross to reach the same {$(6000)} take-home:</p>
+  <ul>
+    <li>no PIT-2 filed: {$(g6nopit2)} gross, since the employer does not subtract {F.reducingMonth} from the tax advance;</li>
+    <li>PPK at the basic rate: {$(g6ppk)} gross, because {F.ppkEe} leaves your pay and the employer's {F.ppkEr} counts as taxable income;</li>
+    <li>raised work costs of {F.kupRaised} for people commuting from another town: {$(g6raised)} gross;</li>
+    <li>under 26 with the youth relief: {$(g6young)} gross, until your income for the year passes {F.youthLimit}.</li>
+  </ul>
+  <p>The first and last variants are {$(spread6)} of gross apart for an identical bank transfer, which is exactly why a net expectation tells an employer so little.</p>
+
+  <h2>Negotiating: think in gross, check in net</h2>
+  <p>Job ads for employment contracts in Poland quote gross pay, and the contract states gross pay. Walk into the interview with a gross figure derived from the net you need. For {$(6000)} take-home that is {$(g6)} gross, and the position then costs the company {$(m6.er.cost)} a month including its own contributions.</p>
+  <p>That last number explains why raises feel harder to win than they should. An extra {$(1000)} gross leaves you about {$(raiseNet)} more at this salary level, while the employer's cost rises by {$(raiseCost)}. Asking for a specific net amount really means asking for a much larger budget. The <a href={route('employer', lang)}>employer cost calculator</a> breaks it down.</p>
+  <p>On B2B offers "netto" means something else entirely: the invoice value before VAT, out of which you pay ZUS, health contribution and tax yourself. {$(10000)} net on an invoice and {$(10000)} net on a payslip are very different incomes. See <a href={route('compare', lang)}>B2B vs employment contract</a> for the comparison.</p>
+
+  <h2>What this calculator leaves out</h2>
+  <p>It converts net to gross for one employment contract with one employer. Bonuses, overtime supplements and benefits in kind such as a company car or private medical cover all increase taxable income and are not included. Neither are bailiff deductions (komornik) or union dues that may appear on your payslip (pasek wypłaty). Rounding follows Polish payroll practice, with contributions to the grosz and the tax base and advance to whole złoty, so a difference of a few grosze against your actual pay is normal.</p>
+
+  <h2>What your requested salary costs the employer</h2>
+  <p>Enter the gross from the first calculator to see the full cost of employment, with or without PPK.</p>
+  <div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('employer', lang)} /></div>
+</GuideLayout>

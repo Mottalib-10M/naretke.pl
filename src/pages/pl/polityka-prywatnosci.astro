@@ -1,0 +1,56 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import LegalIdentity from '../../components/LegalIdentity.astro';
+import { CONTACT_EMAIL, LEGAL, SITE_URL, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const title = `Polityka prywatności ${F.year}: bez cookies, obliczenia u Ciebie`;
+const description = `RODO w praktyce: w ${F.year} r. nie mamy cookies, analityki ani reklam; kalkulator liczy w Twojej przeglądarce. Co widzi hosting, ile trzymamy e-maile, Twoje prawa.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('privacy', lang), path: route('privacy', lang) }])]}
+  breadcrumbs={[{ label: label('privacy', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Polityka prywatności</h1>
+    <p class="lead">Krótko: kalkulator nie wysyła Twoich danych nigdzie, serwis nie używa plików cookies, narzędzi analitycznych ani reklam. Poniżej szczegóły wymagane przez RODO (rozporządzenie UE 2016/679) dla serwisu {SITE_URL}.</p>
+
+    <h2>1. Administrator danych</h2>
+    <LegalIdentity lang={lang} />
+    <p>W sprawach ochrony danych piszesz na ten sam adres: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Administrator nie powołał inspektora ochrony danych, bo przy tej skali przetwarzania RODO tego nie wymaga.</p>
+
+    <h2>2. Kalkulator nie wysyła niczego</h2>
+    <p>Wszystkie obliczenia wykonuje Twoja przeglądarka. Kwota brutto, rodzaj umowy, zaznaczone ulgi (PIT-2, ulga dla młodych), PPK czy status studenta <strong>nie są przesyłane na żaden serwer</strong>, nie są zapisywane i nie są łączone z żadnym identyfikatorem. Nie ma kont ani rejestracji.</p>
+    <p>Jedna rzecz, o której warto wiedzieć: kalkulator zapisuje wpisane wartości w adresie strony, żeby dało się wysłać komuś gotowe wyliczenie. Taki link zawiera Twoje dane (na przykład kwotę brutto), więc przekazuj go tylko osobom, którym chcesz je pokazać. Adres zostaje też w historii Twojej przeglądarki.</p>
+
+    <h2>3. Co faktycznie jest przetwarzane</h2>
+    <h3>Dziennik serwera u dostawcy hostingu</h3>
+    <p>Serwis jest hostowany w usłudze GitHub Pages (GitHub, Inc.). Jak każdy serwer, przy każdym wejściu na stronę GitHub otrzymuje adres IP odwiedzającego i techniczne dane żądania. Według dokumentacji GitHub adresy IP odwiedzających są rejestrowane i przechowywane ze względów bezpieczeństwa. My nie mamy dostępu do tych dzienników i z nich nie korzystamy. Podstawą jest prawnie uzasadniony interes (art. 6 ust. 1 lit. f RODO): udostępnienie strony i ochrona przed nadużyciami. Okres przechowywania określa GitHub w swojej <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="nofollow noopener" target="_blank">polityce prywatności</a>.</p>
+    <h3>Wiadomości e-mail</h3>
+    <p>Jeśli do nas napiszesz, przetwarzamy Twój adres e-mail i treść wiadomości, żeby odpowiedzieć i ewentualnie poprawić błąd w obliczeniach (art. 6 ust. 1 lit. f RODO). Korespondencję przechowujemy nie dłużej niż trzy lata od ostatniej wymiany wiadomości.</p>
+    <h3>Analityka i reklamy</h3>
+    <p>Obecnie serwis <strong>nie używa żadnych narzędzi analitycznych</strong> (ani Google Analytics, ani Microsoft Clarity, ani innych) i <strong>nie wyświetla reklam</strong>. Strona nie ładuje też zewnętrznych czcionek ani skryptów z innych domen.</p>
+
+    <h2>4. Komu przekazujemy dane</h2>
+    <p>Nie sprzedajemy, nie wynajmujemy i nie udostępniamy danych osobowych w celach marketingowych. Odbiorcą danych technicznych jest wyłącznie dostawca hostingu, a wiadomości e-mail przechodzą przez dostawcę naszej poczty, który przetwarza je na nasze zlecenie.</p>
+
+    <h2>5. Przekazywanie poza Europejski Obszar Gospodarczy</h2>
+    <p>GitHub, Inc. ma siedzibę w Stanach Zjednoczonych, więc dane techniczne żądań mogą być przetwarzane poza EOG. GitHub opisuje w swojej polityce prywatności mechanizmy transferu przewidziane w RODO, na których się opiera.</p>
+
+    <h2>6. Twoje prawa</h2>
+    <p>Masz prawo dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, przeniesienia oraz prawo sprzeciwu wobec przetwarzania opartego na prawnie uzasadnionym interesie (art. 15–21 RODO). Napisz na <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>; odpowiemy w ciągu miesiąca, bezpłatnie. Ponieważ nie prowadzimy kont użytkowników, zwykle nie mamy żadnych danych, które pozwalałyby Cię zidentyfikować, poza ewentualną korespondencją, i powiemy Ci to wprost.</p>
+    <p>Masz też prawo wnieść skargę do organu nadzorczego. Administrator ma siedzibę we Francji, więc organem wiodącym jest {LEGAL.supervisoryAuthority} (<a href={LEGAL.supervisoryAuthorityUrl} rel="nofollow noopener" target="_blank">{LEGAL.supervisoryAuthorityUrl.replace('https://', '')}</a>). Jeśli mieszkasz w Polsce, możesz złożyć skargę także do Prezesa Urzędu Ochrony Danych Osobowych (<a href="https://uodo.gov.pl" rel="nofollow noopener" target="_blank">uodo.gov.pl</a>), zgodnie z art. 77 RODO.</p>
+
+    <h2>7. Brak profilowania</h2>
+    <p>Wynik kalkulatora to obliczenie, o które sam prosisz, wykonane na Twoim urządzeniu z Twoich danych. Nie wywołuje skutków prawnych i nie jest zautomatyzowaną decyzją w rozumieniu art. 22 RODO. Nie tworzymy profili użytkowników.</p>
+
+    <h2>8. Zmiany tej polityki</h2>
+    <p>Jeśli kiedyś dodamy narzędzie do mierzenia ruchu albo reklamy, najpierw zaktualizujemy tę politykę i stronę o <a href={route('cookies', lang)}>cookies</a>, a dopiero potem włączymy narzędzie. Tam, gdzie prawo wymaga zgody, zostaniesz o nią zapytany, zanim cokolwiek zostanie zapisane na Twoim urządzeniu. Połączenie ze stroną jest szyfrowane (HTTPS), a serwis nie prowadzi bazy danych użytkowników.</p>
+    <p>Wersja z dnia {updated}.</p>
+  </div>
+</PageLayout>

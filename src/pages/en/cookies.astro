@@ -1,0 +1,41 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { CONTACT_EMAIL, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const title = `Cookies policy ${F.year}: this site stores no cookies at all`;
+const description = `In ${F.year} KalkulatorWynagrodzen.pl stores no cookies, nothing in localStorage, runs no analytics or ads, so it shows no consent banner. How to check it yourself.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}
+  breadcrumbs={[{ label: label('cookies', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Cookies and similar technologies</h1>
+    <p class="lead">This page supplements the <a href={route('privacy', lang)}>privacy policy</a>. The answer is short: at present the site stores no cookies on your device.</p>
+
+    <h2>Where things stand today</h2>
+    <ul>
+      <li><strong>Strictly necessary cookies:</strong> none. The calculator works without them.</li>
+      <li><strong>Analytics cookies:</strong> none. We use no Google Analytics, no Microsoft Clarity and no other traffic measurement tool.</li>
+      <li><strong>Advertising cookies:</strong> none. The site shows no ads.</li>
+      <li><strong>Browser storage (localStorage, sessionStorage):</strong> the calculator does not use it. Your figures are not saved even locally.</li>
+    </ul>
+    <p>That is why there is no cookie consent banner: there is nothing to consent to. The widget embedded on other sites behaves the same way and stores nothing either.</p>
+
+    <h2>What about the link with my result?</h2>
+    <p>The calculator writes your inputs into the page address so that a finished calculation can be sent to someone. That is not a cookie: nothing stays on your device beyond ordinary browsing history, and the link only carries your figures if you copy it and pass it on yourself.</p>
+
+    <h2>How to check for yourself</h2>
+    <p>In Chrome, Edge or Firefox, open the developer tools (F12), go to the “Application” or “Storage” tab and select “Cookies” for this domain. The list is empty. The “Network” tab will also show that the page makes no connection to analytics or advertising servers.</p>
+
+    <h2>If this ever changes</h2>
+    <p>Should we add an audience measurement tool or advertising, we will first update this page and the <a href={route('privacy', lang)}>privacy policy</a>, listing each cookie, its purpose and how long it lasts. Tools that require consent will only start once you have given it through a banner, and you will be able to withdraw it at any time.</p>
+    <p>Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Version dated {updated}.</p>
+  </div>
+</PageLayout>

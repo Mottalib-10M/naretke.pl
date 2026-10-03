@@ -1,0 +1,66 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, secondBracketMonth, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const mon = (m: number | null) => (m ? MONTHS[m - 1] : 'not this year');
+const GS = [6000, 8000, 10000, 12000, 15000, 20000, 25000, 30000];
+const rows = GS.map((g) => { const y = uopYear({ gross: g }); return [$(g), $(y.total.net), $(y.months[0].net), $(y.months[11].net), mon(secondBracketMonth({ gross: g })), mon(capMonth(g))]; });
+const y15 = uopYear({ gross: 15000 }); const m15 = secondBracketMonth({ gross: 15000 }) ?? 12;
+const y30 = uopYear({ gross: 30000 }); const b30 = secondBracketMonth({ gross: 30000 }) ?? 12; const c30 = capMonth(30000) ?? 12;
+const low30 = y30.months[b30].net, after30 = y30.months[11].net;
+const y10 = uopYear({ gross: 10000 });
+const noPit2Refund = uopYear({ gross: 8000, pit2: false }).total.pit - uopYear({ gross: 8000 }).total.pit;
+const yA = uopYear({ gross: 8000 }), yB = uopYear({ gross: 8000, pit2: false });
+// Work costs: each payer deducts PLN 3,000 a year, but several contracts are capped at PLN 4,500 (PIT Act art. 22(2)(2)).
+const base2 = yA.total.taxBase + yB.total.taxBase + (2 * P.pit.kup_employee_year - P.pit.kup_multi_year);
+const due2 = Math.round(Math.min(base2, P.pit.threshold) * P.pit.rate_low + Math.max(0, base2 - P.pit.threshold) * P.pit.rate_high - P.pit.tax_reducing_amount_year);
+const extra2 = due2 - (yA.total.pit + yB.total.pit);
+const faqs = [
+  { q: 'My salary is the same every month, so why did my autumn payments shrink?', a: `Almost certainly not a payroll error. Polish tax advances are calculated on the taxable base accumulated since January. Once it passes ${F.threshold}, the excess is taxed at ${F.pitHigh} instead of ${F.pitLow}. On ${$(15000)} gross this happens in ${MONTHS[m15 - 1]}, and net pay falls from ${$(y15.months[0].net)} to ${$(y15.months[11].net)} by December. The count restarts from zero in January.` },
+  { q: 'I have two employment contracts at PLN 8,000 each. Will I owe tax at the end of the year?', a: `Very likely. Each employer calculates advances as if it were your only one, so both apply ${F.pitLow} all year. Your combined taxable base is ${$(base2)}, above the ${F.threshold} threshold, and work costs for several contracts are capped at ${F.kupMulti} a year. With PIT-2 filed at one employer you will pay roughly ${$(extra2)} extra on your PIT-37 return, unless you ask one employer to withhold more.` },
+  { q: 'What is the annual net on PLN 10,000 gross a month, and is every month the same?', a: `On ${$(10000)} gross a month, with PIT-2 and ${F.kup} work costs, annual net pay is ${$(y10.total.net)}. Every month is identical in this case, because the cumulative taxable base never reaches ${F.threshold} and the second bracket never applies. Differences start at around ${$(12000)} gross, where December already comes in below January.` },
+];
+---
+<GuideLayout lang={lang} id="annual" breadcrumbLabel={label('annual', lang)} title={`Annual Salary Poland ${F.year}: Your Net Pay Month by Month`} h1={`Annual salary in Poland ${F.year}: your net pay over the whole year`}
+  description={`Annual salary in Poland ${F.year}: ${$(15000)} gross a month gives ${$(y15.total.net)} net for the year, but December pays less than January. See net pay for every month.`}
+  intro={`The calculator turns an employment contract into twelve consecutive payslips, because on higher salaries net pay changes during the year.`}
+  resume={`On ${$(15000)} gross a month you will take home ${$(y15.total.net)} in ${F.year}, but not in twelve equal parts: from January to ${MONTHS[m15 - 2] ?? 'December'} each transfer is ${$(y15.months[0].net)}, and by December it is down to ${$(y15.months[11].net)}. The reason is that Polish income tax is calculated cumulatively. The tax advance is ${F.pitLow} until the sum of taxable income since January passes ${F.threshold}; after that, the excess is taxed at ${F.pitHigh}. Very high salaries also see the opposite effect: once gross pay for the year exceeds ${F.cap}, pension and disability contributions stop and net pay rises again late in the year. Up to roughly ${$(10000)} gross every month is the same. The calculator shows each month separately, and the table below sets out annual net, January and December for eight salary levels, with PIT-2, ${F.kup} work costs and no PPK.`}
+  faqs={faqs}
+  related={[{ href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh}: how the ${F.threshold} threshold works.` }, { href: route('cap', lang), name: label('cap', lang), description: `The ${F.cap} cap: when pension and disability contributions stop.` }, { href: route('bonus', lang), name: label('bonus', lang), description: 'What a bonus leaves you in January and in December.' }]}
+  sources={[src('pit_act', lang), src('cap', lang), src('zus_rates', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="uop" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
+    <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('home', lang)} /></div>
+  </div>
+
+  <h2>Annual net pay for eight salary levels</h2>
+  <p>The table assumes the same salary all year with one employer. "Second bracket from" names the first month in which part of the taxable base falls into the {F.pitHigh} rate; "ZUS cap" names the month in which cumulative gross passes {F.cap}.</p>
+  <ContentTable headers={['Monthly gross', 'Net for the year', 'Net in January', 'Net in December', 'Second bracket from', 'ZUS cap']} align={['r', 'r', 'r', 'r', 'l', 'l']} rows={rows} highlightRow={4} />
+
+  <h2>Why December differs from January</h2>
+  <p>Polish tax advances are not worked out on each salary in isolation but on the running total since the start of the year. Every month the employer adds the new taxable base to the previous ones and checks whether the total has passed {F.threshold}. In the crossover month part of the base is taxed at {F.pitLow} and part at {F.pitHigh}, so that single transfer sits somewhere in between. From the following month the whole base falls into the higher bracket.</p>
+  <p>At {$(30000)} gross both effects show up. The second bracket starts in {MONTHS[b30 - 1]} and net pay drops to {$(low30)}. In {MONTHS[c30 - 1]} cumulative gross passes the {F.cap} cap, so pension ({F.emerytalnaEe}) and disability ({F.rentowaEe}) contributions stop leaving your pay and December's net climbs to {$(after30)}. Sickness and health contributions carry on, since the cap does not cover them.</p>
+  <p>For budgeting, the monthly average of your annual net is a safer guide than January's transfer. Anyone taking a mortgage or signing a lease sized to the January payslip may find themselves short in the autumn.</p>
+
+  <h2>From monthly advances to PIT-37: the annual return</h2>
+  <p>The monthly advances are prepayments. After the year ends, your employer gives you a PIT-11 statement with total income, contributions and advances withheld, and you settle with the tax office (urząd skarbowy) on a PIT-37 return. With one employment contract, a steady salary and PIT-2 filed, the tax due on the return usually matches the advances almost exactly, so any difference comes from rounding or reliefs your employer did not know about.</p>
+  <p>Larger gaps appear in three situations. Without PIT-2 the employer withholds more and the overpayment comes back on the return: {$(noPit2Refund)} for the year on {$(8000)} gross. With several employment contracts each employer applies the first bracket as if it were the only one, while the return adds the incomes together and caps work costs at {F.kupMulti}; two jobs at {$(8000)} leave roughly {$(extra2)} to pay. And after a job change the new employer starts the threshold count from zero, so you may owe extra even with one salary at a time.</p>
+  <p>The calculator shows advances withheld by one employer. It does not include reliefs claimed only on the return, or income from other sources that is added to your salary on PIT-37.</p>
+
+  <h2>Reading the year-to-date column on your payslip</h2>
+  <p>Many Polish payroll systems print a cumulative column on the payslip (pasek wypłaty), labelled "narastająco" or "od początku roku". It is worth checking from the autumn onwards: when the total taxable base approaches {F.threshold}, the next transfer will be lower. The same column shows cumulative contribution-bearing income, in other words how far you are from the {F.cap} cap. If you change jobs mid-year, your new employer cannot see those totals and starts from zero; everything is reconciled on PIT-37.</p>
+
+  <h2>When pension and disability contributions stop</h2>
+  <p>On a high salary, check which month you cross the annual cap and how much your transfer rises when you do.</p>
+  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('cap', lang)} /></div>
+</GuideLayout>

@@ -1,0 +1,79 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const T = P.pit;
+// Netto z kosztami podstawowymi i podwyższonymi, miesięcznie i za cały rok (moteur).
+const rows = [P.minimum_wage.monthly, 7000, 10000, 15000].map((g) => {
+  const a = uop({ gross: g }), b = uop({ gross: g, kup: 'raised' });
+  const ya = uopYear({ gross: g }).total.net, yb = uopYear({ gross: g, kup: 'raised' }).total.net;
+  return [$(g), $(a.net), $(b.net), $(b.net - a.net), $(yb - ya)];
+});
+const gapLow = $((T.kup_employee_raised_month - T.kup_employee_month) * T.rate_low);
+const gapHigh = $((T.kup_employee_raised_month - T.kup_employee_month) * T.rate_high);
+const y15a = uopYear({ gross: 15000 }).total.net, y15b = uopYear({ gross: 15000, kup: 'raised' }).total.net;
+// Dwie umowy o pracę: każdy płatnik stosuje koszty miesięczne, limit roczny jest wspólny.
+const excess = 2 * T.kup_employee_year - T.kup_multi_year, excessTax = excess * T.rate_low;
+const excessR = 2 * T.kup_employee_raised_year - T.kup_multi_raised_year, excessRTax = excessR * T.rate_low;
+const k7 = uop({ gross: 7000 });
+const z = zlecenie({ gross: 5000 }), dz = dzielo({ gross: 5000 });
+const quarter = uop({ gross: P.minimum_wage.monthly / 4 });
+const faqs = [
+  { q: `Mieszkam pod miastem i dojeżdżam do pracy. Jak dostać ${F.kupRaised} kosztów zamiast ${F.kup}?`, a: `Złóż pracodawcy pisemne oświadczenie, że Twoje miejsce stałego lub czasowego zamieszkania leży poza miejscowością, w której jest zakład pracy, i że nie dostajesz dodatku za rozłąkę (art. 22 ust. 2 pkt 3 ustawy o PIT). Od tego momentu płatnik odlicza ${F.kupRaised} miesięcznie zamiast ${F.kup}, najwyżej ${F.kupRaisedYear} w roku. Ustawa nie mówi o kilometrach ani bilecie; liczy się miejscowość.` },
+  { q: `Mam dwie umowy o pracę. Czy każdy pracodawca odliczy mi ${F.kup} kosztów?`, a: `W praktyce każdy płatnik stosuje koszty miesięczne, ale roczny limit przy kilku stosunkach pracy wynosi łącznie ${F.kupMulti} (przy dojazdach ${F.kupMultiRaised}). Dwaj pracodawcy odliczą razem ${$(2 * T.kup_employee_year)}, czyli o ${$(excess)} za dużo. W zeznaniu rocznym przyjmiesz limit i dopłacisz około ${$(excessTax)} podatku w pierwszym progu. Możesz temu zapobiec wnioskiem do jednego z płatników o niestosowanie kosztów (art. 32 ust. 6).` },
+  { q: 'Czy pracownik na ćwierć etatu ma niższe koszty uzyskania przychodu?', a: `Nie. Koszty pracownicze są kwotą stałą, niezależną od wymiaru etatu: ${F.kup} miesięcznie także przy ćwierć etatu. Ograniczenie jest jedno: koszty nie mogą przekroczyć przychodu pomniejszonego o składki, więc podstawa opodatkowania nie spadnie poniżej zera. Przy płacy minimalnej na ćwierć etatu brutto wynosi ${$(quarter.gross)}, a na rękę zostaje ${$(quarter.net)}.` },
+  { q: `Od jakiej kwoty liczy się ${F.kupContract} kosztów na umowie zlecenie?`, a: `Od przychodu pomniejszonego o składki ZUS potrącone przez zleceniodawcę, a nie od pełnego brutto (art. 22 ust. 9 pkt 4). Przy zleceniu na ${$(5000)} brutto składki społeczne wynoszą ${$(z.social)}, więc koszty to ${$(z.kup)}. Na umowie o dzieło bez składek ${F.kupContract} liczy się od całej kwoty: przy ${$(5000)} daje to ${$(dz.kup)}.` },
+  { q: 'Czy mogę zrezygnować z kosztów pracowniczych na pasku?', a: `Tak. Na pisemny wniosek pracownika płatnik liczy zaliczki bez miesięcznych kosztów ${F.kup} lub ${F.kupRaised} (art. 32 ust. 6 ustawy o PIT). Zaliczki rosną wtedy o ${$(T.kup_employee_month * T.rate_low)} miesięcznie w pierwszym progu, ale prawo do kosztów nie przepada: w zeznaniu rocznym odliczysz je w wysokości ustawowej. Robi się tak głównie przy kilku etatach, żeby uniknąć dopłaty.` },
+];
+---
+<GuideLayout lang={lang} id="kup" breadcrumbLabel={label('kup', lang)} title={`Koszty uzyskania przychodu ${F.year}: ${F.kup}, ${F.kupRaised} i ${F.kupContract}`} h1={`Koszty uzyskania przychodu w ${F.year} r.`}
+  description={`Koszty uzyskania przychodu ${F.year}: ${F.kup} miesięcznie na etacie, ${F.kupRaised} przy dojazdach, limity ${F.kupYear} i ${F.kupMulti} przy kilku umowach, ${F.kupContract} na zleceniu.`}
+  intro={`Koszty uzyskania przychodu to kwota, którą płatnik odejmuje od Twojego przychodu przed policzeniem podatku: na etacie ryczałtem, na zleceniu i dziele procentem.`}
+  resume={`Na umowie o pracę koszty uzyskania przychodu wynoszą w ${F.year} r. ${F.kup} miesięcznie, najwyżej ${F.kupYear} w roku. Jeśli mieszkasz poza miejscowością, w której jest zakład pracy, i nie dostajesz dodatku za rozłąkę, przysługują koszty podwyższone: ${F.kupRaised} miesięcznie, ${F.kupRaisedYear} rocznie. Przy kilku umowach o pracę jednocześnie limity roczne wynoszą łącznie ${F.kupMulti} albo ${F.kupMultiRaised}. Koszty nie są wydatkiem, który trzeba udokumentować, tylko ustawowym ryczałtem, który zmniejsza podstawę opodatkowania. Różnica między ${F.kup} a ${F.kupRaised} to ${gapLow} podatku miesięcznie w pierwszym progu i ${gapHigh} w drugim. Na umowie zlecenie i o dzieło koszty wynoszą ${F.kupContract} przychodu (na zleceniu po odjęciu składek ZUS), a przy pracy twórczej z przeniesieniem praw autorskich ${F.kupAuthors}, z rocznym limitem ${F.kupAuthorsLimit}. Mini-kalkulator pokazuje, ile daje Ci wyższy ryczałt.`}
+  faqs={faqs}
+  related={[{ href: route('authors', lang), name: label('authors', lang), description: `Kiedy przysługuje ${F.kupAuthors} i jak działa limit ${F.kupAuthorsLimit}.` }, { href: route('pit2', lang), name: 'PIT-2', description: `Drugie oświadczenie, które obniża zaliczkę o ${F.reducingMonth}.` }, { href: route('home', lang), name: 'Kalkulator wynagrodzeń', description: 'Netto z kosztami podstawowymi lub podwyższonymi.' }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-chrome><MiniSim client:load kind="kup" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Cztery kwoty z art. 22 ust. 2: ryczałt, nie rachunki</h2>
+  <p>Pracownik nie zbiera paragonów za paliwo ani biletów miesięcznych, żeby mieć koszty. Ustawa o PIT przyjmuje je ryczałtem, w czterech wariantach. Przy jednym stosunku pracy to {F.kup} miesięcznie i {F.kupYear} rocznie. Przy kilku stosunkach pracy jednocześnie obowiązuje łączny limit {F.kupMulti} rocznie. Dla osób dojeżdżających z innej miejscowości kwoty rosną do {F.kupRaised} miesięcznie i {F.kupRaisedYear} rocznie, a przy kilku etatach i dojazdach do {F.kupMultiRaised}.</p>
+  <p>Te same kwoty obowiązują przy stosunku służbowym, spółdzielczym stosunku pracy i pracy nakładczej. Nie zależą od wynagrodzenia, wieku ani stażu: prezes zarządu na etacie i stażysta mają ten sam ryczałt. Nie zależą też od wymiaru czasu pracy, co ma znaczenie przy niskich pensjach. Jedyne ograniczenie miesięczne polega na tym, że koszty nie mogą zrobić z podstawy opodatkowania liczby ujemnej.</p>
+  <p>Na pasku wypłaty koszty widać zwykle w osobnym wierszu „koszty uzyskania przychodu” albo w opisie podstawy opodatkowania. Jeśli widnieje tam {F.kup}, a od lat dojeżdżasz z innej gminy, prawdopodobnie nikt nie dostał od Ciebie oświadczenia.</p>
+
+  <h2>Gdzie koszty wchodzą do rachunku zaliczki</h2>
+  <p>Koszty nie zmniejszają pensji, tylko podstawę, od której liczy się podatek. Przy {$(7000)} brutto płatnik odejmuje najpierw składki społeczne pracownika, {$(k7.social)}, potem koszty, {$(k7.kup)}, i dopiero od tego, co zostanie, po zaokrągleniu do pełnych złotych, czyli od {$(k7.taxBase)}, liczy {F.pitLow}. Od wyniku odejmuje jeszcze {F.reducingMonth}, jeśli masz złożony PIT-2. Zaliczka wynosi w tym przykładzie {$(k7.pit)}.</p>
+  <p>Z tego wynika prosta zasada: każda złotówka kosztów jest warta tyle, ile Twoja stawka podatku. W pierwszym progu to {F.pitLow} kwoty kosztów, w drugim {F.pitHigh}. Koszty nie wpływają natomiast na składki ZUS ani, poza bardzo niskimi pensjami, na składkę zdrowotną. Dlatego zmiana z {F.kup} na {F.kupRaised} nie rusza żadnego innego wiersza na pasku poza zaliczką i kwotą netto.</p>
+
+  <h2>Kiedy przysługuje {F.kupRaised}: warunek „dojeżdżającego”</h2>
+  <p>Art. 22 ust. 2 pkt 3 stawia dwa warunki. Pierwszy: miejsce stałego lub czasowego zamieszkania pracownika jest położone poza miejscowością, w której znajduje się zakład pracy. Drugi: pracownik nie dostaje dodatku za rozłąkę. Przepis nie wymaga, żebyś codziennie jeździł, nie określa minimalnej odległości i nie pyta o środek transportu. Osoba mieszkająca tuż za granicą miasta spełnia warunek, ktoś mieszkający na drugim końcu tego samego dużego miasta już nie.</p>
+  <p>Płatnik nie sprawdza tego sam. Zgodnie z art. 32 ust. 7 zaczyna stosować podwyższone koszty dopiero po Twoim oświadczeniu, że warunek jest spełniony. Jeśli się przeprowadzisz do miejscowości, w której pracujesz, oświadczenie przestaje być prawdziwe i trzeba je skorygować, bo za zaniżone zaliczki odpowiadasz Ty.</p>
+  <ContentTable headers={['Brutto', `Netto przy ${F.kup}`, `Netto przy ${F.kupRaised}`, 'Różnica miesięcznie', 'Różnica w roku']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Wyższe koszty obniżają podstawę opodatkowania o {$(T.kup_employee_raised_month - T.kup_employee_month)}, a podatek o tę kwotę razy stawkę. Stąd {gapLow} miesięcznie, dopóki jesteś w pierwszym progu. Przy {$(15000)} brutto część roku wpada w drugi próg, gdzie ta sama różnica w kosztach jest warta {gapHigh} miesięcznie, więc roczny zysk rośnie do {$(y15b - y15a)}. To niewiele, ale za darmo: wystarczy jedna kartka papieru.</p>
+
+  <h2>Kilka umów o pracę i limity {F.kupMulti} lub {F.kupMultiRaised}</h2>
+  <p>Każdy pracodawca widzi tylko swoją umowę, więc co miesiąc stosuje pełne {F.kup}. Przy dwóch etatach przez cały rok płatnicy odliczą razem {$(2 * T.kup_employee_year)}, a limit z art. 22 ust. 2 pkt 2 to {F.kupMulti}. Nadwyżkę, {$(excess)}, wyrównasz w zeznaniu rocznym, co w pierwszym progu oznacza około {$(excessTax)} dopłaty. Przy kosztach podwyższonych u obu pracodawców nadwyżka wynosi {$(excessR)}, a dopłata około {$(excessRTax)}.</p>
+  <p>Kwoty nie są duże, ale zaskakują osoby, które spodziewały się zwrotu. Jeśli chcesz uniknąć dopłaty, możesz złożyć jednemu z pracodawców wniosek o liczenie zaliczek bez miesięcznych kosztów (art. 32 ust. 6). Zaliczki u niego wzrosną, a w zeznaniu wykażesz koszty do wysokości limitu. Ta sama logika dotyczy kwoty zmniejszającej podatek, którą przy kilku płatnikach dzieli się w oświadczeniu <a href={route('pit2', lang)}>PIT-2</a>.</p>
+  <p>Limit łączny dotyczy umów trwających równocześnie. Jeśli zmieniasz pracę w trakcie roku i jeden etat kończy się, zanim zacznie się drugi, pracujesz u kolejnych płatników po sobie, a nie jednocześnie, i każdy miesiąc ma swoje {F.kup}.</p>
+
+  <h2>Zlecenie i dzieło: {F.kupContract} zamiast stałej kwoty</h2>
+  <p>Przy umowie zlecenie i o dzieło nie ma ryczałtu kwotowego. Art. 22 ust. 9 pkt 4 przewiduje {F.kupContract} przychodu, z tym że na zleceniu liczy się je od kwoty pomniejszonej o składki społeczne potrącone przez zleceniodawcę. Przy zleceniu na {$(5000)} brutto składki to {$(z.social)}, a koszty {$(z.kup)}. Umowa o dzieło zwykle nie podlega składkom, więc ten sam procent liczy się od pełnych {$(5000)}: koszty wynoszą {$(dz.kup)}.</p>
+  <p>Procent działa w obie strony. Przy dużych umowach koszty zleceniobiorcy są wielokrotnie wyższe niż {F.kup} pracownika, przy drobnych mniejsze. Wyjątek stanowią umowy do {F.smallContract} zawarte z osobą, która nie jest pracownikiem płatnika: tu podatek jest zryczałtowany i kosztów nie odlicza się wcale. Pełne zestawienie obu umów, ze składkami i netto, znajdziesz w poradniku <a href={route('zlecdzielo', lang)}>zlecenie czy dzieło</a>.</p>
+
+  <h2>Koszty autorskie {F.kupAuthors} w skrócie</h2>
+  <p>Jeśli w ramach umowy o pracę, zlecenia lub dzieła tworzysz utwór i przenosisz na płatnika prawa autorskie, do wynagrodzenia za tę część pracy stosuje się koszty {F.kupAuthors} zamiast ryczałtu czy {F.kupContract}. Roczny limit tych kosztów to {F.kupAuthorsLimit}, czyli górna granica pierwszego progu skali. Na etacie dotyczy to tylko tej części pensji, która jest wynagrodzeniem za przeniesienie praw; reszta zachowuje zwykłe {F.kup}.</p>
+  <p>To osobny temat, z własnymi pułapkami: kto może z niego korzystać, jak dzielić pensję i co dzieje się po przekroczeniu limitu. Opisuje go poradnik <a href={route('authors', lang)}>o kosztach autorskich</a>, a kalkulator poniżej pozwala sprawdzić efekt na własnej pensji.</p>
+
+  <div data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('authors', lang)} /></div>
+
+  <h2>Koszty przy uldze dla młodych i w zeznaniu rocznym</h2>
+  <p>Osoba przed 26. urodzinami, której przychód korzysta z ulgi dla młodych, nie płaci podatku od zwolnionej części, więc koszty nie mają od czego być odjęte. Art. 22 ust. 3b mówi wprost, że przy zwolnieniu koszty pracownicze i koszty zlecenia stosuje się najwyżej do wysokości tej części przychodu, która podlega opodatkowaniu. Koszty zaczynają realnie działać dopiero od miesiąca, w którym wyczerpiesz limit zwolnienia; więcej o tym w poradniku o <a href={route('youth', lang)}>uldze dla młodych</a>.</p>
+  <p>W zeznaniu rocznym koszty pracownicze wykazuje się w wysokości ustawowej, niezależnie od tego, co stosował płatnik. Jeśli przez część roku miałeś oświadczenie o dojazdach, a przez część nie, koszty liczy się miesiąc po miesiącu. Netto z kosztami podstawowymi lub podwyższonymi policzysz w <a href={route('home', lang)}>kalkulatorze wynagrodzeń</a>.</p>
+</GuideLayout>

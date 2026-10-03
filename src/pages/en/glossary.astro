@@ -1,0 +1,84 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { PARAMS as P } from '../../lib/engine/pl';
+import { pct } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const ryczaltIt = pct(P.b2b.ryczalt_rates[0].rate, lang);
+const ryczaltTrade = pct(P.b2b.ryczalt_rates[6].rate, lang);
+interface Term { id: string; term: string; def: string; link?: { id: string; text: string } }
+const groups: Array<{ h: string; terms: Term[] }> = [
+  { h: 'Pay and the payslip', terms: [
+    { id: 'brutto', term: 'Brutto (gross pay)', def: `The salary written in your contract, before your employer deducts contributions and the income tax advance. Polish job offers usually quote gross pay. The ${F.year} minimum wage is ${F.minWage} gross a month, and the minimum hourly rate on a mandate contract is ${F.minHourly}.`, link: { id: 'minimum', text: 'minimum wage' } },
+    { id: 'netto', term: 'Netto, na rękę (net pay)', def: `What actually lands in your account: gross pay minus social contributions, the health contribution and the PIT advance. On the minimum wage under an employment contract that comes to ${F.minNet}.`, link: { id: 'nettobrutto', text: 'convert net to gross' } },
+    { id: 'pasek', term: 'Pasek wypłaty (payslip)', def: 'The monthly statement from your employer that walks from gross to net: each contribution on its own line, the health contribution base, deductible costs, the taxable base and the tax advance withheld. The first place to look if your pay differs from the calculator.', link: { id: 'home', text: 'compare with the calculator' } },
+  ] },
+  { h: 'ZUS contributions and funds', terms: [
+    { id: 'zus', term: 'ZUS', def: `Zakład Ubezpieczeń Społecznych, the Social Insurance Institution; in everyday speech also the contributions themselves. An employee pays ${F.socialEe} of gross pay in total for three insurances: pension, disability and sickness.`, link: { id: 'zus', text: 'ZUS contributions explained' } },
+    { id: 'emerytalna', term: 'Składka emerytalna (pension contribution)', def: `${F.emerytalnaTotal} of the base, split equally: ${F.emerytalnaEe} from the employee and ${F.emerytalnaEr} from the employer. It is only charged up to the annual cap of 30 times the average wage.` },
+    { id: 'rentowa', term: 'Składka rentowa (disability contribution)', def: `${F.rentowaTotal} of the base, split unevenly: ${F.rentowaEe} paid by the employee, ${F.rentowaEr} by the employer. Same annual cap as the pension contribution.` },
+    { id: 'chorobowa', term: 'Składka chorobowa (sickness contribution)', def: `${F.chorobowa} of the base, paid entirely by the insured person. Compulsory on an employment contract, voluntary on a mandate contract. It entitles you to sickness benefit, usually ${F.sickRate} of the benefit base.`, link: { id: 'sick', text: 'sick pay calculator' } },
+    { id: 'wypadkowa', term: 'Składka wypadkowa (accident contribution)', def: `Paid by the employer alone. The rate varies from one employer to another within a range of ${F.wypadkowaMin} to ${F.wypadkowaMax}; the calculator uses ${F.wypadkowa}, the rate ZUS uses in its examples.` },
+    { id: 'fp', term: 'Fundusz Pracy, FP (Labour Fund)', def: `${F.fp} of the base, paid by the employer at the rate set in the Budget Act. It does not reduce your net pay but adds to what you cost your employer.`, link: { id: 'employer', text: 'employer cost' } },
+    { id: 'fs', term: 'Fundusz Solidarnościowy, FS (Solidarity Fund)', def: `${F.fs} of the base, also on the employer's side. Together with the Labour Fund it makes ${F.fpfs}, which is how ZUS tables often show the pair.` },
+    { id: 'fgsp', term: 'FGŚP (Guaranteed Employee Benefits Fund)', def: `Fundusz Gwarantowanych Świadczeń Pracowniczych: ${F.fgsp} of the base, paid by the employer. It guarantees employee pay when an employer becomes insolvent.` },
+    { id: 'zdrowotna', term: 'Składka zdrowotna (health contribution)', def: `${F.health} of a base equal to gross pay minus the employee's social contributions. Employees cannot deduct it from their tax. A self-employed person on the flat tax pays ${F.healthLiniowy} of income, at least ${F.healthMin} a month.`, link: { id: 'health', text: 'health contribution in detail' } },
+    { id: 'limit-30', term: 'Limit 30-krotności (contribution cap)', def: `The annual ceiling on the pension and disability contribution base: ${F.cap} in ${F.year}. Once your gross pay for the year passes it, those two contributions stop for the rest of the year and your net pay rises.`, link: { id: 'cap', text: 'contribution cap' } },
+    { id: 'ppk', term: 'PPK (Employee Capital Plans)', def: `Pracownicze Plany Kapitałowe, a voluntary workplace pension scheme. You pay ${F.ppkEe} of gross (up to ${F.ppkEeExtra} more if you choose), your employer ${F.ppkEr} (up to ${F.ppkErExtra} more), and the state adds a ${F.ppkWelcome} welcome payment and ${F.ppkAnnual} a year.`, link: { id: 'ppk', text: 'PPK calculator' } },
+  ] },
+  { h: 'Income tax and tax forms', terms: [
+    { id: 'pit', term: 'PIT (personal income tax)', def: `Podatek dochodowy od osób fizycznych. Under the standard scale it is ${F.pitLow} on annual income up to ${F.threshold} and ${F.pitHigh} on the excess.`, link: { id: 'brackets', text: 'tax brackets' } },
+    { id: 'skala', term: 'Skala podatkowa (tax scale)', def: `The default tax method, with two rates (${F.pitLow} and ${F.pitHigh}) and a tax-free allowance. It applies to every employee and mandate contractor; a self-employed person may choose the flat tax or the lump-sum tax instead.` },
+    { id: 'zaliczka', term: 'Zaliczka na podatek (tax advance)', def: 'The slice of your annual tax that the payer withholds from each payment and sends to the tax office (urząd skarbowy). The final figure is only settled in the annual return, which evens out any overpayment or shortfall.' },
+    { id: 'kwota-wolna', term: 'Kwota wolna (tax-free allowance)', def: `${F.freeAmount} of annual income on which no tax is due. In practice it works through the tax-reducing amount.`, link: { id: 'allowance', text: 'tax-free allowance' } },
+    { id: 'kwota-zmniejszajaca', term: 'Kwota zmniejszająca podatek (tax-reducing amount)', def: `${F.reducingYear} a year, which is ${F.pitLow} of the tax-free allowance. Your employer subtracts 1/12 of it, ${F.reducingMonth}, from each tax advance if you have filed a PIT-2.` },
+    { id: 'pit-2', term: 'PIT-2', def: `A statement you give the payer so that it reduces your monthly tax advance by ${F.reducingMonth}. It stays valid until withdrawn and can also be filed on mandate and specific-work contracts.`, link: { id: 'pit2', text: 'the PIT-2 form' } },
+    { id: 'pit-11', term: 'PIT-11', def: 'The annual information slip that a payer (employer, principal under a mandate or specific-work contract) prepares after the year ends, for you and the tax office: income, costs, contributions and tax advances withheld. You use it to fill in your annual return.' },
+    { id: 'pit-37', term: 'PIT-37', def: 'The annual return for people whose income for the year came only through a payer (employment, mandate or specific-work contracts), taxed on the scale, with no business activity.' },
+    { id: 'kup', term: 'KUP, koszty uzyskania przychodu (deductible costs)', def: `An amount taken off income before tax is calculated. Employees: ${F.kup} a month (${F.kupRaised} if you commute from another town). Mandate and specific-work contracts: ${F.kupContract} of income, or ${F.kupAuthors} for creative work.`, link: { id: 'kup', text: 'deductible employment costs' } },
+    { id: 'koszty-autorskie', term: 'Koszty autorskie 50 % (creative work costs)', def: `Higher deductible costs (${F.kupAuthors}) on pay for transferring copyright. Over a year they cannot exceed ${F.kupAuthorsLimit} in total.`, link: { id: 'authors', text: 'creative work costs' } },
+    { id: 'ulga-dla-mlodych', term: 'Ulga dla młodych (youth relief)', def: `An income tax exemption on up to ${F.youthLimit} a year for people under 26, on employment and mandate contracts. It covers tax only: contributions are charged as usual.`, link: { id: 'youth', text: 'youth tax relief' } },
+  ] },
+  { h: 'Contracts and self-employment', terms: [
+    { id: 'umowa-o-prace', term: 'Umowa o pracę (employment contract)', def: `Employment under the Labour Code: full contributions, employee deductible costs, paid leave and sick pay from the employer (${F.sickRate} for the first ${F.sickDays} days of illness in a year).`, link: { id: 'home', text: 'salary calculator' } },
+    { id: 'zlecenie', term: 'Umowa zlecenie (mandate contract)', def: `A civil-law contract for services. Pension, disability and health contributions are compulsory, sickness cover is optional, and deductible costs are ${F.kupContract}. A pupil or student under 26 pays no ZUS contributions on a mandate contract.`, link: { id: 'zlecenie', text: 'mandate contract calculator' } },
+    { id: 'dzielo', term: 'Umowa o dzieło (specific-work contract)', def: `A contract for a defined result (a text, a design, a program). The calculator treats it without ZUS or health contributions, as a typical contract with a client who is not your employer. Deductible costs: ${F.kupContract}, or ${F.kupAuthors} when copyright is transferred.`, link: { id: 'dzielo', text: 'specific-work contract calculator' } },
+    { id: 'b2b', term: 'B2B / JDG (sole proprietorship)', def: `Working through your own one-person business (jednoosobowa działalność gospodarcza): you invoice instead of drawing a salary, pay your own contributions (full ZUS is ${F.b2bZusFull} a month with sickness cover) and choose how you are taxed.`, link: { id: 'b2b', text: 'B2B calculator' } },
+    { id: 'liniowy', term: 'Podatek liniowy (flat tax)', def: `${F.liniowy} of income whatever its level, with no tax-free allowance. The health contribution is ${F.healthLiniowy}, and the amount you can deduct is capped at ${F.liniowyLimit} a year.`, link: { id: 'liniowy', text: 'flat tax' } },
+    { id: 'ryczalt', term: 'Ryczałt ewidencjonowany (lump-sum tax)', def: `Tax on revenue with no deduction of costs, at a rate that depends on the activity: for example ${ryczaltIt} for software developers and ${ryczaltTrade} in retail. The health contribution is fixed in three revenue bands, starting at ${F.ryczaltBand1} a month.`, link: { id: 'ryczalt', text: 'lump-sum tax' } },
+    { id: 'preferencyjny', term: 'Preferencyjny ZUS (reduced ZUS)', def: `Lower social contributions calculated on ${F.b2bBasePref} instead of ${F.b2bBaseFull}. ${F.b2bZusPref} a month in total with sickness cover.`, link: { id: 'zusb2b', text: 'ZUS for the self-employed' } },
+    { id: 'maly-zus-plus', term: 'Mały ZUS plus', def: `A relief under which a self-employed person's social contribution base depends on their income and falls between ${F.b2bBasePref} and ${F.b2bBaseFull}. ZUS sets the eligibility conditions.` },
+    { id: 'ulga-na-start', term: 'Ulga na start (start-up relief)', def: 'An exemption from social insurance contributions for a new business at the start of its activity. The health contribution remains due throughout.', link: { id: 'zusb2b', text: 'self-employed contributions' } },
+  ] },
+];
+const count = groups.reduce((s, g) => s + g.terms.length, 0);
+const title = `Payroll glossary ${F.year}: Polish salary, ZUS and PIT terms`;
+const description = `${count} terms from Polish payslips and contracts in ${F.year}, explained in English: brutto and netto, ZUS (${F.socialEe} of gross), PIT-2, ryczałt, Mały ZUS plus and more.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('glossary', lang), path: route('glossary', lang) }])]}
+  breadcrumbs={[{ label: label('glossary', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Glossary of Polish pay, contributions and tax</h1>
+    <p class="lead">{count} Polish terms you will meet on a payslip, in a contract and in the calculator, each with a plain-English explanation. The rates come from the same data file as the calculations, so they match the {F.year} calculator results.</p>
+    <p class="text-sm">Jump to: {groups.map((g, i) => <>{i > 0 && ' · '}<a href={`#g${i + 1}`}>{g.h}</a></>)}</p>
+    {groups.map((g, i) => (
+      <section>
+        <h2 id={`g${i + 1}`}>{g.h}</h2>
+        <dl>
+          {g.terms.map((t) => (
+            <>
+              <dt id={t.id} class="font-semibold text-navy-900">{t.term}</dt>
+              <dd class="mb-4 ml-0">{t.def}{t.link && <> <a href={route(t.link.id, lang)}>More: {t.link.text}</a>.</>}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+    ))}
+    <p>Missing a term? Tell us through the <a href={route('contact', lang)}>contact page</a>. How everything is calculated is set out in the <a href={route('method', lang)}>methodology</a>.</p>
+  </div>
+</PageLayout>

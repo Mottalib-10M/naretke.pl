@@ -1,0 +1,91 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const HR = P.health.employee_rate;
+const raw = (g: number) => { const x = uop({ gross: g }); return Math.round((g - x.social) * HR * 100) / 100; };
+const G = 8000, u = uop({ gross: G });
+const effShare = pct(Math.round((u.health / G) * 1000) / 1000, lang);
+// Najwyższe brutto, przy którym ograniczenie z art. 83 jeszcze obniża składkę (szukanie po złotówce).
+let capEdge = 0; for (let g = 100; g <= P.minimum_wage.monthly; g += 1) { if (uop({ gross: g }).health < raw(g) - 0.005) capEdge = g; }
+const small = 1000, us = uop({ gross: small });
+const smallRows = [600, 1000, 1500, 2000].map((g) => [$(g), $2(raw(g)), $2(uop({ gross: g }).health)]);
+const Z4 = $(4000), z = zlecenie({ gross: 4000 }), zst = zlecenie({ gross: 4000, student: true });
+const young = uop({ gross: 6000, under26: true }), old6 = uop({ gross: 6000 });
+const lin15 = b2b({ revenue: 15000, form: 'liniowy' }), lin6 = b2b({ revenue: 6000, form: 'liniowy' }), sk15 = b2b({ revenue: 15000, form: 'skala' });
+const linRate = pct(P.b2b.health.liniowy_rate, lang);
+const bands = P.b2b.health.ryczalt_bands;
+const lvl = [P.minimum_wage.monthly, 12000, 20000].map((g) => ({ g, h: uop({ gross: g }).health }));
+const ryczShare = pct(P.b2b.health.ryczalt_deductible_share, lang);
+const formRows = [
+  ['Umowa o pracę, zlecenie', F.health, 'brutto minus składki społeczne', 'nie'],
+  ['Działalność, skala podatkowa', F.health, 'dochód, minimum od płacy minimalnej', 'nie'],
+  ['Działalność, podatek liniowy', linRate, 'dochód, minimum od płacy minimalnej', `tak, do ${F.liniowyLimit} rocznie`],
+  ['Działalność, ryczałt', F.health, 'stała podstawa zależna od przychodu', `${ryczShare} składek od przychodu`],
+];
+const faqs = [
+  { q: 'Czy na etacie można odliczyć składkę zdrowotną od podatku?', a: `Nie. Ustawa o PIT pozwala odliczać składkę zdrowotną tylko przedsiębiorcom na podatku liniowym, ryczałcie i karcie podatkowej. Pracownik i zleceniobiorca płacą pełne ${F.health} i nie odejmują jej ani od dochodu, ani od podatku. Przy pensji ${$(G)} brutto to ${$2(u.health)} miesięcznie, które w całości zmniejszają netto.` },
+  { q: 'Dlaczego przy bardzo małej pensji składka zdrowotna jest niższa niż 9 % podstawy?'.replace('9 %', F.health), a: `Działa art. 83 ustawy o świadczeniach opieki zdrowotnej: składka nie może przekroczyć zaliczki na podatek obliczonej według przepisów PIT z 31 grudnia 2021 r. Przy pensji ${$(small)} brutto pełne ${F.health} dałoby ${$2(raw(small))}, a pracodawca pobiera ${$2(us.health)}. Na umowie o pracę ograniczenie przestaje działać przy około ${$(capEdge)} brutto.` },
+  { q: 'Czy student na zleceniu płaci składkę zdrowotną?', a: `Ze zlecenia zwykle nie. Uczeń lub student przed 26. rokiem życia nie podlega na zleceniu obowiązkowym ubezpieczeniom emerytalnemu i rentowemu, a obowiązek zdrowotny z art. 66 ustawy o świadczeniach obejmuje osoby spełniające warunki objęcia ubezpieczeniami społecznymi. Ze zlecenia na ${Z4} zostaje mu więc ${$(zst.net)}. Gdy ma też etat, z etatu zdrowotną płaci normalnie.` },
+  { q: 'Ile wynosi minimalna składka zdrowotna na działalności w 2026 r.?'.replace('2026', String(F.year)), a: `Na skali podatkowej i podatku liniowym ${F.healthMin} miesięcznie za miesiące od lutego ${F.year} r. do stycznia następnego roku, bo podstawa nie może być niższa niż płaca minimalna ${F.minWage}. Za styczeń ${F.year} r. minimum wynosiło ${F.healthMinJan}. Na ryczałcie minimum nie ma, są trzy stałe stawki, z których najniższa to ${F.ryczaltBand1}.` },
+  { q: 'Który próg składki zdrowotnej na ryczałcie mnie dotyczy?', a: `Decyduje roczny przychód. Do ${F.ryczaltLimit1} płacisz ${F.ryczaltBand1} miesięcznie, do ${F.ryczaltLimit2} ${F.ryczaltBand2}, a powyżej ${F.ryczaltBand3}. Podstawy to procent przeciętnego wynagrodzenia z IV kwartału 2025 r. (${F.avgQ4}). Od przychodu odliczasz ${ryczShare} zapłaconych składek, co łagodzi koszt wyższego progu.` },
+  { q: 'Ile składki zdrowotnej odliczę na podatku liniowym?', a: `W ${F.year} r. najwyżej ${F.liniowyLimit} rocznie, od dochodu, a nie od podatku. Przy ${linRate} składki i przychodzie ${$(15000)} miesięcznie bez kosztów składka wynosi ${$2(lin15.health)} miesięcznie, więc mieści się w limicie w całości. Wyższe składki zmniejszają netto, ale ponad limit nie obniżają już podatku.` },
+];
+---
+<GuideLayout lang={lang} id="health" breadcrumbLabel={label('health', lang)}
+  title={`Składka zdrowotna ${F.year}: ${F.health} na etacie, B2B od ${F.healthMin}`}
+  h1={`Składka zdrowotna w ${F.year} r.: etat, zlecenie i działalność`}
+  description={`Składka zdrowotna w ${F.year} r.: ${F.health} na etacie i zleceniu, bez odliczenia od PIT. Na B2B minimum ${F.healthMin}, ${linRate} na liniowym, trzy stałe progi na ryczałcie.`}
+  intro={`Pracownik płaci ${F.health} składki zdrowotnej od brutto pomniejszonego o składki społeczne i nie może jej odliczyć od podatku.`}
+  resume={`Składka zdrowotna na umowie o pracę i zleceniu wynosi w ${F.year} r. ${F.health} podstawy, czyli brutto pomniejszonego o składki emerytalną, rentową i chorobową. Przy pensji ${$(G)} brutto to ${$2(u.health)} miesięcznie, około ${effShare} brutto. Pracownik nie odlicza jej od podatku: ustawa o PIT pozwala na to tylko przedsiębiorcom na liniowym, ryczałcie i karcie podatkowej. Przy bardzo małych pensjach składka jest obniżana do wysokości zaliczki na PIT liczonej według przepisów z końca 2021 r. (art. 83 ustawy o świadczeniach), co na etacie działa do około ${$(capEdge)} brutto. Przedsiębiorca na skali płaci ${F.health} dochodu, na podatku liniowym ${linRate}, w obu przypadkach co najmniej ${F.healthMin} miesięcznie; na liniowym odliczy do ${F.liniowyLimit} rocznie. Na ryczałcie składka ma trzy stałe wysokości: ${F.ryczaltBand1}, ${F.ryczaltBand2} lub ${F.ryczaltBand3}, zależnie od rocznego przychodu. Mini-kalkulator liczy składkę dla czterech form zatrudnienia.`}
+  faqs={faqs}
+  related={[{ href: route('zus', lang), name: label('zus', lang), description: `${F.socialEe} pracownika, od których zależy podstawa zdrowotnej.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} podatku i ${linRate} zdrowotnej na działalności.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Stawki ryczałtu i progi zdrowotnej.' }]}
+  sources={[src('health_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
+  <div data-chrome><MiniSim client:load kind="health" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Etat: {F.health} od brutto po składkach społecznych</h2>
+  <p>Art. 79 ustawy o świadczeniach opieki zdrowotnej finansowanych ze środków publicznych ustala stawkę na {F.health} podstawy wymiaru. Podstawą dla pracownika jest brutto, od którego liczy się składki społeczne, pomniejszone o te składki w części finansowanej przez pracownika (art. 81 ust. 6). Przy {$(G)} brutto składki społeczne wynoszą {$2(u.social)}, zostaje {$2(G - u.social)} podstawy i {$2(u.health)} składki.</p>
+  <p>Kolejność ma znaczenie. Najpierw z brutto schodzą składki ZUS, potem od reszty liczy się zdrowotną, a dopiero na końcu zaliczkę na podatek. Zdrowotna nie zmniejsza jednak podstawy opodatkowania ani samego podatku. To dlatego wyższa pensja oznacza proporcjonalnie wyższą składkę bez żadnej ulgi w PIT. Całe przejście od brutto do netto liczy <a href={route('home', lang)}>kalkulator wynagrodzeń</a>.</p>
+  <p>Składka zdrowotna nie ma rocznego limitu. Po przekroczeniu {F.cap} brutto emerytalna i rentowa znikają, podstawa zdrowotnej rośnie o ich wartość i składka idzie w górę. W grudniu osoba dobrze zarabiająca płaci więc więcej zdrowotnej niż w styczniu, przy tej samej pensji.</p>
+
+  <h2>Dlaczego pracownik nie odlicza zdrowotnej od podatku</h2>
+  <p>Na stronie podatki.gov.pl Ministerstwo Finansów wymienia, kto może odliczyć składkę zdrowotną: przedsiębiorcy opodatkowani podatkiem liniowym {F.liniowy}, ryczałtem od przychodów ewidencjonowanych i kartą podatkową. Pracowników ani zleceniobiorców na tej liście nie ma. Składka zmniejsza więc tylko kwotę na rękę i nie wraca w zeznaniu rocznym.</p>
+  <p>W praktyce oznacza to, że przy pensji {$(G)} brutto ponad {$(u.health * 12)} rocznie idzie na zdrowotną bez wpływu na podatek. To największa pojedyncza pozycja po składkach ZUS i często wyższa niż sama zaliczka na PIT.</p>
+
+  <h2>Bardzo małe pensje: ograniczenie z art. 83</h2>
+  <p>Art. 83 ust. 1 i 2b ustawy o świadczeniach obniża składkę, jeśli przekracza ona zaliczkę na podatek obliczoną według przepisów PIT w brzmieniu z 31 grudnia 2021 r. Te dawne zasady dawały niższą zaliczkę przy małych dochodach, więc ograniczenie działa tylko przy niewielkich kwotach: na etacie przy pełnych kosztach {F.kup} do około {$(capEdge)} brutto miesięcznie.</p>
+  <ContentTable headers={['Brutto', `Pełne ${F.health}`, 'Składka po ograniczeniu']} align={['r', 'r', 'r']} rows={smallRows} />
+  <p>Takie kwoty pojawiają się przy pracy na ułamek etatu albo w miesiącu, w którym ktoś przepracował tylko kilka dni. Przy pełnym etacie na płacy minimalnej ograniczenie już nie działa. Podobną regułę ust. 2a stosuje się do przychodów zwolnionych z PIT, np. w uldze dla młodych: zaliczkę porównawczą liczy się tak, jakby przychód nie był zwolniony.</p>
+
+  <h2>Ulga dla młodych nie zwalnia ze zdrowotnej</h2>
+  <p>Osoba przed 26. rokiem życia na etacie nie płaci zaliczki na PIT do limitu {F.youthLimit} rocznie, ale składkę zdrowotną płaci w pełnej wysokości. Przy {$(6000)} brutto zdrowotna wynosi {$2(young.health)}, tyle samo co u osoby starszej ({$2(old6.health)}). Różnica w netto wynika wyłącznie z podatku. Więcej na stronie o <a href={route('youth', lang)}>uldze dla młodych</a>.</p>
+
+  <h2>Umowa zlecenie i student</h2>
+  <p>Na zleceniu stawka i podstawa są takie same jak na etacie: {F.health} od wynagrodzenia pomniejszonego o składki społeczne. Przy zleceniu na {Z4} brutto zdrowotna wynosi {$2(z.health)}. Zleceniobiorca też jej nie odlicza od podatku.</p>
+  <p>Inaczej jest u ucznia lub studenta przed 26. rokiem życia. Na zleceniu nie podlega on obowiązkowo ubezpieczeniom emerytalnemu i rentowemu (art. 6 ust. 4 ustawy systemowej), a art. 66 ust. 1 pkt 1 ustawy o świadczeniach obejmuje obowiązkiem zdrowotnym osoby, które spełniają warunki objęcia ubezpieczeniami społecznymi. Z tego zestawienia przepisów wynika, że ze zlecenia student nie płaci zdrowotnej, i tak liczy nasz kalkulator: ze zlecenia na {Z4} zostaje mu {$(zst.net)}. Jeśli masz wątpliwość co do własnej sytuacji, np. kilka umów naraz, zapytaj zleceniodawcę lub ZUS. Wyliczenia dla studenta pokazuje strona o <a href={route('student', lang)}>zleceniu dla studenta</a>.</p>
+
+  <h2>Działalność gospodarcza: trzy sposoby liczenia</h2>
+  <p>U przedsiębiorcy składka zależy od formy opodatkowania, a rok składkowy biegnie od lutego do stycznia. Tabela zestawia zasady na {F.year} r.</p>
+  <ContentTable headers={['Forma', 'Stawka', 'Podstawa', 'Odliczenie']} align={['l', 'r', 'l', 'l']} rows={formRows} />
+  <p><strong>Skala podatkowa.</strong> Składka to {F.health} dochodu z poprzedniego miesiąca, ale nie mniej niż {F.healthMin} miesięcznie, bo podstawa nie może być niższa od płacy minimalnej {F.minWage}. Za styczeń {F.year} r. minimum wynosiło {F.healthMinJan}. Przy przychodzie {$(15000)} miesięcznie bez kosztów składka wynosi średnio {$2(sk15.health)}. Odliczenia na skali nie ma.</p>
+  <p><strong>Podatek liniowy.</strong> Stawka jest niższa, {linRate} dochodu, z tym samym minimum {F.healthMin}. Przy {$(15000)} przychodu składka to {$2(lin15.health)}, a przy {$(6000)} już minimum {$2(lin6.health)}. Zapłaconą składkę odliczasz od dochodu, w {F.year} r. najwyżej {F.liniowyLimit} rocznie. Szczegóły na stronie o <a href={route('liniowy', lang)}>podatku liniowym</a>.</p>
+  <p><strong>Ryczałt.</strong> Tu składka nie zależy od dochodu, tylko od rocznego przychodu, i ma trzy wysokości: {F.ryczaltBand1} miesięcznie przy przychodzie do {F.ryczaltLimit1}, {F.ryczaltBand2} do {F.ryczaltLimit2} i {F.ryczaltBand3} powyżej. Podstawy wyliczono od przeciętnego wynagrodzenia z IV kwartału 2025 r., {F.avgQ4}. Od przychodu odliczasz {ryczShare} zapłaconych składek. Stawki samego ryczałtu omawia strona o <a href={route('ryczalt', lang)}>ryczałcie ewidencjonowanym</a>.</p>
+
+  <h2>Częste pomyłki przy liczeniu zdrowotnej</h2>
+  <p>Najczęstsza to liczenie {F.health} od całego brutto. Przy {$(G)} dałoby to {$2(G * HR)}, o {$2(G * HR - u.health)} za dużo, bo podstawą jest brutto po odjęciu składek społecznych. Druga pomyłka to oczekiwanie, że część składki wróci w podatku: na etacie nie wraca nic. Trzecia dotyczy młodych pracowników, którzy słysząc o „zerowym PIT” zakładają, że nie płacą też zdrowotnej, a płacą ją w całości.</p>
+  <p>Dla orientacji kilka poziomów pensji na etacie: na płacy minimalnej zdrowotna wynosi {$2(lvl[0].h)}, przy {$(lvl[1].g)} brutto {$2(lvl[1].h)}, przy {$(lvl[2].g)} brutto {$2(lvl[2].h)} miesięcznie. U przedsiębiorcy pomyłki są inne: na liniowym ktoś liczy {F.health} zamiast {linRate}, na skali zapomina o minimum {F.healthMin}, a na ryczałcie wybiera próg według dochodu zamiast przychodu. Każda z tych pomyłek oznacza niedopłatę lub nadpłatę składki, którą trzeba potem skorygować.</p>
+
+  <h2>Liniowy w praktyce: ile zdrowotnej i ile odliczenia</h2>
+  <p>Drugi kalkulator pokazuje, ile przedsiębiorca na podatku liniowym płaci zdrowotnej i jaka jej część zmniejsza podstawę opodatkowania. Wpisz przychód i koszty miesięczne.</p>
+  <div data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
+  <p>Wynik to średnia miesięczna z całego roku, przy pełnym ZUS bez dobrowolnej chorobowej. W rzeczywistości zdrowotna zmienia się razem z dochodem z miesiąca na miesiąc, nigdy nie spadając poniżej {F.healthMin}.</p>
+</GuideLayout>

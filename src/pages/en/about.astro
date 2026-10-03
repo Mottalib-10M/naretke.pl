@@ -1,0 +1,45 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { AUTHOR_NAME, CONTACT_EMAIL, REVIEW_CYCLE_MONTHS, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { personSchema, organizationSchema, breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const checked = displayDate(F.retrieved, LANG_TAGS[lang]);
+const title = 'KalkulatorWynagrodzen.pl: who we are and how we work out pay';
+const description = `Who runs KalkulatorWynagrodzen.pl, why it sets four Polish contract types side by side, where the ${F.year} rates come from, how it is funded, how to flag an error.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[personSchema(lang), organizationSchema(lang), breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('about', lang), path: route('about', lang) }])]}
+  breadcrumbs={[{ label: label('about', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Who we are and why this calculator exists</h1>
+    <p class="lead">The site is published by {AUTHOR_NAME}, a company that builds free salary, tax and benefit calculators for several countries. This one covers Poland, and it aims to show take-home pay the honest way: every contribution, every threshold, and an official source behind every rate.</p>
+
+    <h2>Why build another Polish salary calculator</h2>
+    <p>Most tools answer a single question: how much net you get from one gross figure, on one contract, in an ordinary month. The people who write to us are usually facing a choice between offers, or a payslip (pasek wypłaty) that does not match what they expected. So the tool is built around four ideas.</p>
+    <ul>
+      <li><strong>Four contracts side by side.</strong> An employment contract (umowa o pracę), a mandate contract (umowa zlecenie), a specific-work contract (umowa o dzieło) and B2B self-employment, all computed from the same amount. An offer of “{F.money(12000)} on invoice or {F.money(10000)} on payroll” becomes comparable in a minute. The full comparison lives on the <a href={route('compare', lang)}>B2B vs employment contract</a> page.</li>
+      <li><strong>The year, month by month.</strong> Polish net pay is not flat across the year. Higher earners move into the {F.pitHigh} tax bracket partway through the year, and once gross pay passes {F.cap} in a calendar year the pension and disability contributions stop. The <a href={route('annual', lang)}>annual salary view</a> shows the month where each change kicks in.</li>
+      <li><strong>Official sources for every figure.</strong> Rates come from ZUS (the social insurance institution), podatki.gov.pl (the Ministry of Finance tax portal), the Journal of Laws (Dziennik Ustaw) and the Official Gazette (Monitor Polski). Last full check: {checked}.</li>
+      <li><strong>A real English version.</strong> Many people working in Poland do not read Polish legislation. The English pages are written for them, not machine-translated: they explain terms like zlecenie, PIT-2 or the tax-free allowance (kwota wolna) to someone meeting them for the first time.</li>
+    </ul>
+
+    <h2>How the numbers are produced</h2>
+    <p>Every {F.year} parameter lives in a single data file, with the source address and the date it was read next to each group of rates. The calculation engine reads only that file, and the guides pull their figures from the same place. When the minimum wage or the contribution cap changes, one value is edited and the change reaches the calculator and every page that quotes it at the same time.</p>
+    <p>Before each release the engine runs through a suite of reference cases. The formulas and assumptions are written up in the <a href={route('method', lang)}>methodology</a>; how we verify figures and correct mistakes is set out in the <a href={route('editorial', lang)}>editorial policy</a>. All parameters are reviewed in full at least every {REVIEW_CYCLE_MONTHS} months and whenever the law changes.</p>
+
+    <h2>How the site is funded</h2>
+    <p>The calculator is free and needs no account. Right now the site carries no advertising and no analytics. If advertising ever appears, it will never sit above the calculator and it will have no say over a result or a guide. We sell no data, because we hold none: your browser does the arithmetic and nothing reaches our server. The details are in the <a href={route('privacy', lang)}>privacy policy</a>.</p>
+    <p>We have no arrangements with accounting firms, banks or advisers, and we take no payment for mentions. Should such a relationship ever exist, it would be stated plainly on the page concerned.</p>
+
+    <h2>What this site cannot replace</h2>
+    <p>A result here is a careful estimate for a standard situation, not a tax ruling. We do not know your other income, your family reliefs or what you agreed with your employer. For a decision with long-term consequences, such as switching to B2B, show our figures to a tax adviser (doradca podatkowy) or an accountant. We are not affiliated with ZUS, the Ministry of Finance or any Polish authority.</p>
+
+    <h2>Spotted an error? Tell us</h2>
+    <p>Every report is checked against the source. The quickest help is the link in your address bar once the calculator is filled in, since it stores all your inputs, plus the figure you expected, for example from your payslip or your PIT-11 annual statement. Write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>; the <a href={route('contact', lang)}>contact page</a> explains what to include.</p>
+  </div>
+</PageLayout>

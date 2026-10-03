@@ -1,0 +1,92 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const MW = P.minimum_wage.monthly, MH = P.minimum_wage.hourly, AVG = P.average_wage.forecast_2026;
+const m = uop({ gross: MW }), mNo = uop({ gross: MW, pit2: false }), mYoung = uop({ gross: MW, under26: true });
+const parts = [1, 0.75, 0.5, 0.25].map((e) => { const x = uop({ gross: MW * e }); return [`${formatNumber(e * 100, 0, lang)} %`, $(MW * e), $(x.social + x.health), $(x.pit), $(x.net)]; });
+const half = uop({ gross: MW * 0.5 });
+const H = 168;
+const perHourEmployee = MW / H, netPerHour = m.net / H;
+const zl160 = zlecenie({ gross: MH * 160 }), zl100 = zlecenie({ gross: MH * 100 });
+const er = m.er;
+const erRows = [
+  ['Pension (employer share)', F.emerytalnaEr, $2(er.emerytalna)],
+  ['Disability (employer share)', F.rentowaEr, $2(er.rentowa)],
+  ['Accident insurance (ZUS example rate)', F.wypadkowa, $2(er.wypadkowa)],
+  ['Labour Fund and Solidarity Fund', F.fpfs, $2(er.fp)],
+  ['FGŚP (wage guarantee fund)', F.fgsp, $2(er.fgsp)],
+  ['Total on top of gross', '', $2(er.total)],
+];
+const a = uop({ gross: AVG });
+const grossShare = pct(Math.round((MW / AVG) * 100) / 100, lang), netShare = pct(Math.round((m.net / a.net) * 100) / 100, lang);
+const prefShare = pct(P.b2b.zus_base_preferential / MW, lang), ppkMult = formatNumber(P.ppk.low_income_multiple, 1, lang);
+const costPerNet = formatNumber(er.cost / m.net, 2, lang);
+const faqs = [
+  { q: `Will the Polish minimum wage go up again in July ${F.year}?`, a: `No. The Council of Ministers regulation of 11 September 2025 sets a single figure for the whole year: ${F.minWage} gross a month and ${F.minHourly} an hour, both from 1 January ${F.year}. There is no second increase mid-year, and ZUS uses ${F.minWage} from January to December, including as the base of the minimum health contribution for the self-employed.` },
+  { q: 'What does a half-time job on the minimum wage pay after tax?', a: `Half-time gross is ${$(MW * 0.5)}, and take-home pay is ${$(half.net)} a month if you have filed PIT-2. The tax advance drops to zero, because the ${F.reducingMonth} monthly reduction is larger than the tax due on such a small base. Only ZUS and the health contribution come off, ${$(half.social + half.health)} in total.` },
+  { q: 'Does the minimum wage apply to a mandate contract (umowa zlecenie)?', a: `Not as a monthly amount. A mandate contract has a minimum hourly rate instead: ${F.minHourly} gross for every hour worked in ${F.year}. At 160 hours that is ${$(MH * 160)} gross, which leaves ${$(zl160.net)} after ZUS, health and a tax advance without PIT-2. The rate applies to hours actually worked, so keep a record of them.` },
+  { q: 'How much does an employer pay in total for a minimum-wage worker?', a: `The full cost is ${$(er.cost)} a month: ${F.minWage} gross plus ${$(er.total)} in employer contributions and fund payments, at an accident rate of ${F.wypadkowa}. The worker takes home ${F.minNet}, so the employer spends PLN ${costPerNet} for every złoty of net pay. A higher accident rate or PPK payments push the cost up.` },
+  { q: 'What does someone under 26 take home on the minimum wage?', a: `With the youth relief, ${$(mYoung.net)} a month, which is ${$(mYoung.net - m.net)} more than an older worker with PIT-2. No tax advance is withheld, because income up to ${F.youthLimit} a year is exempt from PIT and a full year on the minimum wage stays within that limit. ZUS and the health contribution are still deducted.` },
+];
+---
+<GuideLayout lang={lang} id="minimum" breadcrumbLabel={label('minimum', lang)}
+  title={`Minimum Wage ${F.year} in Poland: ${F.minWage} Gross, ${F.minNet} Net`}
+  h1={`Minimum wage in Poland ${F.year}: gross, net and hourly`}
+  description={`The ${F.year} Polish minimum wage is ${F.minWage} gross a month and ${F.minHourly} an hour. Take-home pay full and part time, employer cost and mandate contract pay.`}
+  intro={`Since 1 January ${F.year}, the statutory minimum wage in Poland has been ${F.minWage} gross a month, and the minimum hourly rate ${F.minHourly}.`}
+  resume={`The Polish minimum wage for ${F.year} is ${F.minWage} gross a month for a full-time job, which comes to ${F.minNet} take-home pay when your employer holds your PIT-2 form, or ${$(mNo.net)} without it. The deductions are the pension, disability and sickness contributions (${$(m.social)} together), the health contribution (${$(m.health)}) and the income tax advance (${$(m.pit)}). The amount applies from 1 January to 31 December: the Council of Ministers regulation of 11 September 2025 provides for a single increase this year. Mandate contracts (umowa zlecenie) are covered by the minimum hourly rate of ${F.minHourly} gross instead. A full-time minimum-wage job costs the employer ${$(er.cost)} a month, and the minimum is ${grossShare} of the forecast average wage of ${F.avgForecast}. Workers under 26 keep ${$(mYoung.net)}, because no tax advance is withheld. The calculator below works out take-home pay for your working time.`}
+  faqs={faqs}
+  related={[{ href: route('hourly', lang), name: label('hourly', lang), description: `Your rate against the ${F.minHourly} minimum.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Full employment cost at any salary.' }, { href: route('average', lang), name: label('average', lang), description: `${F.avgForecast}: the ${F.year} forecast and what it is used for.` }]}
+  sources={[src('minimum', lang), src('zus_b2b', lang), src('pit_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="minimum" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>The {F.year} figures: {F.minWage} a month, {F.minHourly} an hour</h2>
+  <p>Both numbers come from one legal act, the Council of Ministers regulation of 11 September 2025 on the minimum wage for {F.year} (Journal of Laws 2025, item 1242). Its first paragraph fixes the monthly minimum at {F.minWage}; the second sets the minimum hourly rate at {F.minHourly}. Both took effect on 1 January. There is no second date in the regulation, so unlike some earlier years Poland has no July increase in {F.year}. ZUS, the social insurance institution, says the same on its contribution page: the minimum wage is {F.minWage} from January to December.</p>
+  <p>Polish salaries are quoted gross (brutto), before contributions and tax, and the minimum is no exception. On an employment contract (umowa o pracę) it refers to a full-time post. The hourly rate is a separate safeguard that mainly protects people on mandate contracts, where pay depends on hours rather than on the calendar month.</p>
+
+  <h2>Take-home pay on a full-time minimum wage</h2>
+  <p>From {F.minWage} gross, the employee first pays {F.socialEe} in three social contributions: pension {F.emerytalnaEe}, disability {F.rentowaEe} and sickness {F.chorobowa}, {$2(m.social)} in all. The health contribution of {F.health} is then charged on what remains, {$2(m.health)}. Finally the employer withholds the tax advance (zaliczka): {F.pitLow} of the taxable base after the {F.kup} standard work-related costs, less {F.reducingMonth} thanks to PIT-2. That gives a {$(m.pit)} advance and {F.minNet} net.</p>
+  <p>Without PIT-2 on file, the advance is {F.reducingMonth} higher and the payout falls to {$(mNo.net)}. The money is not lost, it comes back as a refund when you file your annual return, but on the lowest salary the monthly gap matters. Our page on the <a href={route('pit2', lang)}>PIT-2 form</a> explains how to file it and with whom. For any other salary or contract type, the <a href={route('home', lang)}>salary calculator</a> runs the full gross-to-net calculation.</p>
+  <p>Per hour, the picture looks like this. In a month with 168 working hours (21 days of 8 hours), the minimum wage works out at {$2(perHourEmployee)} gross and {$2(netPerHour)} net per hour. In a shorter month the hourly equivalent rises and in a longer one it falls, since the monthly salary stays the same.</p>
+
+  <h2>Part-time work: gross and net pro rata</h2>
+  <p>The calculator above and the table below scale the gross amount to your working time. As pay falls, the mix of deductions changes. Contributions remain a fixed percentage of gross, but the tax advance soon reaches zero because the {F.reducingMonth} reduction absorbs all the tax on a small base. That is why net pay is a larger share of gross on a half-time contract than on a full one.</p>
+  <ContentTable headers={['Working time', 'Gross', 'ZUS and health', 'Tax advance', 'Net (with PIT-2)']} align={['l', 'r', 'r', 'r', 'r']} rows={parts} />
+  <p>At a quarter of full time, gross is only {$(MW * 0.25)}, and a further rule comes into play: the health contribution is capped at the tax advance as it would have been calculated under the rules in force at the end of 2021. It only bites on very small salaries; the <a href={route('health', lang)}>health contribution guide</a> covers the details.</p>
+
+  <h2>Who is covered: the monthly minimum and the hourly rate</h2>
+  <p>The monthly {F.minWage} protects employees on an employment contract. If your payslip (pasek wypłaty) shows less for a full-time month, ask HR (the kadry department) what your pay is made of. This page does not settle which allowances may count towards the minimum, since that depends on the Minimum Wage Act, which we do not analyse here. In a dispute, the National Labour Inspectorate (Państwowa Inspekcja Pracy, PIP) is the body to contact.</p>
+  <p>For mandate contracts the regulation sets {F.minHourly} gross per hour. Compare that with employment: over 168 hours an employee earns {$2(perHourEmployee)} gross per hour, while a contractor gets at least {F.minHourly}. The gap reflects what the employee also receives, paid holiday and sick pay, which a contractor does not.</p>
+  <p>What does a contractor keep? At 160 hours on the minimum rate, gross is {$(MH * 160)} and net {$(zl160.net)} (pension and disability contributions, health, a tax advance without PIT-2, no voluntary sickness cover). At 100 hours, gross is {$(MH * 100)} and net {$(zl100.net)}. Students under 26 on a mandate contract pay no ZUS and keep almost the full amount; our page on <a href={route('student', lang)}>students on zlecenie</a> runs those numbers.</p>
+
+  <h2>What a minimum-wage employee costs the employer</h2>
+  <p>Gross pay is not the last line of the employer's budget. The company adds its share of the pension and disability contributions, the accident contribution and payments to several funds. The table shows the monthly cost of a full-time job at an accident rate of {F.wypadkowa}, the figure ZUS uses in its own example. The real rate depends on the business and ranges from {F.wypadkowaMin} to {F.wypadkowaMax}.</p>
+  <ContentTable headers={['Contribution', 'Rate', 'Per month']} align={['l', 'r', 'r']} rows={erRows} highlightRow={erRows.length - 1} />
+  <p>In total the employer pays {$2(er.cost)} a month. Of that, {F.minNet} reaches the worker's bank account, so each złoty of take-home pay costs the company PLN {costPerNet}. If the worker is enrolled in PPK, the employee capital plan, the employer adds a further {F.ppkEr} of gross. The <a href={route('employer', lang)}>employer cost calculator</a> handles any salary.</p>
+
+  <h2>Minimum wage versus the average wage</h2>
+  <p>The forecast average wage for {F.year} is {F.avgForecast}. The minimum wage is {grossShare} of that figure in gross terms. After deductions the gap narrows: the average salary leaves {$(a.net)} net, so the minimum is {netShare} of average take-home pay. The reason is the tax-reducing amount, a fixed sum in złoty that makes up a larger part of the tax bill on a low salary.</p>
+  <p>The average wage is an official index rather than what a typical worker earns. Where it comes from and what it is used for is covered in our guide to the <a href={route('average', lang)}>average salary in Poland</a>.</p>
+
+  <h2>Where else the minimum wage matters</h2>
+  <p>The same {F.minWage} turns up elsewhere in the system. For sole traders taxed on the progressive scale or the flat tax, it is the base of the minimum health contribution: for the contribution year from February {F.year} to January of the following year, the contribution cannot be lower than {F.healthMin} a month. The preferential ZUS available to new businesses is calculated on {prefShare} of the minimum wage, which is {F.b2bBasePref}. And the low-income threshold in PPK, below which an employee may pay less than {F.ppkEe}, is {ppkMult} times the minimum: {F.ppkLowIncome}.</p>
+  <p>So a change in the minimum wage moves more than the lowest salaries; it also moves the fixed costs of one-person businesses. In {F.year} that change happened once, on 1 January, and the figures above stay put until the end of the year.</p>
+
+  <h2>Checking a minimum-wage payslip</h2>
+  <p>On the payslip for a full month, the first line is basic pay, which for full-time work should match {F.minWage}. Below it come the three employee contributions, {$2(m.social)} together, then the health contribution of {$2(m.health)} and the tax advance of {$(m.pit)}. If the advance is {F.reducingMonth} higher, your employer is not applying PIT-2. If there is no advance at all and you are not on the youth relief or another PIT exemption, ask HR why, because the missing tax will surface in your annual return. The last line, the amount paid out, should match the calculator to within a few grosz; a month with absence or overtime will differ.</p>
+
+  <h2>When a job is advertised by the hour</h2>
+  <p>Some employment offers quote an hourly rate. To check it against the minimum, multiply it by the hours in the month and compare the result with {F.minWage}. The second calculator does this and shows net pay per hour.</p>
+  <div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('hourly', lang)} /></div>
+  <p>The result is for an employment contract. On a mandate contract, only the rate itself matters: it must be at least {F.minHourly}, whatever the number of hours in the month.</p>
+</GuideLayout>

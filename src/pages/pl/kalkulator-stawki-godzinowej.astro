@@ -1,0 +1,63 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+// Hypothèse d'heures : celle du mini-simulateur (168 h = 21 jours × 8 h), modifiable par l'utilisateur.
+const H = 168;
+const RATES = [P.minimum_wage.hourly, 40, 50, 75, 100, 150];
+const rows = RATES.map((r) => { const g = r * H; const u = uop({ gross: g }), z = zlecenie({ gross: g }); return [$2(r), $(g), $(u.net), $2(u.net / H), $(z.net), $2(z.net / H)]; });
+// Sens inverse : brut mensuel → taux horaire selon trois hypothèses d'heures.
+const HOURS = [160, 168, 176];
+const MONTHLY = [P.minimum_wage.monthly, 8000, 12000, 20000];
+const back = MONTHLY.map((g) => [$(g), ...HOURS.map((h) => $2(g / h))]);
+const minAtH = P.minimum_wage.hourly * H;
+const z50 = zlecenie({ gross: 50 * H }), zs50 = zlecenie({ gross: 50 * H, student: true });
+const minPerH = P.minimum_wage.monthly / H;
+// Premier taux du tableau où le zlecenie laisse plus que l'umowa o pracę.
+const cross = RATES.find((r) => zlecenie({ gross: r * H }).net > uop({ gross: r * H }).net) ?? RATES[RATES.length - 1];
+const faqs = [
+  { q: `Zleceniodawca proponuje mi 28 zł za godzinę. Czy może zapłacić mniej niż minimalna stawka?`, a: `Przy umowie zlecenia rozliczanej za przepracowane godziny nie powinien. Rozporządzenie Rady Ministrów ustala minimalną stawkę godzinową na ${F.year} r. w wysokości ${F.minHourly} brutto i to ona jest dolną granicą wynagrodzenia za każdą godzinę. Przy ${formatNumber(H, 0, lang)} godzinach w miesiącu daje to co najmniej ${$(minAtH)} brutto. Stawka 28 zł jest więc niższa od ustawowego minimum.` },
+  { q: 'Jak zamienić pensję z etatu na stawkę za godzinę, żeby porównać ją z ofertą zlecenia?', a: `Podziel pensję brutto przez liczbę godzin pracy w danym miesiącu. Ta liczba zmienia się co miesiąc, bo zależy od dni roboczych i świąt, dlatego kalkulator prosi o nią zamiast ją zakładać. Przy ${$(8000)} brutto i 168 godzinach wychodzi ${$2(8000 / H)} za godzinę. Porównując z ofertą zlecenia, pamiętaj, że etat daje płatny urlop i chorobowe, których zlecenie zwykle nie daje.` },
+  { q: 'Ile netto zostaje z godziny pracy na zleceniu przy stawce 50 zł brutto?', a: `Przy ${formatNumber(H, 0, lang)} godzinach w miesiącu, z obowiązkowymi składkami emerytalną i rentową, składką zdrowotną i zaliczką ${F.pitLow} po kosztach ${F.kupContract}, zostaje około ${$2(z50.net / H)} netto za godzinę, czyli ${$(z50.net)} miesięcznie. Student do 26 lat nie płaci składek ani podatku, więc dostaje ${$2(zs50.net / H)} za godzinę. Wynik zależy od sumy miesięcznej, nie tylko od stawki.` },
+];
+---
+<GuideLayout lang={lang} id="hourly" breadcrumbLabel={label('hourly', lang)} title={`Stawka godzinowa ${F.year}: minimum ${F.minHourly} i netto za godzinę`} h1={`Stawka godzinowa ${F.year}: z godzin na pensję i z pensji na godziny`}
+  description={`Stawka godzinowa ${F.year}: minimum ${F.minHourly} brutto na zleceniu. Przelicz stawkę za godzinę na pensję netto i odwrotnie, dla dowolnej liczby godzin w miesiącu.`}
+  intro={`Wpisz stawkę brutto za godzinę i liczbę godzin, a kalkulator poda miesięczne brutto, netto na etacie i netto za każdą przepracowaną godzinę.`}
+  resume={`Minimalna stawka godzinowa w ${F.year} r. wynosi ${F.minHourly} brutto i dotyczy przede wszystkim umów zlecenia, gdzie wynagrodzenie za każdą godzinę nie może być niższe. Na etacie minimum jest wyrażone miesięcznie, jako płaca minimalna ${F.minWage} za pełny wymiar czasu pracy. Kalkulator przelicza stawkę w obie strony: mnoży stawkę godzinową przez liczbę godzin, którą sam podajesz, a potem liczy netto z umowy o pracę dla takiej pensji. Przy stawce 50 zł i ${formatNumber(H, 0, lang)} godzinach miesięcznie wychodzi ${$(50 * H)} brutto i ${$(uop({ gross: 50 * H }).net)} netto na etacie, czyli ${$2(uop({ gross: 50 * H }).net / H)} na rękę za godzinę. Liczbę godzin wpisujesz samodzielnie, bo wymiar czasu pracy zmienia się z miesiąca na miesiąc w zależności od dni roboczych i świąt. Tabele niżej pokazują netto na etacie i na zleceniu dla sześciu stawek oraz stawkę godzinową odpowiadającą czterem pensjom.`}
+  faqs={faqs}
+  related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Netto ze zlecenia ze wszystkimi wariantami składek.' }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} miesięcznie i ${F.minHourly} za godzinę.` }, { href: route('overtime', lang), name: label('overtime', lang), description: `Dodatek ${F.ot50} lub ${F.ot100} za godziny ponad normę.` }]}
+  sources={[src('minimum', lang), src('pit_act', lang), src('zus_rates', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Od stawki godzinowej do pensji netto</h2>
+  <p>Tabela przyjmuje {formatNumber(H, 0, lang)} godzin w miesiącu, czyli 21 dni po 8 godzin. To tylko przykład: w kalkulatorze wpisz liczbę godzin z własnego grafiku albo umowy.</p>
+  <ContentTable headers={['Stawka brutto/h', 'Brutto miesięcznie', 'Netto etat', 'Netto/h etat', 'Netto zlecenie', 'Netto/h zlecenie']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={0} />
+  <p>Kolumny etatu zakładają PIT-2 i koszty {F.kup}. Kolumny zlecenia: obowiązkowe składki emerytalną i rentową, bez dobrowolnej chorobowej, koszty {F.kupContract} i bez PIT-2. Przy niskich stawkach więcej zostaje z etatu, bo zleceniodawca bez PIT-2 nie odejmuje od zaliczki {F.reducingMonth}. Od stawki {$2(cross)} zlecenie wychodzi przed etat: nie ma składki chorobowej, a koszty {F.kupContract} rosną razem z kwotą, podczas gdy na etacie zostają stałe {F.kup}. Ta przewaga znika, jeśli policzysz płatny urlop i wynagrodzenie za czas choroby, których zlecenie nie daje.</p>
+
+  <h2>Minimalna stawka godzinowa i jej granice</h2>
+  <p>Minimalna stawka {F.minHourly} brutto chroni przede wszystkim osoby na zleceniu. Wynagrodzenie za każdą przepracowaną godzinę nie powinno być niższe, niezależnie od tego, jak wysoka jest suma miesięczna. Przy {formatNumber(H, 0, lang)} godzinach to {$(minAtH)} brutto miesięcznie.</p>
+  <p>Na umowie o pracę działa inna granica: płaca minimalna {F.minWage} za pełny etat w miesiącu, bez względu na to, ile godzin ma dany miesiąc. Podzielona przez {formatNumber(H, 0, lang)} godzin daje {$2(minPerH)}, ale w krótszym miesiącu ta sama pensja oznacza wyższą stawkę, a w dłuższym niższą. Dlatego na etacie nie porównuje się stawki godzinowej z {F.minHourly}, tylko pensję miesięczną z płacą minimalną.</p>
+
+  <h2>Od pensji miesięcznej do stawki za godzinę</h2>
+  <p>Kierunek odwrotny przydaje się, gdy porównujesz etat z ofertą zlecenia albo kontraktu. Ta sama pensja daje różną stawkę w zależności od liczby godzin:</p>
+  <ContentTable headers={['Brutto miesięcznie', '160 h', '168 h', '176 h']} align={['r', 'r', 'r', 'r']} rows={back} />
+  <p>Różnica między 160 a 176 godzinami to kilka złotych na godzinę przy średnich pensjach i kilkanaście przy wysokich. Przy porównywaniu ofert przyjmij tę samą liczbę godzin po obu stronach i doliczaj do etatu wartość płatnego urlopu.</p>
+
+  <h2>Najczęstsze błędy przy przeliczaniu</h2>
+  <p>Pierwszy błąd to mnożenie stawki netto przez godziny. Stawka w ogłoszeniach i umowach jest prawie zawsze kwotą brutto; netto zależy od rodzaju umowy i od całej sumy w miesiącu, bo na etacie stałe odliczenia rozkładają się na wszystkie godziny. Drugi to porównywanie stawki na zleceniu ze stawką na etacie bez uwzględnienia urlopu i choroby. Trzeci to założenie, że każdy miesiąc ma tyle samo godzin. Przy pensji miesięcznej przelew jest stały, przy stawce godzinowej zmienia się razem z grafikiem.</p>
+  <p>Kalkulator nie liczy dodatków za nadgodziny, pracę w nocy ani w święta. Te godziny rozliczysz w <a href={route('overtime', lang)}>kalkulatorze nadgodzin</a>. Nie stosuje też ulgi dla młodych ani zwolnień studenckich: dla zlecenia z takimi wariantami użyj <a href={route('zlecenie', lang)}>kalkulatora umowy zlecenia</a>.</p>
+
+  <h2>Godziny na zleceniu: ile na rękę</h2>
+  <p>Wpisz miesięczną sumę ze zlecenia (stawka razy godziny), żeby zobaczyć netto z rozbiciem na składki, także w wariancie dla studenta.</p>
+  <div data-chrome><MiniSim client:load kind="zlecenie" lang={lang} href={route('zlecenie', lang)} /></div>
+</GuideLayout>

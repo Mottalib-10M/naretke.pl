@@ -1,0 +1,63 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatDecimal, formatNumber } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const K = P.ppk;
+const low = P.minimum_wage.monthly * K.low_income_multiple;
+const mult = formatDecimal(K.low_income_multiple, 1, lang);
+const GS = [P.minimum_wage.monthly, low, 8000, 12000, 20000];
+const rows = GS.map((g) => { const a = uop({ gross: g, ppk: true }), b = uop({ gross: g }); const drop = b.net - a.net, into = a.ppkEmployee + a.ppkEmployer; return [$(g), $(b.net), $(a.net), $(drop), $(into), formatNumber(into / drop, 2, lang)]; });
+const a8 = uop({ gross: 8000, ppk: true }), b8 = uop({ gross: 8000 });
+const drop8 = b8.net - a8.net, into8 = a8.ppkEmployee + a8.ppkEmployer, tax8 = a8.pit - b8.pit;
+const ratio8 = formatNumber(into8 / drop8, 2, lang);
+const year8 = into8 * 12, year8first = year8 + K.state_welcome + K.state_annual;
+const minG = P.minimum_wage.monthly;
+const m0 = uop({ gross: minG }), mBasic = uop({ gross: minG, ppk: true }), mLow = uop({ gross: minG, ppk: true, ppkEmployeeRate: K.employee_min });
+const mx = uop({ gross: 8000, ppk: true, ppkEmployeeRate: K.employee_basic + K.employee_extra_max, ppkEmployerRate: K.employer_basic + K.employer_extra_max });
+const mxDrop = b8.net - mx.net, mxInto = mx.ppkEmployee + mx.ppkEmployer;
+const faqs = [
+  { q: `I earn the minimum wage. Can I pay less than ${F.ppkEe} into PPK?`, a: `Yes. If your pay does not exceed ${F.ppkLowIncome} a month, which is ${mult} times the minimum wage, you can lower your own contribution to ${F.ppkEeMin}. On ${F.minWage} gross your net pay then drops by only ${$2(m0.net - mLow.net)} instead of ${$2(m0.net - mBasic.net)}. The employer's contribution stays at ${F.ppkEr}.` },
+  { q: 'My tax advance went up after I joined PPK. Why?', a: `The employer's PPK payment counts as your income, so the employer adds it to your taxable base even though the money goes to your PPK account rather than your salary. On ${$(8000)} gross the employer pays in ${$2(a8.ppkEmployer)}, and your income tax advance rises by ${$(tax8)} a month. No ZUS contributions are charged on that payment.` },
+  { q: `How much will build up in my PPK account in a year on ${$(8000)}?`, a: `At the basic rates ${$2(into8)} goes in each month: ${$2(a8.ppkEmployee)} from your pay and ${$2(a8.ppkEmployer)} from your employer. Over twelve months that is ${$(year8)}, and in the first year, with the state's ${F.ppkWelcome} welcome payment and ${F.ppkAnnual} annual top-up, about ${$(year8first)} before any investment gains or losses. Meanwhile your net pay falls by ${$(drop8 * 12)}.` },
+];
+---
+<GuideLayout lang={lang} id="ppk" breadcrumbLabel={label('ppk', lang)} title={`PPK Poland ${F.year}: What It Costs You and What You Gain`} h1={`PPK in ${F.year}: what you pay, what your employer and the state add`}
+  description={`PPK ${F.year}: you pay ${F.ppkEe}, your employer ${F.ppkEr}, the state ${F.ppkWelcome} plus ${F.ppkAnnual} a year. On ${$(8000)} gross, net drops ${$(drop8)} and ${$(into8)} goes in. Free calculator.`}
+  intro={`The calculator compares your pay with and without PPK, Poland's workplace pension scheme: how much your net falls and how much reaches your PPK account each month.`}
+  resume={`In PPK (Pracownicze Plany Kapitałowe, Poland's employee capital plans) the employee pays ${F.ppkEe} of gross salary in ${F.year} and the employer adds ${F.ppkEr}. Both can opt for additional payments: the employee up to ${F.ppkEeExtra}, the employer up to ${F.ppkErExtra}. The state adds a ${F.ppkWelcome} welcome payment and a ${F.ppkAnnual} annual top-up. On ${$(8000)} gross, ${$2(into8)} reaches your PPK account each month while net pay falls by ${$2(drop8)}, which is your own contribution (${$2(a8.ppkEmployee)}) plus tax on the employer's payment. That payment counts as your income: it raises your taxable base, although no ZUS contributions are charged on it. Your own contribution is deducted after tax. People earning no more than ${F.ppkLowIncome} (${mult} times the minimum wage) can cut their contribution to ${F.ppkEeMin}. The calculator shows the payments and the change in net pay for any salary, and the table below compares five salary levels.`}
+  faqs={faqs}
+  related={[{ href: route('employer', lang), name: label('employer', lang), description: `The ${F.ppkEr} payment in the full cost of employment.` }, { href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'The gross needed to keep the same net with PPK.' }, { href: route('home', lang), name: label('home', lang), description: 'Net pay with or without PPK, for every contract.' }]}
+  sources={[src('ppk', lang), src('ppk_tax', lang), src('pit_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Net pay with and without PPK on five salaries</h2>
+  <p>Basic rates: {F.ppkEe} from the employee and {F.ppkEr} from the employer, with no additional payments and no state top-ups. The last column shows how many złoty reach your PPK account for every złoty your net pay falls.</p>
+  <ContentTable headers={['Gross', 'Net without PPK', 'Net with PPK', 'Drop in net', 'Paid into account', 'Paid in / drop']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={2} />
+  <p>The ratio in the last column barely moves, because every payment is a percentage of gross. On {$(8000)} gross, each złoty less in your pay puts {ratio8} złoty into your account, before state top-ups and investment returns. The second row is the {F.ppkLowIncome} limit up to which you can lower your own contribution.</p>
+
+  <h2>Why net pay drops by more than your contribution</h2>
+  <p>A PPK member's payslip (pasek wypłaty) shows two changes. The first is the deduction of your own {F.ppkEe}, taken after tax is calculated, so it does not reduce your taxable base. The second is less obvious: the employer's {F.ppkEr} counts as your income. The employer adds it to your taxable base and withholds a {F.pitLow} advance on it, even though the money itself goes straight into your PPK account. On {$(8000)} gross that advance grows by {$(tax8)} a month.</p>
+  <p>No pension or disability contributions are charged on the employer's payment, because it is excluded from their base. Nor does it affect the employee's health contribution. On the payslip it usually appears as an information line, "PPK pracodawcy", added to income but not to the amount paid out.</p>
+
+  <h2>Contribution reduced to {F.ppkEeMin} on low pay</h2>
+  <p>The PPK Act lets an employee lower their contribution to {F.ppkEeMin} if their pay does not exceed {mult} times the minimum wage, that is {F.ppkLowIncome} a month. On the minimum wage of {F.minWage}, net pay is {$2(m0.net)} without PPK, {$2(mBasic.net)} with PPK at the basic rate and {$2(mLow.net)} with the reduced contribution. The employer pays the same in both cases, so lowering your own share cuts the cost of membership without losing the employer's money.</p>
+
+  <h2>Maximum contributions: what they cost and what they bring</h2>
+  <p>With additional payments the employee saves up to {formatDecimal((K.employee_basic + K.employee_extra_max) * 100, 2, lang)} % in total, and the employer up to {formatDecimal((K.employer_basic + K.employer_extra_max) * 100, 2, lang)} % of gross. On {$(8000)} that puts {$2(mxInto)} into the account each month, while net pay falls by {$2(mxDrop)}. The employer's additional payment is the company's decision, so the calculator counts basic payments by default.</p>
+
+  <h2>What the PPK calculator does not show</h2>
+  <p>The tool covers only the monthly flows: your contribution, the employer's contribution and their effect on net pay. It does not forecast returns on the target-date fund, management fees or the value of your savings at withdrawal, which depend on markets and on the financial institution. Nor does the monthly result include the state top-ups: the {F.ppkWelcome} welcome payment and the {F.ppkAnnual} annual top-up are credited on the terms set out in the Act. The full cost of employment including the employer's payment is in the <a href={route('employer', lang)}>employer cost calculator</a>, and the gross you would need to keep your net pay after joining PPK is in the <a href={route('nettobrutto', lang)}>net to gross calculator</a>.</p>
+
+  <h2>What your PPK membership costs your employer</h2>
+  <p>Enter a salary and choose PPK to see how the {F.ppkEr} payment changes the cost of employment.</p>
+  <div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('employer', lang)} /></div>
+</GuideLayout>

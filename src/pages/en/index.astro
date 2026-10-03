@@ -1,0 +1,173 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import MiniSim from '../../components/calc/MiniSim';
+import ContentTable from '../../components/ContentTable.astro';
+import { route, AMOUNTS } from '../../i18n/routes';
+import { amountLabel } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, dzielo, b2b, grossForNet, capMonth, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct, displayDate } from '../../lib/format';
+import { webApplicationSchema, websiteSchema, organizationSchema, faqSchema } from '../../lib/seo';
+import { LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const share = (a: number, b: number) => pct(Math.round((a / b) * 100) / 100, lang);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const mName = (m: number | null) => (m ? MONTHS[m - 1] : 'never this year');
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+
+const minG = P.minimum_wage.monthly;
+const min = uop({ gross: minG });
+const minNoPit2 = uop({ gross: minG, pit2: false });
+
+const exGross = [minG, 6000, 8000, 10000, 15000, 25000];
+const exRows = exGross.map((g) => { const m = uop({ gross: g }); return [$(g), $(m.social), $(m.health), $(m.pit), $(m.net), $(m.er.cost)]; });
+
+const G8 = 8000;
+const c8 = { uop: uop({ gross: G8 }), zl: zlecenie({ gross: G8 }), zl2: zlecenie({ gross: G8, pit2: true }), dz: dzielo({ gross: G8 }), lin: b2b({ revenue: G8, form: 'liniowy' }), ry: b2b({ revenue: G8, form: 'ryczalt', ryczaltRate: P.b2b.ryczalt_rates[0].rate }), sk: b2b({ revenue: G8, form: 'skala' }) };
+
+const G15 = 15000, G25 = 25000;
+const y15 = uopYear({ gross: G15 }), y25 = uopYear({ gross: G25 });
+const sb15 = secondBracketMonth({ gross: G15 }), sb25 = secondBracketMonth({ gross: G25 }), cap25 = capMonth(G25);
+const jan25 = y25.months[0].net, low25 = Math.min(...y25.months.map((m) => m.net)), dec25 = y25.months[11].net;
+const dec15 = y15.months[11].net, jan15 = y15.months[0].net;
+
+const net5k = 5000, gfn = grossForNet(net5k);
+const ppkA = uop({ gross: G8, ppk: true });
+const young = uop({ gross: 6000, under26: true }), notYoung = uop({ gross: 6000 });
+const raised = uop({ gross: G8, kup: 'raised' });
+const authors = uop({ gross: 12000, authorsShare: 0.5 }), noAuthors = uop({ gross: 12000 });
+const er8 = c8.uop.er;
+
+const paramRows = [
+  ['Minimum wage (monthly)', F.minWage, 'Journal of Laws 2025, item 1242'],
+  ['Minimum hourly rate', F.minHourly, 'Journal of Laws 2025, item 1242'],
+  ['Pension contribution: employee / employer', `${F.emerytalnaEe} / ${F.emerytalnaEr}`, 'Social Insurance System Act'],
+  ['Disability contribution: employee / employer', `${F.rentowaEe} / ${F.rentowaEr}`, 'Social Insurance System Act'],
+  ['Sickness contribution (employee)', F.chorobowa, 'Social Insurance System Act'],
+  ['Accident contribution (employer, rate used)', `${F.wypadkowa} (range ${F.wypadkowaMin}–${F.wypadkowaMax})`, 'ZUS'],
+  ['Labour Fund + Solidarity Fund / FGŚP', `${F.fp} + ${F.fs} / ${F.fgsp}`, '2026 Budget Act'],
+  ['Health contribution (employment, zlecenie)', F.health, 'Act on publicly funded healthcare'],
+  ['PIT tax scale', `${F.pitLow} / ${F.pitHigh}`, 'PIT Act, art. 27'],
+  ['Tax bracket threshold (yearly)', F.threshold, 'PIT Act, art. 27'],
+  ['Tax-free amount / monthly tax reduction', `${F.freeAmount} / ${F.reducingMonth}`, 'PIT Act, podatki.gov.pl'],
+  ['Deductible employment costs per month', `${F.kup} or ${F.kupRaised}`, 'PIT Act, art. 22'],
+  ['Youth relief limit (yearly)', F.youthLimit, 'PIT Act, art. 21'],
+  ['ZUS annual cap (30× rule)', F.cap, 'Monitor Polski 2025, item 1206'],
+  ['Forecast average wage', F.avgForecast, 'Monitor Polski 2025, item 1206'],
+  ['PPK: employee / employer (basic)', `${F.ppkEe} / ${F.ppkEr}`, 'mojeppk.pl'],
+  ['Self-employed ZUS: full / preferential (with sickness)', `${F.b2bZusFull} / ${F.b2bZusPref}`, 'ZUS'],
+  ['Minimum B2B health contribution (scale, flat tax)', F.healthMin, 'ZUS'],
+  ['Flat income tax', F.liniowy, 'PIT Act, art. 30c'],
+];
+
+const faqs = [
+  { q: 'Why is my December net pay different from January?', a: `Your employer calculates tax cumulatively. Once your taxable income since January passes ${F.threshold}, the excess is taxed at ${F.pitHigh} instead of ${F.pitLow}, so take-home pay drops. On ${$(G15)} gross a month this starts in ${mName(sb15)}, and December pays ${$(dec15)} instead of ${$(jan15)}. On very high salaries the ${F.cap} ZUS cap then kicks in: pension and disability contributions stop and net pay rises again.` },
+  { q: 'Does the calculator include PPK?', a: `Yes, tick “In PPK”. The calculator then deducts your ${F.ppkEe} contribution and adds your employer's ${F.ppkEr} payment to your taxable income, because Polish law treats it as your income. On ${$(G8)} gross your take-home falls by ${$(c8.uop.net - ppkA.net)}, while ${$(ppkA.ppkEmployee + ppkA.ppkEmployer)} a month lands in your PPK account. State top-ups are not counted as salary.` },
+  { q: 'A job offer only gives a net figure. How do I find the gross?', a: `Use the net-to-gross calculator, which runs the same engine in reverse. On an employment contract with PIT-2 filed and standard costs of ${F.kup}, ${$(net5k)} take-home needs about ${$(gfn)} gross in ${F.year}. That holds for months before the second tax bracket, so on higher salaries always agree the gross figure in writing: it is what Polish contracts and payslips are built on.` },
+  { q: `What does a ${$(G8)} gross salary really cost the employer?`, a: `${$(er8.cost)} a month. On top of your gross the employer pays pension ${F.emerytalnaEr}, disability ${F.rentowaEr}, accident insurance (assumed ${F.wypadkowa}), the Labour and Solidarity Funds ${F.fpfs} and FGŚP ${F.fgsp}, together ${$(er8.total)}. Of that budget you take home ${$(c8.uop.net)}. The calculator shows the full employer cost under every result.` },
+  { q: 'Why do zlecenie and an employment contract give different net pay for the same gross?', a: `Each contract has different deductions. On a zlecenie (mandate contract) the ${F.chorobowa} sickness contribution is optional, deductible costs are ${F.kupContract} instead of a flat ${F.kup}, and the client only applies the monthly tax reduction if you file PIT-2. On ${$(G8)} gross a zlecenie pays ${$(c8.zl.net)} without PIT-2 and ${$(c8.zl2.net)} with it; employment pays ${$(c8.uop.net)}.` },
+  { q: 'I work part-time. Does the calculator still work?', a: `Yes. The engine works from the gross amount in your contract, whatever your working hours, so simply enter your monthly gross. Contributions, the ${F.kup} costs and the ${F.reducingMonth} PIT-2 reduction work exactly as on full-time. On a very low gross the health contribution may be capped at the tax advance computed under the 2021 rules; the calculator applies that cap automatically.` },
+  { q: 'What is my net pay over a whole year on a fixed salary?', a: `Click “Show the year month by month” below the result. On ${$(G15)} gross a month the yearly take-home is ${$(y15.total.net)}, not twelve times the January figure, because part of your income moves into the second bracket from ${mName(sb15)}. On ${$(G25)} gross the year totals ${$(y25.total.net)}, with the smallest payslip at ${$(low25)}.` },
+];
+
+const related = [
+  { href: route('nettobrutto', lang), name: 'Net to gross calculator', description: 'The gross you need for the take-home pay you want.' },
+  { href: route('compare', lang), name: 'B2B vs employment contract', description: 'The same budget invoiced or salaried, leave and ZUS included.' },
+  { href: route('annual', lang), name: 'Annual salary, month by month', description: 'Twelve payslips with the second bracket and the ZUS cap.' },
+];
+const sources = [src('pit_act', lang), src('sus_act', lang), src('zus_rates', lang), src('cap', lang), src('minimum', lang), src('health_act', lang)];
+const title = `Gross to Net Salary Poland ${F.year}: Take-Home Pay Calculator`;
+const description = `Gross to net salary in Poland for ${F.year}: the ${F.minWage} minimum wage leaves ${F.minNet} take-home. Employment, zlecenie, dzieło and B2B, month by month, free.`;
+const path = route('home', lang);
+const jsonLd = [webApplicationSchema({ name: `Gross to net salary calculator Poland ${F.year}`, description, path, lang }), websiteSchema(lang), organizationSchema(lang), faqSchema(faqs, lang)];
+---
+<PageLayout title={title} description={description} lang={lang} jsonLd={jsonLd} faqs={faqs} related={related} sources={sources}>
+  <article>
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-navy-900 md:text-4xl">Gross to Net Salary Calculator Poland {F.year}</h1>
+      <p class="mt-3 text-lg text-navy-600">Your Polish take-home pay on an employment contract, zlecenie, dzieło or B2B for the same amount, with the whole year laid out month by month.</p>
+      <p class="mt-2 text-sm text-navy-500">{F.year} ZUS and PIT rates · updated {updated}</p>
+    </header>
+    <SalaryCalculator client:load lang={lang} methodHref={route('method', lang)} />
+
+    <p class="mt-8 text-navy-700">On the Polish minimum wage of {F.minWage} gross, an employee on an umowa o pracę (standard employment contract) takes home {F.minNet} a month in {F.year}, roughly {share(min.net, minG)} of gross, provided they have filed the PIT-2 form with their employer; without it, take-home drops to {$(minNoPit2.net)}. Three deductions explain the gap. First come the employee's social security contributions to ZUS, {F.socialEe} in total: pension {F.emerytalnaEe}, disability {F.rentowaEe} and sickness {F.chorobowa}, or {$(min.social)} at the minimum wage. Next is the {F.health} health contribution, charged on what is left and no longer deductible from tax, here {$(min.health)}. Last is the income tax advance: {F.pitLow} of the taxable base after contributions and the {F.kup} flat employment costs, less the {F.reducingMonth} monthly tax reduction, giving {$(min.pit)}. The same gross on a mandate contract, a specific-work contract or a B2B invoice gives a different net, and the calculator above works out all four side by side.</p>
+
+    <div class="prose prose-slate max-w-none">
+      <h2>How Polish net pay is calculated</h2>
+      <p>Your net salary, the amount Poles call <em>na rękę</em> (literally “into your hand”), is gross pay minus everything your employer must withhold and pass on: to ZUS, the social insurance institution, to the national health fund through ZUS, and to the urząd skarbowy (tax office). The order matters, because each deduction is worked out on what remains after the previous one. The calculator follows the same sequence as Polish payroll software.</p>
+      <ol>
+        <li><strong>Employee social contributions.</strong> Pension {F.emerytalnaEe}, disability {F.rentowaEe} and sickness {F.chorobowa} of gross. On {$(G8)} gross that is {$(c8.uop.social)} together. Pension and disability stop for the rest of the year once your cumulative gross passes {F.cap}.</li>
+        <li><strong>Health contribution.</strong> {F.health} of gross minus social contributions, so {$(c8.uop.health)} on {$(G8)}. Employees cannot deduct it from tax, which means it reduces take-home pay in full.</li>
+        <li><strong>Taxable base.</strong> Gross minus social contributions minus deductible employment costs (<em>koszty uzyskania przychodu</em>): {F.kup} a month, or {F.kupRaised} if you commute from another town. The result is rounded to the whole złoty.</li>
+        <li><strong>Income tax advance.</strong> {F.pitLow} of the base until your taxable income since January passes {F.threshold}, then {F.pitHigh}. If you have filed PIT-2, {F.reducingMonth} comes off every month. The advance is rounded to the złoty as well.</li>
+        <li><strong>PPK, if you take part.</strong> Your {F.ppkEe} contribution to the workplace pension plan is taken after tax, while the employer's {F.ppkEr} adds to your taxable income even though it never reaches your bank account.</li>
+      </ol>
+      <p>Net pay is gross minus all of the above. On {$(G8)} gross that leaves {$(c8.uop.net)}, while the employer spends {$(er8.cost)}, because their own contributions never appear on your payslip. Every formula, the rounding rules and edge cases such as the health contribution cap on very low salaries are documented in our <a href={route('method', lang)}>calculation methodology</a>.</p>
+      <p>Newcomers to Poland are usually caught out by two things. The {F.freeAmount} tax-free amount is not deducted from income as it is in many countries: it is converted into a flat tax reduction of {F.reducingMonth} a month, the same for everyone, whatever you earn. And the health contribution on {$(G8)} gross is larger than the whole income tax advance, with no way to claim it back. If your payslip and our figure disagree, check those two lines first, then whether your employer applies {F.kup} or {F.kupRaised} of costs.</p>
+
+      <h2>What this calculator does that others don't</h2>
+      <p>Most Polish salary calculators show one month on one contract. That is fine at the minimum wage, but on higher salaries it paints a picture that does not match the payslips you will actually receive. We built the tool around three things that decide what you really earn.</p>
+      <h3>Four contracts at the same gross, side by side</h3>
+      <p>Under every result you see what the same amount would pay on the other contract types. At {$(G8)}, employment pays {$(c8.uop.net)}, a zlecenie without PIT-2 pays {$(c8.zl.net)} and an umowa o dzieło (specific-work contract) pays {$(c8.dz.net)}, because the calculator charges no ZUS or health contribution on it. Seeing the four figures together lets you judge an offer before you sign, not after the first payday.</p>
+      <h3>B2B under three tax regimes</h3>
+      <p>Many foreign specialists in Poland, especially in IT, are offered B2B: you register a sole-trader business (<em>jednoosobowa działalność gospodarcza</em>) and invoice the client. A {$(G8)} monthly invoice is nothing like a {$(G8)} salary. You pay full self-employed ZUS of {F.b2bZusFull} with voluntary sickness cover or {F.b2bZusFullNoSick} without it, and the health contribution depends on how you are taxed. The calculator handles the {F.liniowy} flat tax (<em>podatek liniowy</em>), the lump-sum tax on revenue (<em>ryczałt</em>) at your industry's rate, and the standard tax scale. At this revenue, with no business costs and no sickness cover, they leave {$(c8.lin.net)}, {$(c8.ry.net)} and {$(c8.sk.net)} a month respectively, less than employment. The full comparison, paid leave included, is in <a href={route('compare', lang)}>B2B vs employment contract</a>.</p>
+      <h3>The whole year: second bracket and ZUS cap</h3>
+      <p>This is the part other tools usually leave out. On {$(G25)} gross a month your first payslip is {$(jan25)}. From {mName(sb25)} your cumulative taxable income passes {F.threshold}, part of it is taxed at {F.pitHigh} and take-home drops to {$(low25)}. {cap25 ? `Then, in ${mName(cap25)}, your gross for the year passes the ${F.cap} cap, pension and disability contributions stop, and the December payslip climbs back to ${$(dec25)}.` : ''} The calculator lists all twelve months and flags the one where the cap applies, so an autumn pay cut does not come as a surprise. The cap itself is explained in our guide to the <a href={route('cap', lang)}>ZUS contribution cap</a>.</p>
+      <p>Every rate in the engine comes from a statute, a regulation or the official ZUS website and is recorded in a parameter file with its verification date. The self-employed ZUS amounts the calculator produces match the figures ZUS publishes to the grosz, which automated tests check before every release. The same pages exist <a href={route('home', 'pl')} hreflang="pl">in Polish</a>, handy if you want to show the result to a Polish accountant or HR department.</p>
+
+      <h2>Net pay by contract type</h2>
+      <p>In Poland the type of contract changes your take-home more than a few hundred złoty of negotiation. Here is how the four options in the calculator differ; each has its own page with a dedicated calculator.</p>
+      <h3>Umowa o pracę (employment contract)</h3>
+      <p>Full social contributions, the health contribution, flat costs of {F.kup} or {F.kupRaised} and the {F.reducingMonth} PIT-2 reduction. In exchange you get paid holiday, sick pay and Labour Code protection. Full-time pay cannot be below {F.minWage}. The employer adds about {share(er8.total, G8)} of gross on top.</p>
+      <h3>Umowa zlecenie (mandate contract)</h3>
+      <p>Pension and disability contributions are compulsory, sickness cover is optional, and deductible costs are {F.kupContract} of the base after contributions. A pupil or student under 26 pays no ZUS, and in the calculator no health contribution either, so they keep the full gross. On contracts up to {F.smallContract} signed with someone who is not the payer's employee, a flat {F.pitLow} tax on the whole amount applies instead. All the variants are in the <a href={route('zlecenie', lang)}>mandate contract calculator</a>.</p>
+      <h3>Umowa o dzieło (specific-work contract)</h3>
+      <p>The calculator charges no contributions here, and tax is computed on revenue minus costs of {F.kupContract}, or {F.kupAuthors} when you transfer copyright. That is why it gives the highest net for the same amount, but it builds no pension and no sick-pay entitlement. Examples are in the <a href={route('dzielo', lang)}>specific-work contract calculator</a>.</p>
+      <h3>B2B (self-employment)</h3>
+      <p>Invoice revenue net of VAT, minus self-employed ZUS, the Labour Fund, the health contribution and tax under your chosen regime. The calculator works out a monthly average over the whole year and supports full ZUS, preferential ZUS at {F.b2bZusPref}, and the start-up relief (<em>ulga na start</em>), under which you pay no social contributions but still pay health. Business costs go in a separate field. The full simulation is in the <a href={route('b2b', lang)}>B2B calculator</a>.</p>
+
+      <h2>{F.year} rates and thresholds</h2>
+      <p>Every value below comes from the parameter file the engine reads, and the table is generated from that same file, so it cannot drift away from the calculator's results. We last verified the rates on {updated}.</p>
+    </div>
+    <ContentTable headers={['Parameter', `${F.year} value`, 'Legal basis']} align={['l', 'r', 'l']} rows={paramRows} />
+
+    <div class="prose prose-slate mt-8 max-w-none">
+      <h2>Net salary examples for {F.year}</h2>
+      <p>The table shows a typical month on an employment contract: {F.kup} costs, PIT-2 filed, no PPK and no youth relief. It is January, so before any second bracket or contribution cap; at the top two amounts, payslips later in the year will be smaller.</p>
+    </div>
+    <ContentTable headers={['Gross', 'Employee ZUS', 'Health', 'PIT advance', 'Net', 'Employer cost']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={exRows} highlightRow={0} />
+
+    <div class="prose prose-slate mt-8 max-w-none">
+      <p>The share of gross you keep falls as pay rises, but more slowly than many expect. At the minimum wage you keep {share(min.net, minG)}, at {$(10000)} still {share(uop({ gross: 10000 }).net, 10000)}, because contributions are proportional and the {F.reducingMonth} reduction is the same at every level. The {F.pitHigh} rate only changes the picture once your yearly taxable income passes the threshold.</p>
+      <div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('compare', lang)} /></div>
+
+      <h2>Reading your Polish payslip</h2>
+      <p>Your <em>pasek wypłaty</em> (payslip), the printout or PDF from HR, lists the same items as the calculator, but under Polish names and often in a different order. To compare the two, work down line by line rather than jumping to the amount transferred.</p>
+      <p>Start with <em>wynagrodzenie zasadnicze</em> (base salary) and every addition: <em>premia</em> (bonus), <em>nadgodziny</em> (overtime), <em>dodatek stażowy</em> (seniority allowance). The calculator needs their sum as the gross. If you received a bonus this month, enter the gross including it, or use the <a href={route('bonus', lang)}>bonus after tax calculator</a> to see what is left of the bonus alone. Then compare the three ZUS lines, <em>emerytalne</em>, <em>rentowe</em> and <em>chorobowe</em>; at the same gross they should match to the grosz unless the annual cap has already applied.</p>
+      <p>Next is <em>ubezpieczenie zdrowotne</em>, the health contribution at {F.health}. If it is clearly lower than ours and your pay is very low, that is the 2021-rules cap, which the calculator applies too. Finally compare <em>zaliczka na podatek</em>, the tax advance. A difference of exactly {F.reducingMonth} means your employer is not applying your PIT-2; a gap of a few złoty usually comes from different deductible costs or from the employer's PPK payment being added to your base.</p>
+      <p>Some deductions are invisible to any calculator: union dues, group life insurance, a sports card, a loan from the company social fund or a bailiff's garnishment. They do not change your tax but they do shrink the transfer. If the numbers still do not add up once those are taken out, ask HR to break down the specific line; in most companies one email is enough.</p>
+
+      <h2>Popular calculations: net pay for a given gross</h2>
+      <p>Each of these pages breaks one gross amount down across contracts and months, with the questions people at that pay level usually ask.</p>
+      <ul>
+        {AMOUNTS.map((a) => <li><a href={route(`amount-${a}`, lang)}>{amountLabel(a, lang)} to net</a>: {$(uop({ gross: a }).net)} take-home in January on employment</li>)}
+      </ul>
+
+      <h2>Legal ways to raise your take-home pay</h2>
+      <p>On an employment contract there is no avoiding contributions, but a handful of decisions really do change what reaches your account. You can test each one by flipping the matching option in the calculator.</p>
+      <ol>
+        <li><strong>File PIT-2.</strong> Without it you overpay {F.reducingMonth} of tax every month and only get it back through your annual tax return. You file it once with each employer; our guide to the <a href={route('pit2', lang)}>PIT-2 form</a> covers the details.</li>
+        <li><strong>Check the {F.kupRaised} commuter costs.</strong> If you travel to work from another town, the higher costs cut your base by {$(P.pit.kup_employee_raised_month - P.pit.kup_employee_month)} a month; on {$(G8)} that is {$(raised.net - c8.uop.net)} more take-home. See <a href={route('kup', lang)}>deductible employment costs</a>.</li>
+        <li><strong>Use the youth relief.</strong> Until your 26th birthday, income up to {F.youthLimit} a year from employment or a zlecenie is exempt from PIT. On {$(6000)} gross you take home {$(young.net)} instead of {$(notYoung.net)}; contributions stay the same. The rules are in our <a href={route('youth', lang)}>youth tax relief</a> guide.</li>
+        <li><strong>Treat PPK as savings, not a cost.</strong> Take-home drops by {$(c8.uop.net - ppkA.net)} on {$(G8)}, but {$(ppkA.ppkEmployee + ppkA.ppkEmployer)} a month goes into your account, plus state top-ups. The <a href={route('ppk', lang)}>PPK calculator</a> does the maths.</li>
+        <li><strong>Ask about creative work costs.</strong> Developers, designers and translators who create protected works can have part of their pay settled with {F.kupAuthors} costs. On {$(12000)} gross with half the salary treated as copyright, take-home rises from {$(noAuthors.net)} to {$(authors.net)}. The {F.kupAuthorsLimit} limit is explained in <a href={route('authors', lang)}>creative work costs</a>.</li>
+        <li><strong>Compare contracts before you sign.</strong> The same amount on zlecenie, dzieło and B2B gives a different net and very different protection. Before agreeing to switch, run every variant in the calculator and weigh what you lose besides money: paid leave, sick pay and pension rights.</li>
+      </ol>
+      <p>Keep in mind that the calculator covers pay from one employer. If you have several sources of income, your annual tax return may differ from the sum of the monthly results, and the final tax is only settled in that return.</p>
+    </div>
+  </article>
+</PageLayout>

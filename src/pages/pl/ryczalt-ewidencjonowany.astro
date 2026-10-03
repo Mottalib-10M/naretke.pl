@@ -1,0 +1,103 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const RR = P.b2b.ryczalt_rates;
+const rate = (r: number) => RR.find((x) => x.rate === r)?.rate ?? r;
+// Stawki z art. 12 ust. 1 pkt 3 i 4 ustawy o ryczałcie, których nie ma w params-2026.json
+// (relevé params-pl-2026.md §5, Dz.U. 2025 poz. 843) : 10 %, puis 8,5 % jusqu'à 100 000 zł et 12,5 % au-delà.
+const ART12 = { realEstate: 0.1, stepLow: 0.085, stepHigh: 0.125, stepLimit: 100000 };
+const H = P.b2b.health;
+const net15 = (r: number) => $(b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: r }).net);
+const rows = [
+  [pct(rate(0.17), lang), 'wolne zawody', net15(0.17)],
+  [pct(rate(0.15), lang), 'część usług: finansowe, prawne i rachunkowe poza wolnym zawodem, doradztwo w zarządzaniu, reklama, usługi związane z zatrudnieniem', net15(0.15)],
+  [pct(rate(0.14), lang), 'opieka zdrowotna (PKWiU 86), architektura i inżynieria (71), specjalistyczne projektowanie (74.1)', net15(0.14)],
+  [pct(rate(0.12), lang), 'usługi IT wymienione w ustawie, m.in. PKWiU 62.01.1, 62.02, 62.03.1, 58.29', net15(0.12)],
+  [pct(ART12.realEstate, lang), 'kupno i sprzedaż nieruchomości na własny rachunek', net15(ART12.realEstate)],
+  [`${pct(ART12.stepLow, lang)} / ${pct(ART12.stepHigh, lang)}`, `część usług, m.in. zakwaterowanie (PKWiU 55) i badania naukowe (72): ${pct(ART12.stepLow, lang)} do ${$(ART12.stepLimit)} przychodu, ${pct(ART12.stepHigh, lang)} od nadwyżki`, 'stawka progresywna, poza kalkulatorem'],
+  [pct(rate(0.085), lang), 'pozostałe usługi, edukacja', net15(0.085)],
+  [pct(rate(0.055), lang), 'produkcja, budownictwo, część transportu', net15(0.055)],
+  [pct(rate(0.03), lang), 'handel, gastronomia bez sprzedaży alkoholu', net15(0.03)],
+];
+const bands = H.ryczalt_bands.map((b, i) => [i === 0 ? `do ${F.ryczaltLimit1}` : i === 1 ? `od ${F.ryczaltLimit1} do ${F.ryczaltLimit2}` : `powyżej ${F.ryczaltLimit2}`, $2(b.monthly), $(b.monthly * 12), $(b.monthly * 12 * H.ryczalt_deductible_share)]);
+// Mécanique d'un mois à 15 000 zł, 12 %.
+const x = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: 0.12 });
+// Effet de seuil sur la santé : 60 000 zł et 300 000 zł de przychód annuel.
+const cliff1 = b2b({ revenue: 5000, form: 'ryczalt' }).net - b2b({ revenue: 5001, form: 'ryczalt' }).net;
+const cliff2 = b2b({ revenue: 25000, form: 'ryczalt' }).net - b2b({ revenue: 25001, form: 'ryczalt' }).net;
+// Frais réels : à partir de quel montant mensuel le liniowy rattrape le ryczałt 12 % (frais payés dans les deux cas).
+let cStar = 0; while (cStar < 15000 && b2b({ revenue: 15000, costs: cStar, form: 'liniowy' }).net <= b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: 0.12 }).net - cStar) cStar += 250;
+const lin2 = b2b({ revenue: 15000, costs: 2000, form: 'liniowy' }).net, ryc2 = x.net - 2000;
+const sk6 = b2b({ revenue: 6000, form: 'skala' }).net, ry6 = b2b({ revenue: 6000, form: 'ryczalt', ryczaltRate: 0.12 }).net, ry6b = b2b({ revenue: 6000, form: 'ryczalt', ryczaltRate: 0.085 }).net;
+const stepOver = 150000 - ART12.stepLimit;
+// Ryczałt 12 % à 10 000 zł selon le niveau de ZUS ; 17 % et 12 % face au liniowy sans coûts.
+const zs = (['start', 'preferential', 'full'] as const).map((z) => b2b({ revenue: 10000, form: 'ryczalt', ryczaltRate: 0.12, zus: z }));
+const r17 = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: 0.17 }).net, l15 = b2b({ revenue: 15000, form: 'liniowy' }).net;
+const r20 = b2b({ revenue: 20000, form: 'ryczalt', ryczaltRate: 0.12 }).net, l20 = b2b({ revenue: 20000, form: 'liniowy' }).net;
+const r30 = b2b({ revenue: 30000, form: 'ryczalt', ryczaltRate: 0.12 }).net, l30 = b2b({ revenue: 30000, form: 'liniowy' }).net;
+const stepTax = ART12.stepLimit * ART12.stepLow + stepOver * ART12.stepHigh;
+const faqs = [
+  { q: 'Czy na ryczałcie odliczę laptopa, leasing albo coworking?', a: `Nie. Ryczałt płaci się od przychodu, a jedyne odliczenia to składki społeczne i ${pct(H.ryczalt_deductible_share, lang)} zapłaconej składki zdrowotnej. Wydatki firmowe zmniejszają tylko Twój portfel. Przy przychodzie ${$(15000)} i stawce ${pct(rate(0.12), lang)} podatek liniowy zaczyna dawać więcej na rękę, gdy koszty przekraczają mniej więcej ${$(cStar)} miesięcznie.` },
+  { q: `Co się stanie ze składką zdrowotną, gdy roczny przychód przekroczy ${F.ryczaltLimit1}?`, a: `Wejdziesz w drugi próg: składka rośnie z ${F.ryczaltBand1} do ${F.ryczaltBand2} miesięcznie, czyli o ${$((H.ryczalt_bands[1].monthly - H.ryczalt_bands[0].monthly) * 12)} w skali roku. Połowę możesz odliczyć od przychodu, ale efekt i tak jest odczuwalny: przy przychodzie miesięcznym tuż powyżej ${$(5000)} zostaje Ci na rękę o około ${$(cliff1)} mniej niż tuż poniżej tej kwoty.` },
+  { q: 'Jaka stawka ryczałtu dla programisty w 2026 r.?', a: `Dla usług IT wymienionych w art. 12 ust. 1 pkt 2b ustawy o ryczałcie, m.in. PKWiU 62.01.1, 62.02, 62.03.1 i 58.29, stawka wynosi ${pct(rate(0.12), lang)}. Decyduje kod usługi, a nie nazwa stanowiska, więc warto go sprawdzić przed wyborem ryczałtu. Przy przychodzie ${$(15000)} miesięcznie i pełnym ZUS zostaje około ${net15(0.12)} na rękę.` },
+  { q: `Jak działa stawka ${pct(ART12.stepLow, lang)} do ${$(ART12.stepLimit)} i ${pct(ART12.stepHigh, lang)} powyżej?`, a: `Ustawa każe płacić ${pct(ART12.stepLow, lang)} od przychodu do ${$(ART12.stepLimit)} w roku i ${pct(ART12.stepHigh, lang)} od nadwyżki. Przy rocznym przychodzie ${$(150000)}, przed odliczeniem składek, daje to ${$(stepTax)} ryczałtu: ${$(ART12.stepLimit * ART12.stepLow)} od pierwszych ${$(ART12.stepLimit)} i ${$(stepOver * ART12.stepHigh)} od reszty. Mini-kalkulator tej stawki nie obsługuje, bo zmienia się ona w trakcie roku.` },
+  { q: 'Czy ryczałt opłaca się przy małym przychodzie?', a: `Często nie. Na ryczałcie nie ma kwoty wolnej od podatku, którą ma skala podatkowa. Przy przychodzie ${$(6000)} miesięcznie, bez kosztów i na pełnym ZUS, skala daje ${$(sk6)} na rękę, ryczałt ${pct(rate(0.12), lang)} ${$(ry6)}, a ryczałt ${pct(rate(0.085), lang)} ${$(ry6b)}. Przewaga ryczałtu pojawia się dopiero przy wyższym przychodzie i niskich kosztach.` },
+];
+---
+<GuideLayout lang={lang} id="ryczalt" breadcrumbLabel={label('ryczalt', lang)} title={`Ryczałt ewidencjonowany ${F.year}: stawki od ${pct(rate(0.03), lang)} do ${pct(rate(0.17), lang)}`} h1={`Ryczałt ewidencjonowany w ${F.year} r.: stawki, składka zdrowotna i przykłady`}
+  description={`Ryczałt ewidencjonowany w ${F.year} r.: stawki od ${pct(rate(0.03), lang)} do ${pct(rate(0.17), lang)} przychodu, zdrowotna ${F.ryczaltBand1}, ${F.ryczaltBand2} lub ${F.ryczaltBand3} miesięcznie. Ile zostaje z ${$(15000)}.`}
+  intro="Na ryczałcie podatek płaci się od przychodu, bez odliczania kosztów, według stawki przypisanej do rodzaju działalności."
+  resume={`Ryczałt ewidencjonowany w ${F.year} r. to podatek od przychodu, a nie od dochodu. Stawki z art. 12 ustawy o zryczałtowanym podatku dochodowym wynoszą ${pct(rate(0.17), lang)} dla wolnych zawodów, ${pct(rate(0.15), lang)} dla części usług doradczych i finansowych, ${pct(rate(0.14), lang)} m.in. dla usług medycznych i inżynierskich, ${pct(rate(0.12), lang)} dla wskazanych usług IT, ${pct(ART12.realEstate, lang)} przy obrocie nieruchomościami, ${pct(ART12.stepLow, lang)} z przejściem na ${pct(ART12.stepHigh, lang)} powyżej ${$(ART12.stepLimit)} dla części usług, ${pct(rate(0.085), lang)} dla pozostałych usług, ${pct(rate(0.055), lang)} dla produkcji i budownictwa oraz ${pct(rate(0.03), lang)} dla handlu. Kosztów nie odliczasz. Od przychodu odejmujesz tylko składki społeczne i ${pct(H.ryczalt_deductible_share, lang)} zapłaconej składki zdrowotnej. Zdrowotna ma trzy progi rocznego przychodu: ${F.ryczaltBand1} miesięcznie do ${F.ryczaltLimit1}, ${F.ryczaltBand2} do ${F.ryczaltLimit2} i ${F.ryczaltBand3} powyżej. Programista ze stawką ${pct(rate(0.12), lang)} i przychodem ${$(15000)} miesięcznie zachowuje na pełnym ZUS około ${net15(0.12)}.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: 'Kalkulator B2B', description: 'Ryczałt, liniowy i skala obok siebie dla Twojego przychodu.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} od dochodu: kiedy koszty przeważają szalę.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Składki społeczne od ${F.b2bZusPref} do ${F.b2bZusFull} miesięcznie.` }]}
+  sources={[src('ryczalt_act', lang), src('zus_b2b', lang), src('health_deduction', lang)]}>
+  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('b2b', lang)} /></div>
+
+  <h2>Stawki ryczałtu według rodzaju działalności</h2>
+  <p>Ostatnia kolumna pokazuje miesięczne netto przy przychodzie {$(15000)}, pełnym ZUS bez chorobowego i bez kosztów. Opisy działalności są skrócone: o stawce rozstrzyga brzmienie art. 12 ust. 1 i klasyfikacja PKWiU Twojej usługi.</p>
+  <ContentTable headers={['Stawka', 'Przykładowe działalności', `Netto z ${$(15000)} przychodu`]} align={['r', 'l', 'r']} rows={rows} />
+  <p>Różnica między skrajnymi stawkami jest ogromna. Kto sprzedaje towary na {pct(rate(0.03), lang)}, płaci od tego samego przychodu kilka razy mniej podatku niż lekarz albo architekt na {pct(rate(0.14), lang)}. Ale handel ma zwykle wysokie koszty zakupu towaru, których ryczałt nie uwzględnia, więc niska stawka wcale nie oznacza wysokiego zarobku.</p>
+
+  <h2>Jak liczy się podatek w jednym miesiącu</h2>
+  <p>Weźmy przychód {$(15000)} i stawkę {pct(rate(0.12), lang)}. Od przychodu odejmujesz składki społeczne ({$2(x.social)}) i połowę składki zdrowotnej ({$2(x.healthDeducted)}). Zostaje podstawa około {$(x.taxBase)}, od której ryczałt wynosi {$(x.tax)}. Po zapłaceniu podatku, składek społecznych, Funduszu Pracy ({$2(x.fp)}) i pełnej zdrowotnej ({$2(x.health)}) na koncie zostaje {$(x.net)}.</p>
+  <p>Zauważ, czego tu nie ma: kosztów. Rachunek za telefon, nowy monitor czy wynajem biura nie zmieniają ani złotówki podatku. Ryczałt nagradza tych, którzy dużo zarabiają przy małych wydatkach, typowo programistów, tłumaczy czy konsultantów pracujących z domu.</p>
+  <p>Warto też zauważyć, jak mało zmienia się podstawa: od {$(15000)} przychodu odliczenia wynoszą łącznie około {$(x.social + x.healthDeducted)}, więc ryczałt płacisz od prawie całej kwoty z faktur. Przy stawce {pct(rate(0.12), lang)} oznacza to, że z każdego dodatkowego tysiąca przychodu podatek zabiera około {$(1000 * rate(0.12))}, dopóki nie przekroczysz progu zdrowotnej.</p>
+
+  <h2>Składka zdrowotna w trzech progach</h2>
+  <ContentTable headers={['Roczny przychód', 'Składka miesięcznie', 'Rocznie', `Odliczane od przychodu (${pct(H.ryczalt_deductible_share, lang)})`]} align={['l', 'r', 'r', 'r']} rows={bands} />
+  <p>Na skali i podatku liniowym zdrowotna rośnie płynnie z dochodem. Na ryczałcie jest kwotą stałą w każdym z trzech przedziałów, więc przekroczenie progu działa jak schodek. Przy przychodzie miesięcznym tuż powyżej {$(5000)} (rocznie ponad {F.ryczaltLimit1}) netto spada o około {$(cliff1)} miesięcznie w porównaniu z kwotą tuż poniżej. Przy {$(25000)} miesięcznie, czyli progu {F.ryczaltLimit2} rocznie, schodek wynosi już około {$(cliff2)}.</p>
+  <p>Kto oscyluje wokół progu, może z tego wyciągnąć praktyczny wniosek: dodatkowe zlecenie, które przepycha roczny przychód tuż ponad próg, bywa mniej opłacalne, niż wygląda na fakturze. Warto przeliczyć cały rok, a nie tylko jeden miesiąc.</p>
+
+  <h2>Ryczałt kontra liniowy, gdy masz koszty</h2>
+  <p>Ponieważ ryczałt ignoruje koszty, jego przewaga topnieje wraz z wydatkami. Przy przychodzie {$(15000)} i stawce {pct(rate(0.12), lang)}, z kosztami {$(2000)} miesięcznie, na ryczałcie zostaje {$(ryc2)} po opłaceniu kosztów, a na podatku liniowym {$(lin2)}. Punkt równowagi wypada w okolicy {$(cStar)} kosztów miesięcznie: powyżej tej kwoty liniowy daje więcej. Szczegóły drugiej strony porównania opisuje poradnik o <a href={route('liniowy', lang)}>podatku liniowym</a>.</p>
+  <p>Ten rachunek zmienia się przy każdej stawce. Na {pct(rate(0.085), lang)} ryczałt wytrzymuje znacznie wyższe koszty, na {pct(rate(0.17), lang)} przegrywa z liniowym szybciej. Dlatego zanim wybierzesz formę opodatkowania, policz trzy warianty w <a href={route('b2b', lang)}>kalkulatorze B2B</a> na swoich realnych liczbach.</p>
+
+  <h2>Wysoka stawka zjada przewagę</h2>
+  <p>Ryczałt kojarzy się z niskim podatkiem, ale przy stawce {pct(rate(0.17), lang)} i przychodzie {$(15000)} miesięcznie zostaje {$(r17)}, podczas gdy podatek liniowy bez kosztów daje {$(l15)}. Wolny zawód na ryczałcie wygrywa więc tylko wtedy, gdy na liniowym miałby do odliczenia wysokie koszty, a usługi intelektualne rzadko ich wymagają tyle, co handel.</p>
+  <p>Przy stawce {pct(rate(0.12), lang)} obraz jest inny. Przy {$(20000)} przychodu ryczałt zostawia {$(r20)} wobec {$(l20)} na liniowym, przy {$(30000)} już {$(r30)} wobec {$(l30)}. Dla programisty pracującego z domu przewaga ryczałtu rośnie wraz z przychodem, a hamuje ją dopiero trzeci próg zdrowotnej powyżej {F.ryczaltLimit2}.</p>
+
+  <h2>Pierwszy rok firmy na ryczałcie</h2>
+  <p>Na początku działalności wariant ZUS zmienia wynik bardziej, niż się wydaje. Przy przychodzie {$(10000)} i stawce {pct(rate(0.12), lang)} na uldze na start zostaje {$(zs[0].net)}, na preferencyjnym ZUS {$(zs[1].net)}, a na pełnym {$(zs[2].net)}. Na uldze na start nie masz składek społecznych do odliczenia, więc ryczałt jest wyższy: {$(zs[0].tax)} wobec {$(zs[2].tax)} miesięcznie na pełnym ZUS. Mimo to netto jest wyraźnie lepsze, bo oszczędność na składkach przewyższa wyższy podatek.</p>
+  <p>Zdrowotna na ryczałcie nie zależy od wariantu ZUS, tylko od rocznego przychodu, więc przez cały pierwszy rok przy takim przychodzie wynosi {F.ryczaltBand2} miesięcznie. Kto przy planowaniu budżetu liczy tylko podatek, zwykle zapomina właśnie o tej pozycji. Szczegóły ulgi na start i preferencyjnych składek znajdziesz w poradniku o <a href={route('zusb2b', lang)}>ZUS przedsiębiorcy</a>.</p>
+
+  <h2>Co odliczasz, a czego nie</h2>
+  <p>Od przychodu odejmujesz składki emerytalną, rentową, wypadkową i ewentualnie chorobową. Do tego dochodzi {pct(H.ryczalt_deductible_share, lang)} zapłaconej składki zdrowotnej, co przy pierwszym progu daje {$(H.ryczalt_bands[0].monthly * 12 * H.ryczalt_deductible_share)} odliczenia rocznie, a przy drugim {$(H.ryczalt_bands[1].monthly * 12 * H.ryczalt_deductible_share)}. Kosztów działalności, amortyzacji ani kwoty wolnej od podatku na ryczałcie nie ma.</p>
+  <p>Na ryczałcie nie dostajesz paska wypłaty, więc to Ty pilnujesz rachunku. W ewidencji przychodów zapisujesz każdy przychód, a podatek za miesiąc liczysz według schematu: przychód minus składki społeczne minus połowa zdrowotnej, razy stawka.</p>
+
+  <h2>Jak wybrać właściwą stawkę</h2>
+  <p>Zacznij od kodu PKWiU usługi, którą faktycznie świadczysz, a nie od kodu PKD wpisanego przy rejestracji firmy. Potem znajdź ten kod lub opis usługi w art. 12 ust. 1 ustawy. Jeśli świadczysz usługi z różnych grup, każda z nich może mieć inną stawkę. W razie wątpliwości co do klasyfikacji pomocne są oficjalne objaśnienia urzędów skarbowych, a przy większych kwotach indywidualna interpretacja podatkowa.</p>
+
+  <h2>Typowe pułapki</h2>
+  <p>Przyjęcie stawki {pct(rate(0.12), lang)} dla każdej usługi „informatycznej”, mimo że ustawa wymienia konkretne kody. Zapomnienie o schodku zdrowotnej przy {F.ryczaltLimit1} i {F.ryczaltLimit2}. Wybór ryczałtu przy wysokich kosztach, bo „stawka jest niska”. I wreszcie liczenie składki zdrowotnej od przychodu procentowo, jak na skali: na ryczałcie to stała kwota zależna od progu.</p>
+  <div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('compare', lang)} /></div>
+</GuideLayout>

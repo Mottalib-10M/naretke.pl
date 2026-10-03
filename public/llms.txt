@@ -1,24 +1,22 @@
-# kalkulatorwynagrodzen.pl
+# KalkulatorWynagrodzen.pl
 
-> Kalkulator wynagrodzeń — oblicz wynagrodzenie netto z brutto dla umów o pracę, zlecenie, o dzieło i B2B.
+> Bezpłatny kalkulator wynagrodzeń 2026 (brutto netto) dla Polski: umowa o pracę, umowa zlecenie, umowa o dzieło i B2B (ryczałt, podatek liniowy, skala). Wersja polska /pl/ i angielska /en/. Wydawca: Radif Partners. Obliczenia w przeglądarce, stawki z ZUS, ustawy o PIT (Dz.U. 2026 poz. 592), ustawy o systemie ubezpieczeń społecznych (Dz.U. 2026 poz. 199) i obwieszczeń w Monitorze Polskim, sprawdzone 2026-10-03.
 
-## Overview
+## Kalkulatory
+- [Kalkulator wynagrodzeń brutto netto](https://kalkulatorwynagrodzen.pl/pl/): cztery umowy, rok miesiąc po miesiącu (drugi próg 32 %, limit 30-krotności ZUS 282 600 zł)
+- [Kalkulator umowa zlecenie](https://kalkulatorwynagrodzen.pl/pl/kalkulator-umowa-zlecenie/)
+- [Kalkulator umowa o dzieło](https://kalkulatorwynagrodzen.pl/pl/kalkulator-umowa-o-dzielo/)
+- [Kalkulator B2B](https://kalkulatorwynagrodzen.pl/pl/kalkulator-b2b/)
+- [Kalkulator netto brutto](https://kalkulatorwynagrodzen.pl/pl/kalkulator-netto-brutto/)
+- [Koszt pracodawcy](https://kalkulatorwynagrodzen.pl/pl/koszt-pracodawcy/)
 
-kalkulatorwynagrodzen.pl is a free Polish salary calculator that computes net take-home pay from gross salary (and vice versa). It supports all major contract types in Poland: umowa o pracę (employment contract), umowa zlecenie (mandate contract), umowa o dzieło (contract for specific work), and B2B (self-employment). The calculator accounts for PIT income tax, ZUS social security contributions, NFZ health insurance, and applicable tax reliefs.
+## Poradniki
+- [Płaca minimalna 2026](https://kalkulatorwynagrodzen.pl/pl/placa-minimalna/)
+- [Składki ZUS](https://kalkulatorwynagrodzen.pl/pl/skladki-zus/)
+- [Składka zdrowotna](https://kalkulatorwynagrodzen.pl/pl/skladka-zdrowotna/)
+- [Progi podatkowe](https://kalkulatorwynagrodzen.pl/pl/progi-podatkowe/)
+- [Metodologia](https://kalkulatorwynagrodzen.pl/pl/metodologia/)
 
-## Main features
-
-- Gross-to-net and net-to-gross salary calculator
-- Support for umowa o pracę, umowa zlecenie, umowa o dzieło, and B2B contracts
-- ZUS contribution breakdown (emerytalne, rentowe, chorobowe, wypadkowe)
-- PIT income tax calculation (12% and 32% thresholds)
-- NFZ health insurance contribution
-- Tax relief options (ulga podatkowa, kwota wolna od podatku, ulga dla młodych)
-- Employer cost (koszt pracodawcy) calculation
-
-## Data sources
-
-- Ministry of Finance (Ministerstwo Finansów): podatki.gov.pl
-- Social Insurance Institution (ZUS): zus.pl
-- PIT tax scales and thresholds: oficjalne tabele podatkowe
-- ZUS contribution rates: annual announcements from zus.pl
+## English
+- [Polish salary calculator, gross to net](https://kalkulatorwynagrodzen.pl/en/)
+- [Methodology](https://kalkulatorwynagrodzen.pl/en/methodology/)

@@ -1,0 +1,62 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+// Net bonus in January: uop({ gross: g + b }) − uop({ gross: g }).
+const janBonus = (g: number, b: number) => uop({ gross: g + b }).net - uop({ gross: g }).net;
+// Net bonus in December: 11 months at g then g + b, against 12 months at g.
+const decBonus = (g: number, b: number) => uopYear({ gross: g, months: [...Array(11).fill(g), g + b] }).months[11].net - uopYear({ gross: g }).months[11].net;
+const BONUSES = [2000, 5000, 10000];
+const GS = [6000, 10000, 15000];
+const rowsJan = GS.map((g) => [$(g), ...BONUSES.map((b) => $(janBonus(g, b)))]);
+const B = 10000;
+const GD = [8000, 12000, 15000, 25000];
+const rowsDec = GD.map((g) => { const j = janBonus(g, B), d = decBonus(g, B); return [$(g), $(j), $(d), $(j - d), pct((B - d) / B, lang)]; });
+const j5 = janBonus(8000, 5000);
+const j15 = janBonus(15000, B), d15 = decBonus(15000, B);
+const d12 = decBonus(12000, B), j12 = janBonus(12000, B);
+const d25 = decBonus(25000, B), d15share = pct((B - d15) / B, lang);
+const faqs = [
+  { q: 'Is a bonus taxed at a higher rate than regular salary in Poland?', a: `There is no separate bonus rate. The employer adds the bonus to that month's salary and deducts the same ZUS contributions, the ${F.health} health contribution and a ${F.pitLow} tax advance. The impression of higher tax comes from the end of the year: a bonus paid after your taxable base passes ${F.threshold} is taxed at ${F.pitHigh}. Early in the year, a ${$(5000)} gross bonus leaves ${$(j5)}.` },
+  { q: `I am getting a ${$(B)} bonus in December on a ${$(15000)} salary. How much will I keep?`, a: `About ${$(d15)} take-home, so deductions take ${d15share} of the bonus. On ${$(15000)} gross your cumulative taxable base passes ${F.threshold} in the autumn, so the whole December bonus is taxed at ${F.pitHigh} rather than ${F.pitLow}. The same bonus paid in January would leave ${$(j15)}.` },
+  { q: 'Is it worth asking for my bonus to be moved from December to January?', a: `For salaries that pass the ${F.threshold} threshold in the autumn, yes. On ${$(12000)} gross a ${$(B)} bonus paid in December leaves ${$(d12)} net, and in January of the following year ${$(j12)}, because the threshold count restarts from zero. The timing is up to your employer and its bonus rules, though, and a bonus moved to January adds to your taxable base for the new year.` },
+];
+---
+<GuideLayout lang={lang} id="bonus" breadcrumbLabel={label('bonus', lang)} title={`Bonus After Tax Poland ${F.year}: What ${$(5000)} Leaves You`} h1={`Bonus after tax in Poland ${F.year}: what is left after tax and ZUS`}
+  description={`Bonus after tax in Poland ${F.year}: a ${$(5000)} gross bonus leaves ${$(j5)} net in January, but less in December once you pass ${F.threshold}. Check your own bonus.`}
+  intro={`The calculator adds a bonus to your monthly salary and shows how much of it reaches your account after contributions and the tax advance.`}
+  resume={`A ${$(5000)} gross bonus paid early in ${F.year} leaves ${$(j5)} take-home on a Polish employment contract, and a ${$(10000)} bonus leaves ${$(janBonus(8000, 10000))}. Bonuses have no tax rate of their own: the employer adds the bonus to that month's salary and deducts pension, disability and sickness contributions (${F.socialEe}), the ${F.health} health contribution and the income tax advance from the total. As long as your taxable base since January stays below ${F.threshold}, the bonus is taxed at ${F.pitLow} and leaves the same net whatever your salary. The difference comes late in the year. On ${$(15000)} gross, a ${$(B)} bonus paid in December already falls into the second bracket and leaves ${$(d15)} instead of ${$(j15)}. The calculator treats the bonus as paid in a month before the second bracket; the tables below show net pay on three bonuses at different salaries and what a December bonus loses.`}
+  faqs={faqs}
+  related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Net pay for each month and when the second bracket starts.' }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh}: how the ${F.threshold} threshold works.` }, { href: route('overtime', lang), name: label('overtime', lang), description: 'Overtime supplements, taxed like a bonus together with salary.' }]}
+  sources={[src('pit_act', lang), src('zus_rates', lang), src('cap', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="bonus" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Three bonuses on three salaries</h2>
+  <p>Net figures are for a bonus paid in January together with salary, with PIT-2 filed and work costs of {F.kup}.</p>
+  <ContentTable headers={['Gross salary', `Bonus ${$(2000)}`, `Bonus ${$(5000)}`, `Bonus ${$(10000)}`]} align={['r', 'r', 'r', 'r']} rows={rowsJan} />
+  <p>The rows are practically identical. The fixed allowances (work costs of {F.kup} and the {F.reducingMonth} tax-reducing amount) are already used up by the salary itself, so every złoty of bonus passes through the same percentage deductions. Early in the year a bonus is worth exactly as much to someone on {$(6000)} as to someone on {$(15000)}.</p>
+
+  <h2>A December bonus: when the second bracket takes more</h2>
+  <p>The second table compares a {$(B)} gross bonus paid in January with the same bonus paid in December, after eleven months of steady salary.</p>
+  <ContentTable headers={['Gross salary', 'Net bonus in January', 'Net bonus in December', 'December loss', 'Deducted from the December bonus']} align={['r', 'r', 'r', 'r', 'r']} rows={rowsDec} highlightRow={2} />
+  <p>At {$(8000)} gross the payment month makes no difference, because the taxable base never gets near {F.threshold} by year end. At {$(12000)} the December salary alone fills what is left of the first bracket, so the whole bonus lands in the second, just as it does at {$(15000)}: both lose the same amount in December, because the entire bonus is taxed at {F.pitHigh}. At {$(25000)} the {F.cap} cap also comes into play: cumulative gross passes it in December, so part of the bonus no longer carries pension and disability contributions, which partly offsets the higher tax; {$(d25)} remains.</p>
+
+  <h2>Where the deductions from a bonus come from</h2>
+  <p>On a Polish payslip (pasek wypłaty) the bonus appears as a separate income line, but deductions are worked out on the total. Social contributions of {F.socialEe} and the {F.health} health contribution are proportional to the amount. The tax advance depends on which bracket your cumulative taxable base is in. The label does not matter: a discretionary bonus, a contractual one, a quarterly bonus or an annual award are all settled the same way, provided the employer pays them under an employment contract.</p>
+  <p>A bonus also raises your cumulative base for the rest of the year. A large payment in spring can therefore bring forward the month you enter the second bracket and lower the net on your salary in the final months, even if the bonus itself was taxed at {F.pitLow}. The <a href={route('annual', lang)}>annual salary calculator</a> shows this effect.</p>
+
+  <h2>What the bonus calculator leaves out</h2>
+  <p>The tool assumes a bonus paid in January, before the second bracket and before the contribution cap. It does not handle bonuses on mandate or B2B contracts, where extra money is simply a higher contract fee or a larger invoice. It ignores PPK: if you are a member, your {F.ppkEe} contribution is also taken from the bonus and the employer's payment raises your tax. It also leaves out the under-26 youth relief, under which a young employee's bonus is exempt from income tax up to {F.youthLimit} a year. For net pay on your salary with those options, use the <a href={route('home', lang)}>salary calculator</a>.</p>
+
+  <h2>Which month the second bracket starts</h2>
+  <p>If your bonus falls late in the year, check from when your salary is taxed at {F.pitHigh}.</p>
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('brackets', lang)} /></div>
+</GuideLayout>

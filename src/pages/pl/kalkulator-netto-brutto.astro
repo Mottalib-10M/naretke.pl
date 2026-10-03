@@ -1,0 +1,79 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, grossForNet, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const ratio = (g: number, n: number) => formatNumber(g / n, 3, lang);
+// Tableau calculé par le moteur : brut nécessaire pour cinq nets visés (mois type, PIT-2, KUP 250 zł).
+const NETS = [4000, 5000, 6000, 8000, 10000];
+const rows = NETS.map((n) => { const g = grossForNet(n); const m = uop({ gross: g }); return [$(n), $(g), ratio(g, n), pct((g - n) / g, lang), $(m.er.cost)]; });
+const g4 = grossForNet(4000), g6 = grossForNet(6000), g7 = grossForNet(7000), g10 = grossForNet(10000);
+const m6 = uop({ gross: g6 });
+const share4 = pct((g4 - 4000) / g4, lang), share10 = pct((g10 - 10000) / g10, lang);
+// Variantes du même net de 6 000 zł.
+const g6ppk = grossForNet(6000, { ppk: true }), g6raised = grossForNet(6000, { kup: 'raised' }), g6young = grossForNet(6000, { under26: true }), g6nopit2 = grossForNet(6000, { pit2: false });
+// Second próg : le brut calculé pour 10 000 zł netto, regardé en décembre.
+const y10 = uopYear({ gross: g10 });
+const dec10 = y10.months[11].net;
+const firstHigh = y10.months.find((x) => x.secondBracket);
+const MONTHS_LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const monthHigh = firstHigh ? MONTHS_LOC[firstHigh.month - 1] : 'grudniu';
+// Podwyżka : ce que 1 000 zł brut de plus laisse en net autour de 6 000 zł netto.
+const raiseNet = uop({ gross: g6 + 1000 }).net - m6.net;
+const raiseCost = uop({ gross: g6 + 1000 }).er.cost - m6.er.cost;
+const spread6 = g6nopit2 - g6young;
+const faqs = [
+  { q: 'Rekruter pyta o oczekiwania finansowe. Podawać netto czy brutto?', a: `Przy umowie o pracę podawaj brutto miesięcznie, bo w takiej kwocie pracodawca zapisze pensję w umowie i w takiej porówna Cię z innymi kandydatami. Jeśli liczysz na ${$(6000)} na rękę, Twoje oczekiwania to około ${$(g6)} brutto przy PIT-2 i kosztach ${F.kup}. Rozmowa w kwotach netto prowadzi do nieporozumień, bo netto zależy od wieku, PPK i dojazdów, których pracodawca nie zna.` },
+  { q: 'Ile brutto trzeba dołożyć, żeby netto wzrosło o 1 000 zł?', a: `Więcej niż 1 000 zł. Przejście z ${$(6000)} na ${$(7000)} netto wymaga podniesienia pensji z ${$(g6)} do ${$(g7)} brutto, czyli o ${$(g7 - g6)}. Z każdej złotówki podwyżki zabierane są składki ZUS ${F.socialEe}, składka zdrowotna ${F.health} i zaliczka PIT ${F.pitLow}, a stałe odliczenia (koszty i kwota zmniejszająca) nie rosną razem z pensją.` },
+  { q: 'Czy ten kalkulator przeliczy netto na brutto dla umowy zlecenia albo B2B?', a: `Nie, liczy wyłącznie umowę o pracę, bo tylko na etacie netto i brutto łączą się jednym stałym wzorem. Na zleceniu składki zależą od tego, czy jesteś studentem i czy masz inny tytuł do ubezpieczeń, a na B2B słowo „netto” oznacza zwykle kwotę faktury bez VAT, nie wypłatę na rękę. Dla tych umów użyj osobnych kalkulatorów i dobierz kwotę metodą prób.` },
+  { q: 'Dlaczego mój pasek wypłaty pokazuje inne netto niż kalkulator dla tej samej kwoty brutto?', a: `Najczęściej z trzech powodów: nie złożyłeś PIT-2 (wtedy zaliczka jest wyższa o ${F.reducingMonth}), należysz do PPK (potrącenie ${F.ppkEe} brutto) albo wypłata obejmuje dodatki i potrącenia, których kalkulator nie zna. Bez PIT-2 na ${$(6000)} netto potrzeba aż ${$(g6nopit2)} brutto. Sprawdź też, czy pensja nie przekroczyła już w tym roku progu ${F.threshold} podstawy opodatkowania.` },
+];
+---
+<GuideLayout lang={lang} id="nettobrutto" breadcrumbLabel={label('nettobrutto', lang)} title={`Netto brutto ${F.year}: ${$(6000)} na rękę to ${$(g6)} brutto`} h1={`Kalkulator netto brutto ${F.year}: jakie brutto daje Twoje netto`}
+  description={`Kalkulator netto brutto ${F.year}: wpisz kwotę na rękę i zobacz potrzebne brutto. ${$(6000)} netto na etacie to ${$(g6)} brutto, a ${$(10000)} netto to ${$(g10)} brutto.`}
+  intro={`Wpisujesz kwotę, którą chcesz dostawać na konto, a kalkulator odwraca obliczenia płacowe i podaje pensję brutto do wpisania w umowie o pracę.`}
+  resume={`Żeby dostać ${$(6000)} na rękę na umowie o pracę w ${F.year} r., potrzebujesz ${$(g6)} brutto miesięcznie, a na ${$(10000)} netto aż ${$(g10)} brutto. Kalkulator netto brutto szuka kwoty brutto, przy której wszystkie potrącenia z pensji dają dokładnie wpisane netto: składki emerytalną, rentową i chorobową pracownika (razem ${F.socialEe}), składkę zdrowotną ${F.health} i zaliczkę na PIT ${F.pitLow} pomniejszoną o ${F.reducingMonth} z PIT-2. Wynik dotyczy miesiąca przed przekroczeniem progu ${F.threshold}, ze standardowymi kosztami ${F.kup}, bez PPK i bez ulgi dla młodych. Relacja brutto do netto nie jest stała: przy ${$(4000)} netto potrącenia zabierają ${share4} brutto, przy ${$(10000)} netto już ${share10}, bo stałe odliczenia ważą coraz mniej. Poniżej tabela dla pięciu kwot, warianty z PPK i dojazdami oraz wskazówki, jak negocjować pensję w kwotach brutto.`}
+  faqs={faqs}
+  related={[{ href: route('home', lang), name: label('home', lang), description: 'Kierunek odwrotny: z brutto na netto, dla każdej umowy.' }, { href: route('employer', lang), name: label('employer', lang), description: 'Ile pracodawcę kosztuje brutto, o które prosisz.' }, { href: route('pit2', lang), name: 'PIT-2', description: `${F.reducingMonth} miesięcznie więcej na rękę po złożeniu oświadczenia.` }]}
+  sources={[src('pit_act', lang), src('zus_rates', lang), src('health_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Brutto potrzebne dla typowych kwot na rękę</h2>
+  <p>Tabela pokazuje miesiąc z PIT-2 i kosztami {F.kup}, czyli sytuację większości osób zatrudnionych na etacie u jednego pracodawcy. Ostatnia kolumna to pełny koszt pracodawcy, który przyda się w rozmowie o budżecie stanowiska.</p>
+  <ContentTable headers={['Netto', 'Potrzebne brutto', 'Brutto / netto', 'Potrącenia w % brutto', 'Koszt pracodawcy']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={2} />
+  <p>Mnożnik w trzeciej kolumnie rośnie z każdym wierszem. Kto liczy „netto razy 1,4”, przy niskiej pensji zawyży oczekiwania, a przy wysokiej je zaniży.</p>
+
+  <h2>Skąd bierze się rosnący mnożnik</h2>
+  <p>Gdyby wszystkie potrącenia były procentem brutto, wystarczyłby jeden przelicznik. Tak jednak nie jest. Składki społeczne ({F.socialEe}) i składka zdrowotna ({F.health} liczona od brutto pomniejszonego o te składki) są proporcjonalne. Zaliczka na podatek już nie: od podstawy odejmuje się stałe koszty {F.kup}, a od samego podatku stałe {F.reducingMonth}. Te dwie kwoty nie zmieniają się, gdy pensja rośnie, więc przy {$(4000)} netto osłaniają znaczną część dochodu, a przy {$(10000)} netto stanowią już niewielki ułamek.</p>
+  <p>Drugi powód widać dopiero w skali roku. Kalkulator liczy miesiąc, w którym cała podstawa mieści się w pierwszym progu. Pensja {$(g10)} brutto daje {$(10000)} netto w styczniu, ale skumulowana podstawa opodatkowania przekracza {F.threshold} w {monthHigh}. Od tego momentu nadwyżka jest opodatkowana stawką {F.pitHigh}, a w grudniu na konto wpływa {$(dec10)}. Jeśli zależy Ci na stałym netto przez cały rok, negocjuj brutto z zapasem albo poproś o przeliczenie średniej rocznej w <a href={route('annual', lang)}>kalkulatorze wynagrodzenia rocznego</a>.</p>
+  <p>Trzecia granica dotyczy najlepiej zarabiających: po przekroczeniu limitu {F.cap} w roku (średnio {F.capMonthly} miesięcznie) znikają składki emerytalna i rentowa, więc netto rośnie. Kalkulator tego nie uwzględnia w wyniku miesięcznym.</p>
+
+  <h2>To samo netto, różne kwoty brutto</h2>
+  <p>Wynik w okienku zakłada najczęstszy przypadek. Twoja sytuacja może wymagać innego brutto dla tego samego celu {$(6000)} na rękę:</p>
+  <ul>
+    <li>bez złożonego PIT-2: {$(g6nopit2)} brutto, bo pracodawca nie odejmuje {F.reducingMonth} od zaliczki;</li>
+    <li>z PPK na stawce podstawowej: {$(g6ppk)} brutto, bo z wypłaty znika dodatkowo {F.ppkEe}, a wpłata pracodawcy ({F.ppkEr}) zwiększa podstawę podatku;</li>
+    <li>z podwyższonymi kosztami {F.kupRaised} dla dojeżdżających z innej miejscowości: {$(g6raised)} brutto;</li>
+    <li>poniżej 26 lat, z ulgą dla młodych: {$(g6young)} brutto, dopóki przychody w roku nie przekroczą {F.youthLimit}.</li>
+  </ul>
+  <p>Między pierwszym a ostatnim wariantem jest {$(spread6)} brutto różnicy przy identycznym przelewie. Dlatego oczekiwania podane w netto są dla pracodawcy mało użyteczne: nie wie, który z tych przypadków Cię dotyczy.</p>
+
+  <h2>Negocjacje: myśl w brutto, sprawdzaj w netto</h2>
+  <p>Oferty pracy na umowę o pracę podają kwoty brutto i w brutto zapisuje się wynagrodzenie w umowie. Rozsądnie jest więc przyjść na rozmowę z kwotą brutto policzoną z netto, którego potrzebujesz, a nie odwrotnie. Przy {$(6000)} netto mówimy o {$(g6)} brutto, a pracodawcę takie stanowisko kosztuje {$(m6.er.cost)} miesięcznie razem z jego składkami.</p>
+  <p>Ta ostatnia liczba tłumaczy, czemu podwyżka bywa trudniejsza, niż się wydaje. Podwyżka o {$(1000)} brutto daje Ci przy tej pensji około {$(raiseNet)} na rękę, a firmie zwiększa koszt o {$(raiseCost)}. Prosząc o konkretną kwotę netto, prosisz w praktyce o znacznie wyższy budżet. Zobacz szczegóły w <a href={route('employer', lang)}>kalkulatorze kosztu pracodawcy</a>.</p>
+  <p>Na ofertach B2B słowo „netto” ma inne znaczenie: oznacza kwotę faktury bez VAT, od której samodzielnie płacisz ZUS, składkę zdrowotną i podatek. {$(10000)} netto na fakturze to coś zupełnie innego niż {$(10000)} netto na etacie. Porównanie obu form znajdziesz na stronie <a href={route('compare', lang)}>B2B czy umowa o pracę</a>.</p>
+
+  <h2>Czego to narzędzie nie policzy</h2>
+  <p>Kalkulator przelicza netto na brutto tylko dla umowy o pracę i jednego pracodawcy. Nie uwzględnia premii, nagród, dodatków za nadgodziny ani świadczeń w naturze (samochód, pakiet medyczny opłacany przez firmę), które zwiększają podstawę podatku i obniżają netto. Nie zna też potrąceń komorniczych ani składek związkowych widocznych na pasku wypłaty. Wynik jest zaokrąglany jak na liście płac: składki do grosza, podstawa i zaliczka do pełnych złotych, więc różnica kilku groszy względem wypłaty jest normalna.</p>
+
+  <h2>Ile kosztuje pracodawcę pensja, o którą prosisz</h2>
+  <p>Wpisz brutto z pierwszego kalkulatora, aby zobaczyć, ile wynosi pełny koszt zatrudnienia z PPK i bez.</p>
+  <div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('employer', lang)} /></div>
+</GuideLayout>

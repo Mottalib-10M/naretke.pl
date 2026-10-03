@@ -1,0 +1,70 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { zlecenie, dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const SMALL = P.pit.flat_small_contract_limit;
+const rows = [SMALL, 1000, 3000, 5000, 10000].map((g) => [$(g), $(zlecenie({ gross: g }).net), $(zlecenie({ gross: g, sickness: true }).net), $(dzielo({ gross: g }).net), $(dzielo({ gross: g, authors: true }).net)]);
+const G = 4000;
+const z = zlecenie({ gross: G }), zs = zlecenie({ gross: G, sickness: true }), zu = zlecenie({ gross: G, under26: true }), zst = zlecenie({ gross: G, student: true });
+const d = dzielo({ gross: G }), da = dzielo({ gross: G, authors: true });
+const zSmall = zlecenie({ gross: SMALL }), dSmall = dzielo({ gross: SMALL });
+const faqs = [
+  { q: 'What is the practical difference between umowa o dzieło and umowa zlecenie?', a: `A specific-work contract (umowa o dzieło) is about a defined result you can hand over and check: a website, a translation, a design, a photo shoot. A mandate contract (umowa zlecenie) is about carrying out tasks with due care, with no guaranteed outcome: teaching classes, serving customers, cleaning. That difference drives contributions: a mandate carries ZUS and health contribution, a specific-work contract generally does not. On ${$(G)} gross that leaves ${$(z.net)} versus ${$(d.net)}.` },
+  { q: 'I am 23 and not a student. Which pays more, zlecenie or dzieło?', a: `For the same amount, usually dzieło. On a mandate contract the youth relief removes income tax but ZUS and health stay: ${$(G)} gross leaves you ${$(zu.net)}. The youth relief does not cover specific-work contracts, so you pay the ${F.pitLow} advance, but with no contributions you keep ${$(d.net)}. Students under 26 are different: on a mandate they pay neither contributions nor tax and keep the full ${$(zst.net)}.` },
+  { q: 'My employer offers me a specific-work contract on top of my job. Does that avoid contributions?', a: `No. Article 8(2a) of the Social Insurance System Act treats as an employee anyone who signs a specific-work or mandate contract with their own employer, or works for that employer under such a contract signed with another firm. The contract pay is added to the salary and carries contributions like wages. The contribution saving of dzieło only exists with a company you are not employed by.` },
+  { q: 'How much does the client pay on top of the contract amount?', a: `On a specific-work contract nothing: the commissioning party's cost equals the gross amount, ${$(d.employerCost)} on a ${$(G)} contract. On a mandate contract the client adds its own share of pension (${F.emerytalnaEr}), disability (${F.rentowaEr}) and accident contributions, plus fund contributions depending on the pay level. The total cost of a ${$(G)} mandate contract is ${$(z.employerCost)}.` },
+  { q: `A contract for ${F.smallContract}: do costs and contributions still apply?`, a: `Costs do not: on a contract of up to ${F.smallContract} with someone who is not the payer's employee, tax is a flat ${F.pitLow} of the whole amount. Contributions depend on the contract: a mandate carries ZUS and health contribution even at that size, a specific-work contract does not. On ${$(SMALL)} you take home ${$(zSmall.net)} from a mandate and ${$(dSmall.net)} from a specific-work contract.` },
+];
+---
+<GuideLayout lang={lang} id="zlecdzielo" breadcrumbLabel={label('zlecdzielo', lang)} title={`Mandate vs Specific-Work Contract ${F.year}: ZUS, Tax, Net Pay`} h1={`Mandate contract or specific-work contract in ${F.year}?`}
+  description={`Umowa zlecenie or o dzieło in ${F.year}: on ${$(G)} gross you keep ${$(z.net)} from a mandate and ${$(d.net)} from dzieło. Contributions, ${F.kupContract} and ${F.kupAuthors} costs, reliefs.`}
+  intro={`Poland's two common civil-law contracts, umowa zlecenie (mandate) and umowa o dzieło (specific work), give very different net pay for the same fee, because only the mandate carries ZUS and health contributions.`}
+  resume={`For the same gross amount, a Polish specific-work contract (umowa o dzieło) leaves more take-home pay than a mandate contract (umowa zlecenie), because it generally carries no ZUS or health contribution. On ${$(G)} gross a mandate leaves ${$(z.net)} and a specific-work contract ${$(d.net)}; if the work is a copyrighted creation and you transfer the rights, ${F.kupAuthors} deductible costs lift net pay to ${$(da.net)}. Both contracts give ${F.kupContract} deductible costs, on a mandate calculated after contributions. The choice is not really about net pay, though, but about the work: dzieło is a defined result, zlecenie is carrying out tasks with due care. A specific-work contract with your own employer is treated like salary for contributions. Under-26s get the youth relief only on a mandate, and a student on a mandate pays neither contributions nor tax. Contracts of up to ${F.smallContract} are flat-taxed at ${F.pitLow} either way. The mini calculator compares both for your amount.`}
+  faqs={faqs}
+  related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Net pay on a mandate, with or without sickness cover.' }, { href: route('dzielo', lang), name: label('dzielo', lang), description: `Net pay on dzieło, with ${F.kupContract} or ${F.kupAuthors} costs.` }, { href: route('authors', lang), name: label('authors', lang), description: `When ${F.kupAuthors} costs apply.` }]}
+  sources={[src('sus_act', lang), src('pit_act', lang), src('health_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecenie', lang)} /></div>
+
+  <h2>Result or due care: the legal difference</h2>
+  <p>Both contracts fall under the Civil Code, not the Labour Code, so neither gives you paid leave or the notice periods of an employment contract. What separates them is the subject. A specific-work contract commits you to a defined result that can be handed over and assessed: a translation, a logo, a piece of software, a bathroom renovation, a magazine feature. You answer for the outcome, and you are paid for the work delivered, not the hours.</p>
+  <p>A mandate contract commits you to performing tasks with due care. You teach, staff a stand, look after clients, hand out leaflets; you answer for diligence, not for whether the client is happy with the result. Because time and activity are what count, mandate contracts are covered by the {F.minHourly} gross minimum hourly rate.</p>
+  <p>What decides the nature of a contract is its content and how it is carried out, not the title on page one. Repetitive work done under supervision and billed by the hour does not become a specific work just because someone called it that. Foreigners in Poland are sometimes offered a dzieło for what is plainly ongoing shift work; read the description of the task before you sign.</p>
+
+  <h2>Net pay from both contracts for the same amount</h2>
+  <ContentTable headers={['Gross', 'Mandate', 'Mandate with sickness cover', `Specific work (${F.kupContract})`, `Specific work, copyright (${F.kupAuthors})`]} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>The table is for someone past their 26th birthday, with no PIT-2 statement and no other insurance title. Above {F.smallContract}, the specific-work contract comes out ahead by roughly a fifth of the gross amount, and the copyright version by more. On {$(G)} the gap between a mandate and an ordinary specific-work contract is {$(d.net - z.net)} a month, or {$((d.net - z.net) * 12)} a year on a contract repeated monthly.</p>
+  <p>The higher net pay is not free. No contributions means nothing paid into your pension account, no sickness benefit and no health insurance from that contract. On a mandate, pension and disability cover is compulsory and sickness cover voluntary. The "with sickness cover" column shows what the voluntary {F.chorobowa} contribution costs: {$(z.net - zs.net)} a month on {$(G)}.</p>
+
+  <h2>ZUS and health contribution on each contract</h2>
+  <p>Mandate contractors (zleceniobiorcy) are listed in article 6(1)(4) of the Social Insurance System Act, so they are compulsorily covered by pension and disability insurance. From {$(G)} gross, the client withholds {$(z.social)} in social contributions and {$(z.health)} in {F.health} health contribution. Sickness insurance is voluntary, on the contractor's request (article 11(2)).</p>
+  <p>People doing specific work are not on that list. A specific-work contract with a company that does not employ you therefore generally creates no social contributions, and because compulsory health insurance for contractors is tied to social insurance cover, no health contribution either. The commissioning party pays the gross amount minus only the tax advance.</p>
+  <p>There is one important exception. Article 8(2a) treats as an employee anyone who signs a mandate or specific-work contract with their own employer, and anyone who works for their employer under such a contract even though it was signed with a different firm. The contract pay is added to the salary and charged contributions as salary.</p>
+
+  <h2>Deductible costs: {F.kupContract} on both, {F.kupAuthors} with copyright</h2>
+  <p>Article 22(9)(4) of the PIT Act gives both contracts deductible costs (koszty uzyskania przychodu) of {F.kupContract}. On a mandate they are calculated after the social contributions withheld: {$(z.kup)} on {$(G)}. On a specific-work contract without contributions the percentage applies to the full amount: {$(d.kup)}. The tax advance is {F.pitLow} of the base after costs, {$(z.pit)} and {$(d.pit)} respectively.</p>
+  <p>If the contract produces a work protected by copyright and you transfer the rights to the client, costs rise to {F.kupAuthors}, with an annual limit of {F.kupAuthorsLimit}. On {$(G)} the advance on a copyright specific-work contract drops to {$(da.pit)} and net pay rises to {$(da.net)}. Who can use these costs and when is covered in our guide to <a href={route('authors', lang)}>creative work costs</a>.</p>
+  <p>On either contract you can give the client a PIT-2 statement that cuts the advance by {F.reducingMonth} a month; see our guide to the <a href={route('pit2', lang)}>PIT-2 form</a>.</p>
+
+  <div data-chrome><MiniSim client:load kind="zlecenie" lang={lang} href={route('zlecenie', lang)} /></div>
+
+  <h2>Contracts up to {F.smallContract}, under-26s and students</h2>
+  <p>On a contract of up to {F.smallContract} with someone who is not the payer's employee, tax is a flat {F.pitLow} of the whole amount, with no costs and no PIT-2. A specific-work contract for {$(SMALL)} leaves {$(dSmall.net)}. A mandate for the same amount still carries contributions, leaving {$(zSmall.net)}.</p>
+  <p>Age flips part of the calculation. The youth relief covers mandate income but not specific-work income. Someone under 26 who is not studying takes home {$(zu.net)} from a {$(G)} mandate: no tax, but contributions. From a specific-work contract for the same amount they get {$(d.net)}: tax is due, but without contributions it still works out better.</p>
+  <p>The best case is a student or pupil under 26 on a mandate contract: no contributions and no tax, so the full {$(zst.net)}. For them a mandate beats dzieło; our guide to <a href={route('student', lang)}>students on a mandate contract</a> has the details.</p>
+
+  <h2>Reading the bill for your contract</h2>
+  <p>Civil-law contracts are usually paid against a bill (rachunek) rather than a payslip. A bill for a {$(G)} gross mandate should show the pension contribution {$(z.emerytalna)}, disability {$(z.rentowa)}, health contribution {$(z.health)}, deductible costs {$(z.kup)}, taxable base {$(z.taxBase)}, tax advance {$(z.pit)} and the amount paid out, {$(z.net)}.</p>
+  <p>A bill for a specific-work contract of the same amount is shorter: costs {$(d.kup)}, base {$(d.taxBase)}, advance {$(d.pit)} and {$(d.net)} paid out. If a specific-work bill shows ZUS contributions, check whether the client is also your employer. If a mandate bill shows none and you are not a student under 26, ask why: the client may be relying on another insurance title, and you should know which.</p>
+
+  <h2>How to choose before you sign</h2>
+  <p>Start with what you will actually do. If the contract describes a finished product with a delivery date, dzieło is the natural fit. If it describes shifts, hours and ongoing tasks, it is a mandate, whichever form pays more. Then check that the client is not your employer, because that removes the contribution saving.</p>
+  <p>Finally, think in years, not months. Specific work pays more now, but a mandate builds an insurance record and, if you pay the voluntary contribution, access to sickness benefit. Run your own numbers in the <a href={route('zlecenie', lang)}>mandate contract calculator</a> and the <a href={route('dzielo', lang)}>specific-work contract calculator</a>.</p>
+</GuideLayout>

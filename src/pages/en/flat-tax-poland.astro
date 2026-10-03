@@ -1,0 +1,77 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const H = P.b2b.health;
+const rows = [10000, 15000, 20000, 30000, 50000].map((g) => { const s = b2b({ revenue: g, form: 'skala' }), l = b2b({ revenue: g, form: 'liniowy' }); return [$(g), $(s.net), $(l.net), `${l.net - s.net >= 0 ? '+' : '−'}${$(Math.abs(l.net - s.net))}`, $2(l.health)]; });
+let cross = 5000; while (b2b({ revenue: cross, form: 'liniowy' }).net <= b2b({ revenue: cross, form: 'skala' }).net) cross += 100;
+let limRev = 5000; while (b2b({ revenue: limRev, form: 'liniowy' }).health * 12 <= H.liniowy_deduction_limit) limRev += 100;
+const minIncome = H.minimum_monthly / H.liniowy_rate;
+const maxSaving = H.liniowy_deduction_limit * P.b2b.liniowy_rate;
+const x6 = b2b({ revenue: 6000, form: 'liniowy' }); const eff6 = x6.health / (6000 - x6.social - x6.fp);
+const x20 = b2b({ revenue: 20000, form: 'liniowy' });
+const x30 = b2b({ revenue: 30000, form: 'liniowy' });
+const mg = (g: number, f: 'skala' | 'liniowy') => b2b({ revenue: g + 1000, form: f }).net - b2b({ revenue: g, form: f }).net;
+const lp = b2b({ revenue: 15000, form: 'liniowy', zus: 'preferential' }), lf = b2b({ revenue: 15000, form: 'liniowy' });
+const c20s = b2b({ revenue: 20000, costs: 6000, form: 'skala' }).net, c20l = b2b({ revenue: 20000, costs: 6000, form: 'liniowy' }).net;
+const faqs = [
+  { q: 'From what revenue does the flat tax beat the tax scale?', a: `In our model, with no costs and full ZUS, the flat tax starts leaving more take-home from about ${$(cross)} of monthly revenue. Below that the tax scale wins thanks to the ${F.reducingYear} tax-reducing amount and the ${F.pitLow} rate. If you have costs, what matters is profit rather than revenue, so the break-even point moves up by roughly the amount of your costs.` },
+  { q: `How much of the health contribution can I deduct on the flat tax in ${F.year}?`, a: `You deduct the health contribution you paid from income, up to ${F.liniowyLimit} a year. At the ${F.liniowy} rate that is worth at most ${$(maxSaving)} of tax a year. The cap starts to bite at around ${$(limRev)} of monthly revenue with no costs: above that, each extra zloty of health contribution no longer lowers your tax.` },
+  { q: `Do I get the ${F.freeAmount} tax-free allowance on the flat tax?`, a: `No. The flat tax is ${F.liniowy} of the tax base from the first zloty of profit. The ${F.freeAmount} tax-free amount, worth ${F.reducingYear} less tax a year, exists only on the tax scale. That is the main reason why, up to a profit of somewhere above ten thousand zloty a month, the scale leaves more despite its higher ${F.health} health contribution.` },
+  { q: `Why do I pay more than ${F.healthLiniowy} health contribution on a low income?`, a: `Because the flat-tax health contribution has a floor of ${F.healthMin} a month. The ${F.healthLiniowy} rate only produces more than that once income exceeds ${$(minIncome)} a month. On ${$(6000)} of revenue with no costs you pay the minimum, which works out at roughly ${pct(Math.round(eff6 * 1000) / 1000, lang)} of income.` },
+  { q: `What is the flat-tax health contribution for January ${F.year}?`, a: `For January ${F.year} the minimum is ${F.healthMinJan}, because January still belongs to the previous contribution year. From February ${F.year} to January of the following year the minimum is ${F.healthMin}, based on the ${F.minWage} minimum wage. If ${F.healthLiniowy} of your income comes to more, you pay that higher amount.` },
+];
+---
+<GuideLayout lang={lang} id="liniowy" breadcrumbLabel={label('liniowy', lang)} title={`Flat tax ${F.year}: ${F.liniowy} rate, ${F.healthLiniowy} health and break-even`} h1={`The ${F.liniowy} flat tax in Poland in ${F.year}: when it beats the tax scale`}
+  description={`Polish flat tax (podatek liniowy) in ${F.year}: ${F.liniowy} of profit, ${F.healthLiniowy} health (minimum ${F.healthMin}), deduction up to ${F.liniowyLimit}. Pays off from ${$(cross)} a month.`}
+  intro="The flat tax is a single rate on all your business profit, with no brackets but also no tax-free allowance and fewer reliefs."
+  resume={`In ${F.year}, the flat tax (podatek liniowy) is ${F.liniowy} of the tax base whatever your income (Article 30c of the PIT Act). It has no tax-free allowance and no ${F.pitHigh} second bracket, and the youth relief (ulga dla młodych) covers employment and mandate income, not a business. The health contribution is ${F.healthLiniowy} of income but never less than ${F.healthMin} a month from February ${F.year} (${F.healthMinJan} for January). The health contribution you pay is deductible from income up to ${F.liniowyLimit} a year. In our model, with no costs and full ZUS without sickness cover, the flat tax starts leaving more take-home than the tax scale from about ${$(cross)} of monthly revenue. At ${$(20000)} the gap reaches ${$(b2b({ revenue: 20000, form: 'liniowy' }).net - b2b({ revenue: 20000, form: 'skala' }).net)} a month, and at ${$(50000)} it is several times larger, because on the scale any profit above ${F.threshold} a year is taxed at ${F.pitHigh}. The mini-calculator below works out flat-tax take-home with your costs.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: 'B2B calculator', description: 'Tax scale, flat tax and lump sum for your revenue and costs.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: `Rates from ${pct(P.b2b.ryczalt_rates[6].rate, lang)} and a health contribution in three bands.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh} on the scale: how the ${F.threshold} threshold works.` }]}
+  sources={[src('pit_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
+  <div data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
+
+  <h2>Tax scale or flat tax: take-home at five revenue levels</h2>
+  <p>The table assumes no costs, full ZUS without voluntary sickness cover, and an average across the year. The difference column shows how much more (plus) or less (minus) the flat tax leaves you each month.</p>
+  <ContentTable headers={['Monthly revenue', 'Net on the tax scale', 'Net on the flat tax', 'Difference', 'Flat-tax health contribution']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>At {$(10000)} the scale wins clearly. It benefits from the tax-reducing amount, which the flat tax does not have, and from the low {F.pitLow} first-bracket rate. Around {$(cross)} the balance tips, and the higher you go, the faster the flat tax pulls ahead. Above roughly {$(P.pit.threshold / 12)} of monthly profit, part of your annual income on the scale falls into the {F.pitHigh} band, while the flat tax stays at {F.liniowy}.</p>
+
+  <h2>The {F.healthLiniowy} health contribution and its floor</h2>
+  <p>The flat-tax health contribution is lower in percentage terms than on the scale ({F.health}), but it has a floor of {F.healthMin} a month. The {F.healthLiniowy} rate only beats the floor once income passes {$(minIncome)} a month. Below that you pay a fixed sum, so the effective rate is higher: on {$(6000)} of revenue with no costs it is about {pct(Math.round(eff6 * 1000) / 1000, lang)} of income.</p>
+  <p>The health contribution year runs from February to January. That is why the January {F.year} minimum is still {F.healthMinJan} and the February minimum {F.healthMin}. For simplicity, our calculator applies the February minimum to the whole year, which on a low income overstates annual health by the difference for one month.</p>
+
+  <h2>The {F.liniowyLimit} deduction cap</h2>
+  <p>On the flat tax you deduct the health contribution you paid from income, but no more than {F.liniowyLimit} in total per year. The largest possible tax saving is therefore {$(maxSaving)} a year. On {$(20000)} of revenue with no costs, health comes to {$2(x20.health)} a month and fits inside the cap. On {$(30000)} it is {$2(x30.health)}, and only {$2(x30.healthDeducted)} a month is deductible, which is the cap split over twelve months.</p>
+  <p>The cap starts to trim the deduction at around {$(limRev)} of monthly revenue. Above that, the health contribution is a pure cost with no relief at all. It does not change the overall picture, though: at that level, the flat tax still leaves clearly more than the scale.</p>
+
+  <h2>What the flat tax does not offer</h2>
+  <p>There is no tax-free allowance and no {F.reducingYear} annual tax-reducing amount. There is no second bracket, but there is no low {F.pitLow} rate either: every zloty of profit, including the first, pays {F.liniowy}. The youth relief covers income from employment and mandate contracts, not from a business, so a twenty-year-old with a sole proprietorship on the flat tax pays tax from the first zloty.</p>
+  <p>All of this makes the flat tax a form for people whose profit is reliably high. In a weaker year, with revenue of a few thousand zloty a month, you pay more on the flat tax than you would on the scale, and in two places at once: in tax, and in a health contribution stuck at its floor.</p>
+
+  <h2>Costs move the break-even point</h2>
+  <p>The table compares revenue without costs. Costs reduce profit under both forms at the same time, so it is profit that decides. With {$(20000)} of revenue and {$(6000)} of monthly costs, the scale leaves {$(c20s)} and the flat tax {$(c20l)}. If you carry large costs, such as a car lease and office rent, the flat tax may start paying off later than your invoiced revenue suggests.</p>
+  <p>If your costs are low, compare the flat tax with the lump sum as well: working from home with little spending, the {pct(P.b2b.ryczalt_rates[0].rate, lang)} lump sum often leaves more. The <a href={route('b2b', lang)}>B2B calculator</a> shows all three forms side by side, and our guide to the <a href={route('ryczalt', lang)}>lump-sum tax</a> explains how it works.</p>
+
+  <h2>What each extra thousand is worth</h2>
+  <p>Averages hide something important: how much of the next invoice you keep. At {$(8000)} of revenue, an extra {$(1000)} leaves {$(mg(8000, 'skala'))} on the scale and {$(mg(8000, 'liniowy'))} on the flat tax. At {$(20000)} the order flips: on the scale you keep {$(mg(20000, 'skala'))} of the thousand, on the flat tax {$(mg(20000, 'liniowy'))}. On the scale, every zloty above the threshold pays {F.pitHigh} tax plus {F.health} health; on the flat tax, {F.liniowy} plus {F.healthLiniowy}.</p>
+  <p>That marginal view helps when you negotiate a rate. If you are weighing an extra project worth a few thousand zloty a month, work out what you would keep under your tax form, not at your average rate for the year.</p>
+
+  <h2>The flat tax on preferential ZUS</h2>
+  <p>Your ZUS option does not change the rules of the flat tax, but it does change the numbers. With {$(15000)} of revenue on preferential ZUS, tax is {$(lp.tax)} a month and health {$2(lp.health)}, against {$(lf.tax)} and {$2(lf.health)} on full ZUS. Lower social contributions mean higher profit, so both tax and health go up. Take-home is still higher: {$(lp.net)} instead of {$(lf.net)}. The contribution options are covered in our guide to <a href={route('zusb2b', lang)}>ZUS for the self-employed</a>.</p>
+
+  <h2>Checking your monthly advance yourself</h2>
+  <p>Nobody gives you a payslip on the flat tax, so you or your accountant (biuro rachunkowe) work out the monthly advance. The pattern never changes: revenue minus costs minus social contributions minus the deductible part of health, multiplied by {F.liniowy}. On {$(20000)} of revenue with no costs, the base is about {$(x20.taxBase)} and the tax {$(x20.tax)} a month. If your advance is hundreds of zloty off that figure, first check whether health is being deducted beyond the cap.</p>
+
+  <h2>Common mistakes when choosing the flat tax</h2>
+  <p>Choosing it "because {F.liniowy} is less than {F.pitHigh}", although on a moderate profit you never reach the second bracket. Deducting the whole health contribution regardless of the {F.liniowyLimit} cap. Assuming {F.healthLiniowy} health is always lower than {F.health}, despite the {F.healthMin} floor. Leaving costs out when comparing with the scale.</p>
+  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('ryczalt', lang)} /></div>
+</GuideLayout>

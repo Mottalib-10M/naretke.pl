@@ -1,0 +1,79 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const T = P.pit;
+const raw = (b: number) => Math.min(b, T.threshold) * T.rate_low + Math.max(0, b - T.threshold) * T.rate_high;
+const due = (b: number) => Math.max(0, raw(b) - T.tax_reducing_amount_year);
+const rows = [2000, 3000, P.minimum_wage.monthly, 8000, 15000, 25000].map((g) => { const b = uopYear({ gross: g }).total.taxBase; return [$(g), $(b), $(raw(b)), $(due(b)), $(raw(b) - due(b))]; });
+// Niska pensja: dochód roczny poniżej kwoty wolnej.
+const lowG = 2000, low = uopYear({ gross: lowG }), lowNo = uopYear({ gross: lowG, pit2: false });
+const lowBase = low.total.taxBase, lowDue = due(lowBase);
+const g6 = 6000, a6 = uop({ gross: g6 }), b6 = uop({ gross: g6, pit2: false });
+const big = 25000, bigB = uopYear({ gross: big }).total.taxBase;
+const z = zlecenie({ gross: 3000, pit2: true }), z0 = zlecenie({ gross: 3000 });
+const sk = b2b({ revenue: 8000, form: 'skala' }), li = b2b({ revenue: 8000, form: 'liniowy' });
+const sk6 = b2b({ revenue: 6000, form: 'skala' }), li6 = b2b({ revenue: 6000, form: 'liniowy' });
+const lowAnnualGross = $(lowG * 12);
+const faqs = [
+  { q: 'Czy kwota wolna 30 000 zł oznacza, że pierwsze 30 000 zł w roku zarabiam bez podatku?'.replace(/30 000 zł/g, F.freeAmount), a: `Nie w sensie miesięcy. Nikt nie zarabia „pierwszych ${F.freeAmount}” bez zaliczek, a potem z zaliczkami. Kwota wolna działa jak stała ulga ${F.reducingYear} odejmowana od podatku za cały rok, rozkładana po ${F.reducingMonth} na każdy miesiąc, jeśli złożysz PIT-2. Efekt jest taki, jakby ${F.freeAmount} dochodu było nieopodatkowane, ale tylko przy stawce ${F.pitLow}.` },
+  { q: 'Czy po przekroczeniu 120 000 zł dochodu tracę kwotę wolną?'.replace('120 000 zł', F.threshold), a: `Nie. Polska skala nie wygasza kwoty wolnej przy wyższych dochodach. W drugim progu podatek to ${$(T.threshold * T.rate_low - T.tax_reducing_amount_year)} plus ${F.pitHigh} nadwyżki, a ta pierwsza kwota już zawiera pomniejszenie o ${F.reducingYear}. Przy pensji ${$(big)} brutto miesięcznie, z podstawą roczną ${$(bigB)}, ulga jest warta dokładnie tyle samo co przy płacy minimalnej.` },
+  { q: 'Zarabiam mniej niż 30 000 zł rocznie. Czy odzyskam pobrane zaliczki?'.replace('30 000 zł', F.freeAmount), a: `Tak, jeśli dochód po składkach i kosztach nie przekracza ${F.freeAmount}, podatek roczny wynosi zero, a pobrane zaliczki wracają po złożeniu zeznania PIT-37. Przy pensji ${$(lowG)} brutto miesięcznie podstawa roczna to ${$(lowBase)}. Bez PIT-2 pracodawca pobrałby w roku ${$(lowNo.total.pit)} zaliczek, a z PIT-2 ${$(low.total.pit)}.` },
+  { q: 'Skąd się bierze 3 600 zł, skoro kwota wolna to 30 000 zł?'.replace('3 600 zł', F.reducingYear).replace('30 000 zł', F.freeAmount), a: `To dwa sposoby zapisu tej samej ulgi. Kwota wolna ${F.freeAmount} pomnożona przez stawkę pierwszego progu ${F.pitLow} daje ${F.reducingYear}, czyli kwotę zmniejszającą podatek. W ustawie (art. 27 ust. 1) zapisano właśnie tę drugą liczbę: podatek to ${F.pitLow} podstawy minus ${F.reducingYear}. Miesięcznie to ${F.reducingMonth}.` },
+  { q: 'Czy kwota wolna działa na podatku liniowym albo ryczałcie?', a: `Nie. Kwota zmniejszająca jest częścią skali podatkowej z art. 27 ustawy o PIT. Podatek liniowy to ${F.liniowy} podstawy (art. 30c), a ryczałt to procent przychodu według własnej ustawy, w obu przypadkach bez pomniejszenia. Przy przychodzie ${$(8000)} miesięcznie bez kosztów przedsiębiorca na skali płaci średnio ${$(sk.tax)} podatku, a na liniowym ${$(li.tax)}.` },
+];
+---
+<GuideLayout lang={lang} id="allowance" breadcrumbLabel={label('allowance', lang)}
+  title={`Kwota wolna od podatku ${F.year}: ${F.freeAmount}, czyli ${F.reducingYear} ulgi`}
+  h1={`Kwota wolna od podatku w ${F.year} r.: jak działa i ile jest warta`}
+  description={`Kwota wolna od podatku ${F.year} wynosi ${F.freeAmount}: ${F.reducingYear} mniej podatku rocznie, ${F.reducingMonth} w każdej wypłacie z PIT-2. Bez wygaszania w drugim progu, z kalkulatorem.`}
+  intro={`Kwota wolna od podatku wynosi w ${F.year} r. ${F.freeAmount}, co oznacza ${F.reducingYear} mniej podatku w roku dla każdego rozliczającego się według skali.`}
+  resume={`Kwota wolna od podatku w ${F.year} r. to ${F.freeAmount} dochodu. W praktyce działa jako kwota zmniejszająca podatek: ${F.reducingYear} rocznie, bo tyle wynosi ${F.pitLow} od ${F.freeAmount}. Art. 27 ustawy o PIT zapisuje to wprost: podatek w pierwszym progu to ${F.pitLow} podstawy minus ${F.reducingYear}. Ulga przysługuje każdemu, kto rozlicza się według skali, czyli pracownikom, zleceniobiorcom, wykonawcom dzieła i przedsiębiorcom na skali; nie ma jej na podatku liniowym ani ryczałcie. Nie wygasa przy wysokich dochodach: w drugim progu podatek wynosi ${$(T.threshold * T.rate_low - T.tax_reducing_amount_year)} plus ${F.pitHigh} nadwyżki, z ulgą już uwzględnioną. W wypłacie ulga pojawia się jako ${F.reducingMonth} niższej zaliczki co miesiąc, jeśli złożysz pracodawcy PIT-2; bez niego odzyskasz ją dopiero w zeznaniu rocznym. Kto ma dochód poniżej ${F.freeAmount}, nie płaci podatku wcale. Mini-kalkulator pokazuje, ile ulga daje w Twojej wypłacie.`}
+  faqs={faqs}
+  related={[{ href: route('pit2', lang), name: label('pit2', lang), description: `Oświadczenie, które daje ${F.reducingMonth} co miesiąc.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh}: kiedy wchodzisz w drugi próg.` }, { href: route('youth', lang), name: label('youth', lang), description: `Zwolnienie do ${F.youthLimit} przed 26. rokiem życia.` }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>{F.freeAmount} i {F.reducingYear}: jedna ulga, dwie liczby</h2>
+  <p>W rozmowach mówi się o kwocie wolnej {F.freeAmount}, w ustawie i na pasku wypłaty widać {F.reducingYear} albo {F.reducingMonth}. To ta sama ulga. Ustawa nie wyłącza pierwszych {F.freeAmount} z opodatkowania, tylko każe od podatku obliczonego według stawki {F.pitLow} odjąć stałą kwotę {F.reducingYear}. Ponieważ {F.pitLow} od {F.freeAmount} to dokładnie {F.reducingYear}, wynik jest taki, jakby {F.freeAmount} dochodu było wolne od podatku. Stąd potoczna nazwa.</p>
+  <p>Różnica w zapisie ma praktyczne skutki. Ulga ma stałą wartość w złotych, a nie w dochodzie, więc nie zależy od tego, ile zarabiasz, ani od momentu w roku. Nie ma miesięcy „wolnych od podatku” na początku roku, a potem opodatkowanych: przy PIT-2 każda wypłata dostaje taką samą część ulgi.</p>
+
+  <h2>Ile ulga jest warta przy różnych pensjach</h2>
+  <p>Tabela pokazuje roczny podatek według skali z ulgą i bez niej, dla kilku stałych pensji na etacie przy kosztach {F.kup}. Podstawa to dochód po składkach ZUS i kosztach.</p>
+  <ContentTable headers={['Brutto miesięcznie', 'Podstawa roczna', 'Podatek bez ulgi', 'Podatek z ulgą', 'Wartość ulgi']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Od pewnego poziomu wartość ulgi jest stała i wynosi {F.reducingYear}. Mniej daje tylko przy najniższych dochodach, gdy podatek według stawki {F.pitLow} jest niższy niż {F.reducingYear}: wtedy ulga zeruje podatek, ale nadwyżka przepada, bo podatek nie może być ujemny. Kwota zmniejszająca nie jest świadczeniem wypłacanym przez urząd skarbowy.</p>
+
+  <h2>Brak wygaszania w drugim progu</h2>
+  <p>W wielu krajach ulga podatkowa maleje wraz z dochodem. W Polsce w {F.year} r. nie. Tabela z art. 27 ust. 1 dla dochodu powyżej {F.threshold} podaje podatek {$(T.threshold * T.rate_low - T.tax_reducing_amount_year)} plus {F.pitHigh} nadwyżki. Ta stała część to {F.pitLow} od {F.threshold} pomniejszone o {F.reducingYear}, więc ulga zostaje w całości. Przy pensji {$(big)} brutto, z podstawą roczną {$(bigB)}, oszczędność podatku z tytułu kwoty wolnej wynosi tyle samo co przy płacy minimalnej. Szczegóły drugiego progu opisuje poradnik o <a href={route('brackets', lang)}>progach podatkowych</a>.</p>
+
+  <h2>Jak ulga trafia do wypłaty</h2>
+  <p>Pracodawca może odejmować {F.reducingMonth} od zaliczki w każdym miesiącu tylko wtedy, gdy złożysz mu oświadczenie PIT-2. Przy pensji {$(g6)} brutto zaliczka wynosi wtedy {$(a6.pit)} zamiast {$(b6.pit)}, a netto rośnie z {$(b6.net)} do {$(a6.net)}. Bez oświadczenia ulga nie przepada, ale wraca jednorazowo jako zwrot podatku po złożeniu zeznania rocznego. Jak wypełnić oświadczenie, u ilu płatników je złożyć i jak dzielić pomniejszenie, opisujemy na stronie o <a href={route('pit2', lang)}>formularzu PIT-2</a>.</p>
+  <p>Ulga roczna przysługuje raz, niezależnie od liczby płatników. Jeśli pracujesz u dwóch pracodawców i obaj odejmują pełne {F.reducingMonth}, w roku odliczysz dwa razy więcej, niż Ci się należy, i różnicę dopłacisz w zeznaniu.</p>
+
+  <h2>Dochód poniżej {F.freeAmount}: podatek zero</h2>
+  <p>Kto w ciągu roku osiągnie dochód nie wyższy niż {F.freeAmount}, nie zapłaci podatku według skali. Dochód to przychód po odjęciu składek ZUS i kosztów, więc kwota brutto może być wyraźnie wyższa. Przy pensji {$(lowG)} brutto miesięcznie, czyli {lowAnnualGross} rocznie, podstawa opodatkowania wynosi {$(lowBase)}, a podatek roczny {$(lowDue)}.</p>
+  <p>W ciągu roku pracodawca pobiera jednak zaliczki: bez PIT-2 łącznie {$(lowNo.total.pit)}, z PIT-2 {$(low.total.pit)}. Różnicę między pobranymi zaliczkami a podatkiem należnym odzyskasz w zeznaniu PIT-37 jako nadpłatę. Dotyczy to często osób pracujących na część etatu, studentów po 26. roku życia i osób, które pracowały tylko przez część roku.</p>
+
+  <h2>Kogo obejmuje kwota wolna</h2>
+  <p>Ulga jest elementem skali podatkowej, więc obejmuje każdy dochód rozliczany według skali: z umowy o pracę, umowy zlecenia, umowy o dzieło oraz z działalności gospodarczej, jeśli przedsiębiorca nie wybrał innej formy. Na zleceniu też można złożyć PIT-2: przy umowie na {$(3000)} brutto podnosi to netto z {$(z0.net)} do {$(z.net)}. Wyjątek stanowią bardzo małe umowy, do {F.smallContract}, z osobą niebędącą pracownikiem płatnika: płatnik pobiera wtedy zryczałtowany podatek {F.pitLow} od przychodu i ulgi nie stosuje.</p>
+  <p>Przedsiębiorca na skali korzysta z tej samej kwoty zmniejszającej: przy przychodzie {$(6000)} miesięcznie bez kosztów podatek na skali to średnio {$(sk6.tax)} miesięcznie, a na liniowym {$(li6.tax)}. Podatek liniowy {F.liniowy} i ryczałt ewidencjonowany jej nie przewidują. To jeden z powodów, dla których przy niższych dochodach skala bywa korzystniejsza od liniowego. Porównanie form opodatkowania pokazuje <a href={route('b2b', lang)}>kalkulator B2B</a>.</p>
+
+  <h2>Kwota wolna na pasku wypłaty</h2>
+  <p>Na pasku wypłaty kwoty wolnej zwykle nie ma jako osobnej pozycji. Widać ją pośrednio w zaliczce na podatek: część programów kadrowych pokazuje linię „kwota zmniejszająca” z wartością {F.reducingMonth}, inne od razu podają zaliczkę po pomniejszeniu. Prosty test w pierwszym progu: pomnóż podstawę opodatkowania z paska przez {F.pitLow} i odejmij {F.reducingMonth}. Jeśli wynik zgadza się z zaliczką co do złotówki, pracodawca stosuje ulgę. Jeśli zaliczka jest wyższa o {F.reducingMonth}, ulga czeka na zeznanie roczne, a w ciągu roku tracisz łącznie {F.reducingYear} płynności.</p>
+
+  <h2>Trzy nieporozumienia wokół kwoty wolnej</h2>
+  <p>Pierwsze: „kwota wolna jest dla osób, które mało zarabiają”. Ulgę dostaje każdy rozliczający się według skali, a jej wartość w złotych jest identyczna przy płacy minimalnej i przy wysokich dochodach. Drugie: „kwota wolna rośnie razem z płacą minimalną”. Kwota {F.freeAmount} jest zapisana w ustawie o PIT i nie jest powiązana z płacą minimalną; w {F.year} r. wynosi tyle samo przez cały rok. Trzecie: „bez PIT-2 tracę ulgę”. Nie tracisz jej, tylko dostajesz ją później, jako zwrot w zeznaniu rocznym.</p>
+
+  <h2>Kwota wolna a ulga dla młodych</h2>
+  <p>To dwa różne mechanizmy. Ulga dla młodych zwalnia z podatku przychód do {F.youthLimit} rocznie, zanim w ogóle policzy się podatek; kwota zmniejszająca obniża podatek od dochodu, który zostaje do opodatkowania. Osoba przed 26. rokiem życia z przychodem powyżej limitu korzysta więc z obu: zwolnienie obejmuje przychód do limitu, a od podatku od nadwyżki odejmuje się {F.reducingYear}. Ile daje sama ulga dla młodych, sprawdzisz w drugim kalkulatorze.</p>
+  <div data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('youth', lang)} /></div>
+  <p>Szczegóły warunków, w tym rodzaje umów objętych zwolnieniem, opisuje strona o <a href={route('youth', lang)}>uldze dla młodych</a>.</p>
+</GuideLayout>

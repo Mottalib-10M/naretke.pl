@@ -1,0 +1,137 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { t } from '../../i18n/ui';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, dzielo, b2b, b2bZusMonth, capMonth, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct, displayDate } from '../../lib/format';
+import { webPageSchema, breadcrumbSchema } from '../../lib/seo';
+import { LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const minG = P.minimum_wage.monthly;
+const m = uop({ gross: minG });
+const m5 = uop({ gross: 5000 });
+const capRate = pct(P.health.cap_2021_rate, lang), capRed = $2(P.health.cap_2021_reducing_month);
+const zFull = b2bZusMonth('full', true), zPref = b2bZusMonth('preferential', true);
+const ry15 = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: P.b2b.ryczalt_rates[0].rate });
+const d1 = dzielo({ gross: 1000 }), d1a = dzielo({ gross: 1000, authors: true });
+const cap25 = capMonth(25000), sb12 = secondBracketMonth({ gross: 12000 });
+const y25 = uopYear({ gross: 25000 });
+
+const S = (k: keyof typeof P.sources) => P.sources[k].label[lang];
+const paramRows = [
+  ['Minimum wage, minimum hourly rate', `${F.minWage}; ${F.minHourly}`, S('minimum')],
+  ['Annual contribution cap (30×), forecast average wage', `${F.cap}; ${F.avgForecast}`, S('cap')],
+  ['Social contribution rates', `${F.emerytalnaTotal}, ${F.rentowaTotal}, ${F.chorobowa}, accident ${F.wypadkowa}`, S('zus_rates')],
+  ['Employee / employer split', `${F.emerytalnaEe} / ${F.emerytalnaEr}; ${F.rentowaEe} / ${F.rentowaEr}`, S('sus_act')],
+  ['Labour Fund, Solidarity Fund, FGŚP', `${F.fp}, ${F.fs}, ${F.fgsp}`, S('budget')],
+  ['Health contribution and the “2021” cap', `${F.health}; ${capRate} − ${capRed}`, S('health_act')],
+  ['Tax scale, threshold, tax reduction, costs, small-contract limit', `${F.pitLow} / ${F.pitHigh}; ${F.threshold}; ${F.reducingYear}; ${F.kup} / ${F.kupRaised}; ${F.smallContract}`, S('pit_act')],
+  ['PIT-2 monthly reduction', F.reducingMonth, S('pit2')],
+  ['Youth relief', F.youthLimit, S('youth')],
+  ['PPK basic rates', `${F.ppkEe} / ${F.ppkEr}`, S('ppk')],
+  ['Employer PPK payment as taxable income', F.ppkEr, S('ppk_tax')],
+  ['Self-employed ZUS, minimum health, ryczałt health bands', `${F.b2bZusFull}; ${F.healthMin}; ${F.ryczaltBand1} / ${F.ryczaltBand2} / ${F.ryczaltBand3}`, S('zus_b2b')],
+  ['Flat-tax health deduction limit', F.liniowyLimit, S('health_deduction')],
+  ['Lump-sum (ryczałt) rates', P.b2b.ryczalt_rates.map((r) => pct(r.rate, lang)).join(', '), S('ryczalt_act')],
+  ['Q4 2025 average wage (ryczałt health base)', F.avgQ4, S('gus_q4')],
+  ['Sick pay', `${F.sickRate}; ${F.sickReduction} deducted`, S('sickness')],
+  ['Overtime supplements', `${F.ot50} / ${F.ot100}`, S('labour_code')],
+];
+const sourceKeys = Object.keys(P.sources) as Array<keyof typeof P.sources>;
+const sources = sourceKeys.map((k) => src(k, lang));
+
+const title = `Net Pay Formulas Poland ${F.year}: Methodology and Sources`;
+const description = `How the ${F.year} Polish salary engine works: ZUS, health contribution, PIT, the ${F.cap} cap, rounding and 24 tests. Minimum wage ${F.minWage} gives ${F.minNet} net.`;
+const path = route('method', lang);
+const h1 = `How the calculator works: ${F.year} methodology`;
+const jsonLd = [webPageSchema({ name: h1, description, path, lang }), breadcrumbSchema([{ name: t(lang).breadcrumbHome, path: route('home', lang) }, { name: label('method', lang), path }])];
+---
+<PageLayout title={title} description={description} lang={lang} jsonLd={jsonLd} sources={sources} breadcrumbs={[{ label: label('method', lang) }]}
+  related={[{ href: route('home', lang), name: 'Gross to net calculator', description: 'Take-home pay on four contracts, the year month by month.' }, { href: route('faq', lang), name: 'Questions about the tool', description: 'Data, updates and why your payslip may differ.' }, { href: route('annual', lang), name: 'Annual salary, month by month', description: 'Twelve payslips with the second bracket and ZUS cap.' }]}>
+  <article>
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-navy-900 md:text-4xl">{h1}</h1>
+      <p class="mt-3 text-lg text-navy-600">Formulas, order of calculation, rounding, the model's limits and the official source behind every rate.</p>
+    </header>
+    <p class="mb-6 text-navy-700">The calculator's engine is a set of pure functions that run in your browser: it never contacts a server and contains no hard-coded rate. Every tax rate, threshold and contribution amount is read from a single {F.year} parameter file, where each group of values records its official source; the file was last checked on {updated}. Tables across the site are generated from that same file, so the text, the tables and the calculator cannot contradict each other. Employment contracts are computed month by month across the full year, exactly as Polish payroll software does, with a running taxable base and a running gross total against the {F.cap} contribution cap. Mandate and specific-work contracts are computed for a single payment, and B2B self-employment as a monthly average of the yearly settlement. Below we set out each formula, the rounding rules, the situations the model does not cover and the tests used to check the results.</p>
+
+    <div class="prose prose-slate max-w-none">
+      <h2>Rounding and units</h2>
+      <p>Social contributions, the health contribution and PPK payments are rounded to the nearest grosz (the Polish cent), each one separately. The taxable base and the tax advance are rounded to the whole złoty, as on a Polish payroll: amounts under 50 groszy are dropped and 50 groszy or more round up. On screen we show amounts without groszy, but all calculations run in groszy, so the breakdown lines can differ from the net figure by one złoty.</p>
+
+      <h2>Employment contract: month by month</h2>
+      <p>For each of the twelve months the engine runs the same sequence, carrying three running totals from month to month: gross subject to the contribution cap, income exempted under the youth relief, and the taxable base.</p>
+      <ol>
+        <li><strong>Pension and disability base</strong> = the smaller of this month's gross and what is left of the {F.cap} cap after previous months. Pension = base × {F.emerytalnaEe}, disability = base × {F.rentowaEe}. Sickness = full gross × {F.chorobowa}, as the cap does not apply to it.</li>
+        <li><strong>Health contribution</strong> = {F.health} × (gross − social contributions), but no more than the tax advance computed under the rules in force on 31 December 2021: {capRate} × rounded (gross − contributions − costs) − {capRed}. This cap comes from art. 83(1), (2a) and (2b) of the healthcare act. Under the youth relief we compute it as if the income were not exempt (para. 2a). In practice it only bites on very low pay.</li>
+        <li><strong>Taxable income</strong> = gross + the employer's PPK payment, which counts as the employee's income. Under the youth relief the exempt part is removed until total exemptions for the year reach {F.youthLimit}; social contributions are then deducted in proportion to the taxable part.</li>
+        <li><strong>Deductible costs</strong> = {F.kup} a month, or {F.kupRaised} for commuters, capped at taxable income. With creative work costs: {F.kupAuthors} of the copyright share of gross after the contributions attributable to it, up to {F.kupAuthorsLimit} a year in total.</li>
+        <li><strong>Taxable base</strong> = (taxable income − deductible contributions − costs), rounded to the złoty.</li>
+        <li><strong>PIT advance</strong> = the part of the base within {F.threshold} cumulatively × {F.pitLow} + any excess × {F.pitHigh} − {F.reducingMonth} if PIT-2 is filed, rounded to the złoty and never below zero. The threshold is checked against the base accumulated with the same payer since January, as art. 32 of the PIT Act requires.</li>
+        <li><strong>Net</strong> = gross − social contributions − health contribution − tax advance − employee PPK ({F.ppkEe} of gross, taken after tax).</li>
+        <li><strong>Employer cost</strong> = gross + pension {F.emerytalnaEr} and disability {F.rentowaEr} on the base from step 1 + accident {F.wypadkowa} + Labour Fund {F.fp} + Solidarity Fund {F.fs} + FGŚP {F.fgsp} on full gross + employer PPK.</li>
+      </ol>
+      <p>Worked example at the {F.minWage} minimum wage: social contributions {$2(m.social)}, health {$2(m.health)}, taxable base {$(m.taxBase)}, tax advance {$(m.pit)} after the {F.reducingMonth} reduction, net {$2(m.net)}, or {F.minNet} rounded. The employer's cost is {$2(m.er.cost)}.</p>
+      <p>The net-to-gross calculator runs the same engine backwards by bisection: it searches for the smallest gross at which first-month net reaches your target, to the grosz. There is no separate reverse formula that could drift away from the forward calculation.</p>
+
+      <h2>Mandate contract (umowa zlecenie)</h2>
+      <p>Pension {F.emerytalnaEe} and disability {F.rentowaEe} on gross; sickness {F.chorobowa} only if voluntary cover is ticked. A pupil or student under 26 pays no social contributions, and the calculator then also assumes no health contribution on the contract. The health contribution is {F.health} of gross after contributions, with the same “2021” cap as on employment, computed with {F.kupContract} costs but without subtracting {capRed}.</p>
+      <p>When the contract is worth no more than {F.smallContract}, tax is a flat {F.pitLow} of the whole amount, with no costs and no PIT-2, and the health contribution is not capped. Above that, costs are {F.kupContract} of gross after contributions (or {F.kupAuthors} on the copyright share), the base is rounded to the złoty, and the advance is {F.pitLow} less {F.reducingMonth} if you filed PIT-2 with the client. Under the youth relief the advance is zero. On the client's side we add pension {F.emerytalnaEr}, disability {F.rentowaEr} and accident {F.wypadkowa}, plus the Labour Fund, Solidarity Fund and FGŚP only when the contract pays at least the minimum wage.</p>
+
+      <h2>Specific-work contract (umowa o dzieło)</h2>
+      <p>The model charges no social or health contributions. Up to {F.smallContract}, tax is {F.pitLow} of revenue. Above that: costs of {F.kupContract} of revenue, or {F.kupAuthors} when copyright is transferred, base rounded to the złoty, advance {F.pitLow} less {F.reducingMonth} with PIT-2. On a {$(1000)} contract that gives {$(d1.pit)} of tax, and {$(d1a.pit)} with creative work costs.</p>
+
+      <h2>B2B: monthly average of the year</h2>
+      <p>Self-employment is computed for the year and divided by twelve, because the health contribution, the tax threshold and the deduction limits are annual. Self-employed social contributions use a base of {F.b2bBaseFull} (full ZUS) or {F.b2bBasePref} (preferential): pension {F.emerytalnaTotal}, disability {F.rentowaTotal}, accident {F.wypadkowa}, sickness {F.chorobowa} only with voluntary cover, and Labour plus Solidarity Fund {F.fpfs} only on full ZUS. That gives {$2(zFull.emerytalna + zFull.rentowa + zFull.chorobowa + zFull.wypadkowa + zFull.fp)} a month on full ZUS with sickness cover and {$2(zPref.emerytalna + zPref.rentowa + zPref.chorobowa + zPref.wypadkowa)} on preferential. Under the start-up relief social contributions are zero.</p>
+      <ul>
+        <li><strong>Tax scale:</strong> health {pct(P.b2b.health.skala_rate, lang)} of income (revenue − costs − Labour Fund − social contributions), at least {F.healthMin} a month; tax {F.pitLow} up to {F.threshold} of yearly base and {F.pitHigh} above, less the {F.reducingYear} tax reduction.</li>
+        <li><strong>Flat tax:</strong> health {F.healthLiniowy} of the same income, at least {F.healthMin}; health paid reduces the base by up to {F.liniowyLimit} a year; tax {F.liniowy}.</li>
+        <li><strong>Ryczałt:</strong> fixed health amount by yearly revenue: {F.ryczaltBand1} up to {F.ryczaltLimit1}, {F.ryczaltBand2} up to {F.ryczaltLimit2}, {F.ryczaltBand3} above; half the health paid and the social contributions reduce revenue; tax at the rate chosen for your industry.</li>
+      </ul>
+      <p>B2B net = revenue − costs − social contributions − Labour Fund − health − tax. VAT is left out: enter invoice revenue net of VAT.</p>
+
+      <h2>Sick pay and overtime</h2>
+      <p>The sick-pay base is monthly gross less the {F.sickReduction} employee social contributions; the daily rate = base ÷ 30 × {F.sickRate}. No social contributions are charged on the benefit, while the health contribution is computed on the full benefit. For overtime, the hourly rate = gross ÷ hours worked in the month, and the supplement is {F.ot50} or {F.ot100} of that rate, under art. 151¹ of the Labour Code.</p>
+
+      <h2>What the calculator does not cover</h2>
+      <p>We would rather say plainly where the model stops than claim precision it does not have. Results can differ from reality in these situations:</p>
+      <ul>
+        <li>Several employers or contracts at once: each contract is computed alone, with no shared contribution cap, shared threshold or PIT-2 split.</li>
+        <li>Voluntary contributions, or PPK with additional payments or a reduced employee rate: basic rates are assumed.</li>
+        <li>The accident contribution is set at {F.wypadkowa}, though your employer's rate can be anywhere from {F.wypadkowaMin} to {F.wypadkowaMax}; this only affects employer cost.</li>
+        <li>Labour Fund and Solidarity Fund exemptions for workers aged 55+ and 60+, and the bridging-pension (FEP) contribution, are not modelled.</li>
+        <li>The return relief, the 4+ family relief and the working-senior relief are not available; only the youth relief is.</li>
+        <li>On zlecenie and dzieło the {F.pitLow} rate is applied; the second bracket and interaction with employment income are left to your annual return.</li>
+        <li>B2B is a yearly average: the {F.healthMin} minimum health contribution is applied to all twelve months, although January's is {F.healthMinJan}; month-to-month income swings, “small ZUS plus” and the solidarity levy are not modelled.</li>
+        <li>Non-tax deductions such as union dues, group insurance or garnishments are unknown to the calculator.</li>
+      </ul>
+
+      <h2>How we test the engine</h2>
+      <p>The engine has 24 automated tests (vitest), run before every release. Each compares a result with a figure worked out by hand or published by an institution. A few examples from the test file:</p>
+      <ul>
+        <li>Minimum wage {F.minWage}: contributions {$2(m.social)}, health {$2(m.health)}, base {$(m.taxBase)}, advance {$(m.pit)}, net {F.minNet}.</li>
+        <li>{$(5000)} gross: base {$(m5.taxBase)}, advance {$(m5.pit)}, because {F.pitLow} of the base minus {F.reducingMonth} leaves an amount with groszy that rounds up to the złoty.</li>
+        <li>Full self-employed ZUS: {F.b2bZusFull} with sickness cover and {F.b2bZusFullNoSick} without, identical to the grosz to the figures ZUS publishes; preferential: {F.b2bZusPref} and {F.b2bZusPrefNoSick}.</li>
+        <li>Ryczałt on {$(15000)} monthly revenue: health {$2(ry15.health)}, the band up to {F.ryczaltLimit2}.</li>
+        <li>{$(25000)} gross: cap reached in {cap25 ? MONTHS[cap25 - 1] : 'the last month'}, with that month's pension contribution charged only on the remainder up to the cap; December net {$(y25.months[11].net)}.</li>
+        <li>{$(12000)} gross: the second bracket only appears in {sb12 ? MONTHS[sb12 - 1] : 'the last month'}.</li>
+        <li>Specific-work contract for {$(1000)}: {$(d1.pit)} of tax, {$(d1a.pit)} with creative work costs; a {F.smallContract} contract: flat-rate tax.</li>
+      </ul>
+      <p>The remaining tests cover PIT-2, the {F.kupRaised} commuter costs, the youth relief up to {F.youthLimit}, PPK, employer cost, the net-to-gross inversion, students on zlecenie, the minimum health contribution on flat tax, the start-up relief, sick pay and overtime supplements. If you find a case where the calculator disagrees with your payroll, <a href={route('contact', lang)}>tell us</a>: every confirmed error becomes a new test.</p>
+
+      <h2>Parameters and their sources</h2>
+      <p>This table is generated from the parameter file. Full titles of the acts, with links, are in the sources section at the bottom of the page.</p>
+    </div>
+    <ContentTable headers={['Parameter', `${F.year} value`, 'Source']} align={['l', 'l', 'l']} rows={paramRows} />
+  </article>
+</PageLayout>

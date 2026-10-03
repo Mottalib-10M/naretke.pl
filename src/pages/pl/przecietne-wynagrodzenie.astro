@@ -1,0 +1,87 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const AVG = P.average_wage.forecast_2026, Q4 = P.average_wage.q4_2025_with_profits, MW = P.minimum_wage.monthly;
+const a = uop({ gross: AVG }), q = uop({ gross: Q4 });
+const capMult = formatNumber(P.zus.annual_cap / AVG, 0, lang);
+const b2bShare = pct(Math.round((P.b2b.zus_base_full / AVG) * 100) / 100, lang);
+const bands = P.b2b.health.ryczalt_bands;
+const bandShare = bands.map((b) => pct(Math.round((b.base / Q4) * 100) / 100, lang));
+const sickMult = formatNumber(P.b2b.sickness_base_max / AVG, 1, lang);
+const levels: Array<[string, number]> = [['Płaca minimalna', MW], [`${b2bShare} prognozy (podstawa ZUS przedsiębiorcy)`, P.b2b.zus_base_full], ['Przeciętne IV kw. 2025 z wypłatami z zysku', Q4], ['Prognozowane przeciętne 2026', AVG], ['Dwukrotność prognozy', AVG * 2]];
+const rows = levels.map(([n, g]) => { const x = uop({ gross: g }); return [n, $(g), $(x.net), `${formatNumber((g / AVG) * 100, 0, lang)} %`]; });
+const x3 = AVG * 3, m3 = capMonth(x3);
+const MONTHS = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const netShare = pct(Math.round((a.net / AVG) * 100) / 100, lang);
+const diff = AVG - Q4;
+const ay = uopYear({ gross: AVG }); const aSecond = ay.months.some((m) => m.secondBracket);
+const baseGap = $2(P.b2b.zus_base_full - (P.b2b.zus_base_full / AVG) * Q4);
+const faqs = [
+  { q: `Które przeciętne wynagrodzenie wyznacza limit ${capMult}-krotności w ${F.year} r.?`, a: `Prognozowane przeciętne wynagrodzenie z ustawy budżetowej, czyli ${F.avgForecast}. Minister ogłosił je w Monitorze Polskim (M.P. 2025 poz. 1206) razem z limitem: ${capMult} × ${F.avgForecast} = ${F.cap} rocznej podstawy składek emerytalnej i rentowej. Średnia z GUS za IV kwartał 2025 r. (${F.avgQ4}) do tego limitu nie służy.` },
+  { q: 'Dlaczego składkę zdrowotną na ryczałcie liczy się od 9 228,64 zł, a nie od prognozy?'.replace('9 228,64 zł', F.avgQ4), a: `Bo przepisy o składce zdrowotnej ryczałtowców odwołują się do przeciętnego wynagrodzenia w czwartym kwartale roku poprzedniego, z wypłatami z zysku. Na ${F.year} r. to ${F.avgQ4}. Od tej kwoty ZUS liczy trzy podstawy: ${bandShare[0]}, ${bandShare[1]} albo ${bandShare[2]}, zależnie od przychodu. Prognoza ${F.avgForecast} służy do innych celów, np. do podstawy składek społecznych przedsiębiorcy.` },
+  { q: `Ile na rękę zostaje z przeciętnej pensji w ${F.year} r.?`, a: `Z ${F.avgForecast} brutto na umowie o pracę zostaje ${$(a.net)} netto miesięcznie, przy standardowych kosztach uzyskania przychodu i złożonym PIT-2. Składki społeczne zabierają ${$(a.social)}, składka zdrowotna ${$(a.health)}, zaliczka na PIT ${$(a.pit)}. Przy pensji równej średniej z IV kwartału 2025 r. (${F.avgQ4}) netto wynosi ${$(q.net)}.` },
+  { q: 'Czy większość pracowników zarabia przeciętne wynagrodzenie?', a: `Nie należy tak tego czytać. Średnia arytmetyczna rośnie, gdy rosną pensje najlepiej zarabiających, więc typowa pensja bywa od niej niższa. Kwoty ${F.avgForecast} i ${F.avgQ4} są wskaźnikami urzędowymi, od których zależą limity i podstawy składek, a nie opisem zarobków typowego pracownika. Swoją pensję wobec średniej sprawdzisz w mini-kalkulatorze na tej stronie.` },
+  { q: 'Skąd w ZUS przedsiębiorcy bierze się podstawa 5 652 zł?'.replace('5 652 zł', F.b2bBaseFull), a: `To ${b2bShare} prognozowanego przeciętnego wynagrodzenia ${F.avgForecast}. Tyle wynosi w ${F.year} r. najniższa podstawa pełnych składek społecznych osoby prowadzącej działalność. Od niej ZUS wylicza ${F.b2bZusFull} miesięcznie z dobrowolną chorobową albo ${F.b2bZusFullNoSick} bez niej. Gdy prognoza na kolejny rok wzrośnie, podstawa i składki wzrosną razem z nią.` },
+];
+---
+<GuideLayout lang={lang} id="average" breadcrumbLabel={label('average', lang)}
+  title={`Przeciętne wynagrodzenie ${F.year}: ${F.avgForecast} i ${F.avgQ4}`}
+  h1={`Przeciętne wynagrodzenie ${F.year}: dwie kwoty i do czego służą`}
+  description={`Przeciętne wynagrodzenie ${F.year}: prognoza ${F.avgForecast} (limit ZUS, B2B) i ${F.avgQ4} z IV kw. 2025 (zdrowotna ryczałtu). Ile netto i jak wypada Twoja pensja.`}
+  intro={`W ${F.year} r. w przepisach liczą się dwie średnie: prognozowane przeciętne wynagrodzenie ${F.avgForecast} i przeciętne z IV kwartału 2025 r. z wypłatami z zysku, ${F.avgQ4}.`}
+  resume={`Prognozowane przeciętne wynagrodzenie na ${F.year} r. wynosi ${F.avgForecast} brutto miesięcznie i zostało przyjęte w ustawie budżetowej. Od niego zależy roczny limit składek emerytalnej i rentowej (${capMult}-krotność, czyli ${F.cap}) oraz najniższa podstawa składek społecznych przedsiębiorcy, ${F.b2bBaseFull} (${b2bShare} prognozy). Drugą kwotą jest przeciętne wynagrodzenie w IV kwartale 2025 r. z wypłatami z zysku, ogłoszone przez Prezesa GUS: ${F.avgQ4}. Ono wyznacza trzy progi składki zdrowotnej na ryczałcie ewidencjonowanym. Na umowie o pracę pensja równa prognozie daje ${$(a.net)} na rękę, a pensja równa średniej z IV kwartału ${$(q.net)}, przy PIT-2 i standardowych kosztach. Żadna z tych liczb nie opisuje zarobków typowego pracownika: to wskaźniki, do których przepisy przywiązują limity i podstawy. Mini-kalkulator poniżej pokazuje, jaki procent prognozy stanowi Twoje brutto.`}
+  faqs={faqs}
+  related={[{ href: route('cap', lang), name: label('cap', lang), description: `${F.cap}: kiedy znikają składki emerytalna i rentowa.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Składki od podstawy ${F.b2bBaseFull} i preferencyjny ZUS.` }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} brutto: netto i koszt pracodawcy.` }]}
+  sources={[src('cap', lang), src('gus_q4', lang), src('budget', lang), src('zus_b2b', lang)]}>
+  <div data-chrome><MiniSim client:load kind="average" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Dwie średnie w przepisach na {F.year} rok</h2>
+  <p>Kiedy ktoś pyta o przeciętne wynagrodzenie, zwykle ma na myśli jedną liczbę z wiadomości. W przepisach o składkach i podatkach na {F.year} r. funkcjonują jednak dwie różne kwoty, ogłaszane przez różne urzędy i używane do innych celów. Mylenie ich to najczęstszy błąd przy liczeniu składek przedsiębiorcy.</p>
+  <p>Pierwsza to <strong>prognozowane przeciętne wynagrodzenie</strong>: {F.avgForecast}. Pochodzi z ustawy budżetowej na {F.year} r. i z obwieszczenia ministra właściwego do spraw zabezpieczenia społecznego z 19 listopada 2025 r. (M.P. 2025 poz. 1206). To liczba ustalona z góry, przed rozpoczęciem roku, więc nie zmienia się po publikacji kolejnych danych statystycznych.</p>
+  <p>Druga to <strong>przeciętne wynagrodzenie w IV kwartale 2025 r., łącznie z wypłatami z zysku</strong>: {F.avgQ4}. Ogłosił je Prezes GUS w Monitorze Polskim (M.P. 2026 poz. 117). Jest to wartość zmierzona, a nie prognozowana, i dotyczy ostatniego kwartału poprzedniego roku. Różnica między obiema kwotami wynosi {$2(diff)}.</p>
+
+  <h2>Do czego służy prognoza {F.avgForecast}</h2>
+  <p>Najważniejsze zastosowanie dotyczy wszystkich dobrze zarabiających pracowników. Roczna podstawa składek emerytalnej i rentowej jest ograniczona do {capMult}-krotności prognozowanego przeciętnego wynagrodzenia. W {F.year} r. daje to {F.cap}. Po przekroczeniu tej sumy w danym roku pracodawca przestaje pobierać te dwie składki, a pensja netto rośnie. Średnio to {F.capMonthly} miesięcznie: kto zarabia więcej, przekroczy limit przed grudniem.</p>
+  <p>Weźmy pensję równą trzykrotności prognozy, {$(x3)} brutto. Limit zostanie przekroczony w {m3 ? MONTHS[m3 - 1] : 'tym roku'}, a od tego momentu emerytalna i rentowa znikają z paska wypłaty. Szczegóły, w tym to, co dzieje się ze składką chorobową, opisuje strona o <a href={route('cap', lang)}>rocznym limicie składek</a>. Drugi kalkulator na dole tej strony wskazuje miesiąc dla Twojej pensji.</p>
+  <p>Drugie zastosowanie dotyczy osób na działalności gospodarczej. Najniższa podstawa pełnych składek społecznych przedsiębiorcy to {b2bShare} prognozy, czyli {F.b2bBaseFull}. Od tej kwoty ZUS liczy {F.b2bZusFull} miesięcznie z dobrowolną składką chorobową. Z prognozą wiąże się też górna granica podstawy dobrowolnej chorobowej przedsiębiorcy: {$2(P.b2b.sickness_base_max)} miesięcznie, czyli {sickMult}-krotność {F.avgForecast}. Pełne zestawienie składek firmy znajdziesz na stronie <a href={route('zusb2b', lang)}>ZUS przedsiębiorcy</a>.</p>
+
+  <h2>Do czego służy średnia z IV kwartału: {F.avgQ4}</h2>
+  <p>Ta kwota ma jedno, ale ważne zastosowanie w naszym zakresie: wyznacza składkę zdrowotną przedsiębiorców na ryczałcie ewidencjonowanym. Składka nie zależy tam od dochodu, tylko od rocznego przychodu, i przyjmuje jedną z trzech wysokości. Podstawą jest odpowiedni procent średniej z IV kwartału.</p>
+  <ContentTable headers={['Roczny przychód', 'Podstawa', 'Udział w średniej z IV kw.', 'Składka miesięcznie']} align={['l', 'r', 'r', 'r']} rows={[[`do ${F.ryczaltLimit1}`, $2(bands[0].base), bandShare[0], F.ryczaltBand1], [`do ${F.ryczaltLimit2}`, $2(bands[1].base), bandShare[1], F.ryczaltBand2], [`powyżej ${F.ryczaltLimit2}`, $2(bands[2].base), bandShare[2], F.ryczaltBand3]]} />
+  <p>Kiedy GUS ogłosi średnią za IV kwartał {F.year} r., progi zdrowotne na kolejny rok przesuną się razem z nią. Jak wybrać właściwy próg i jak go rozliczyć w ciągu roku, opisujemy w poradniku o <a href={route('health', lang)}>składce zdrowotnej</a> i na stronie o <a href={route('ryczalt', lang)}>ryczałcie ewidencjonowanym</a>.</p>
+
+  <h2>Ile netto przy przeciętnej pensji</h2>
+  <p>Pensja brutto równa prognozie, {F.avgForecast}, na umowie o pracę daje {$(a.net)} na rękę. Potrącenia to składki społeczne {$2(a.social)}, składka zdrowotna {$2(a.health)} i zaliczka na podatek {$(a.pit)}. Netto stanowi więc {netShare} brutto. Pracodawcę taka pensja kosztuje {$2(a.er.cost)} miesięcznie, razem z jego częścią składek i funduszami.</p>
+  <p>Tabela zestawia kilka poziomów, które pojawiają się w przepisach, z netto na etacie. Ostatnia kolumna pokazuje, jaki procent prognozy stanowi każda kwota.</p>
+  <ContentTable headers={['Poziom', 'Brutto', 'Netto (umowa o pracę)', 'Wobec prognozy']} align={['l', 'r', 'r', 'r']} rows={rows} highlightRow={3} />
+  <p>Netto dotyczy jednego miesiąca, przed przekroczeniem drugiego progu podatkowego i limitu składek, z PIT-2 i kosztami {F.kup}. Przy dwukrotności prognozy roczny dochód przekroczy {F.threshold}, więc pod koniec roku zaliczka wzrośnie. Jak przebiega ten moment, liczy poradnik o <a href={route('brackets', lang)}>progach podatkowych</a>.</p>
+
+  <p>W skali roku pensja równa prognozie to {$(ay.total.gross)} brutto i {$(ay.total.net)} netto. Roczna podstawa opodatkowania wynosi {$(ay.total.taxBase)}, więc {aSecond ? `przekracza ${F.threshold} i część dochodu trafia do drugiego progu` : `nie dochodzi do ${F.threshold} i cały dochód zostaje w pierwszym progu`}. Limit składek też nie zostaje osiągnięty, dlatego netto jest takie samo w każdym miesiącu od stycznia do grudnia.</p>
+
+  <h2>Średnia a typowa pensja</h2>
+  <p>Przeciętne wynagrodzenie to średnia arytmetyczna: suma pensji podzielona przez liczbę osób. Wysokie zarobki niewielkiej grupy podnoszą ją wyraźnie, a niskie zarobki wielu osób obniżają mniej, niż się wydaje. Dlatego w praktyce wielu pracowników zarabia poniżej średniej, a porównanie własnej pensji z {F.avgForecast} mówi mniej o Twojej pozycji, niż sugerują nagłówki.</p>
+  <p>W mediach krąży też kilka innych średnich, publikowanych co miesiąc lub co kwartał, dla różnych grup pracodawców. Te liczby nie zmieniają ani limitu składek, ani podstaw ZUS. W przepisach na {F.year} r. wiążące są tylko dwie kwoty opisane na tej stronie.</p>
+  <p>Jeśli porównujesz ofertę pracy ze średnią, pamiętaj o rodzaju umowy. Ta sama kwota brutto na umowie zlecenia albo na B2B daje inne netto niż na etacie. Przy umowie zlecenia nie ma kosztów pracowniczych {F.kup}, tylko {F.kupContract} kosztów od przychodu po składkach, a na działalności dochodzą stałe składki firmy. Porównanie trzech form przy jednej kwocie pokazuje strona <a href={route('compare', lang)}>B2B czy umowa o pracę</a>.</p>
+
+  <h2>Cztery pomyłki, które powtarzają się najczęściej</h2>
+  <p>Pierwsza to liczenie podstawy składek społecznych przedsiębiorcy od średniej z IV kwartału. Podstawa wynosi {F.b2bBaseFull} i wynika z prognozy; wyliczona od {F.avgQ4} byłaby niższa o {baseGap} miesięcznie, a różnica oznaczałaby niedopłatę składek. Druga pomyłka działa odwrotnie: progi składki zdrowotnej na ryczałcie ktoś liczy od prognozy, choć przepisy wiążą je ze średnią z IV kwartału.</p>
+  <p>Trzecia to traktowanie limitu {F.cap} jak limitu miesięcznego. To suma brutto za cały rok, liczona od stycznia, więc pensja {$(AVG * 2)} miesięcznie nigdy go nie osiąga, a jednorazowa duża premia może przyspieszyć jego przekroczenie o kilka miesięcy. Czwarta pomyłka to porównywanie własnego netto z kwotą {F.avgForecast}. Ta liczba jest brutto; odpowiadające jej netto to {$(a.net)}, i to tylko na etacie z PIT-2. Zestawienie netto z brutto sprawia, że niemal każda pensja wygląda gorzej, niż jest naprawdę.</p>
+
+  <h2>Płaca minimalna jako punkt odniesienia</h2>
+  <p>Płaca minimalna, {F.minWage}, stanowi {pct(Math.round((MW / AVG) * 100) / 100, lang)} prognozy. To ona, a nie przeciętne wynagrodzenie, jest podstawą minimalnej składki zdrowotnej przedsiębiorców na skali i liniowym ({F.healthMin}) oraz preferencyjnych składek ZUS ({F.b2bBasePref}). Średnia odpowiada więc za górne limity i pełne składki, płaca minimalna za dolne progi. Więcej o niej w poradniku o <a href={route('minimum', lang)}>płacy minimalnej</a>.</p>
+
+  <h2>Twoja pensja a limit składek</h2>
+  <p>Drugi kalkulator liczy, w którym miesiącu Twoje skumulowane brutto przekroczy {F.cap}. Wpisz pensję miesięczną: jeśli jest niższa niż {F.capMonthly}, limit w {F.year} r. nie zostanie osiągnięty.</p>
+  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
+  <p>Wynik zakłada stałą pensję przez cały rok u jednego pracodawcy. Premie wypłacone w ciągu roku przyspieszają przekroczenie limitu.</p>
+</GuideLayout>

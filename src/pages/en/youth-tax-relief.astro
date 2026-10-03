@@ -1,0 +1,82 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const LIM = P.pit.youth_exempt_limit;
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const youthRow = (g: number) => {
+  const y = uopYear({ gross: g, under26: true }), n = uopYear({ gross: g });
+  const used = y.total.exempt >= LIM - 1;
+  const last = y.months.filter((m) => m.exempt > 0).pop();
+  return { y, n, month: used && last ? last.month : null };
+};
+const grosses = [P.minimum_wage.monthly, 6000, 8000, 10000, 12000];
+const rows = grosses.map((g) => { const r = youthRow(g); return [$(g), $(r.y.months[0].net), $(r.n.months[0].net), r.month ? MONTHS[r.month - 1] : 'not this year', $(r.n.total.pit - r.y.total.pit)]; });
+const evenMonthly = $(LIM / 12);
+const r10 = youthRow(10000);
+const m10 = r10.month ?? 12;
+const r8 = youthRow(8000), m8 = r8.month ?? 12;
+const late = uopYear({ gross: 12000, months: [...Array(6).fill(0), ...Array(6).fill(12000)], under26: true });
+const lateIncome = $(12000 * 6);
+const a6 = uop({ gross: 6000, under26: true });
+const zU = zlecenie({ gross: 4000, under26: true }), zN = zlecenie({ gross: 4000 });
+const faqs = [
+  { q: 'I turn 26 in June. Until when am I tax-free?', a: `Income you receive up to and including your 26th birthday is exempt. With a birthday on 15 June, pay received by 15 June is covered and pay received from 16 June is taxed. What matters is the day the money reaches you, not the month the salary is for. The full ${F.youthLimit} limit applies in your birthday year too, though most people do not use it all.` },
+  { q: 'I am 24 and work on a specific-work contract. Does the youth relief cover me?', a: `No. Article 21(1)(148) of the PIT Act lists employment income, mandate contracts, graduate internships, vocational school traineeships and maternity benefit. Specific-work contracts (umowa o dzieło), business income and management contracts are not on the list, so you pay the usual ${F.pitLow} advance after ${F.kupContract} deductible costs.` },
+  { q: `I have two employers. Will each of them exempt ${F.youthLimit}?`, a: `Each payer applies the relief on its own, because neither sees your other income, but the ${F.youthLimit} limit is a single annual figure covering every source. If together they exempt more, the excess is taxed in your annual return and you will have tax to pay. To avoid that, ask one payer in writing to withhold tax without the exemption (article 32(6)).` },
+  { q: 'Do I still pay ZUS and the health contribution under the youth relief?', a: `Yes. The relief only removes income tax. Pension, disability and sickness contributions and the ${F.health} health contribution are deducted as usual, which is why ${$(6000)} gross leaves ${$(a6.net)} rather than the full amount. The health contribution is reduced only on very small salaries, to the tax advance that would have applied without the exemption (article 83(2a) of the healthcare act).` },
+  { q: `What happens to my tax once I pass ${F.youthLimit}?`, a: `On income above ${F.youthLimit}, your employer withholds tax like for any other employee, starting at ${F.pitLow}, not ${F.pitHigh}. Deductible costs come back into the calculation, and so does the ${F.reducingMonth} PIT-2 reduction if you filed the statement. In your annual return the part above the limit is taxed on the scale, with the ${F.freeAmount} tax-free allowance.` },
+];
+---
+<GuideLayout lang={lang} id="youth" breadcrumbLabel={label('youth', lang)} title={`Youth Tax Relief ${F.year}: No PIT up to ${F.youthLimit} Under 26`} h1={`Youth tax relief in Poland, ${F.year}: zero PIT before 26`}
+  description={`Polish youth tax relief ${F.year}: no income tax on up to ${F.youthLimit} of job and mandate pay until your 26th birthday. ZUS and health still apply. See when it ends.`}
+  intro={`The youth relief (ulga dla młodych, often called PIT 0 for young people) exempts employment and mandate contract income received before your 26th birthday, up to ${F.youthLimit} a year.`}
+  resume={`Until your 26th birthday you pay no Polish income tax on pay from an employment contract or a mandate contract, as long as it stays within ${F.youthLimit} in ${F.year}. The relief is automatic: your employer applies it without any application or certificate, because the only conditions are your age and the type of contract. It does not cover specific-work contracts, business (B2B) income or contracts of up to ${F.smallContract} taxed at a flat rate. Only income tax disappears: ZUS social contributions and the ${F.health} health contribution are deducted as for anyone else, so take-home pay rises by exactly the tax advance, to ${$(a6.net)} on ${$(6000)} gross. The limit counts gross income, not income after costs, and runs out within the year once your salary exceeds ${evenMonthly} a month; on ${$(10000)} gross that happens in ${MONTHS[m10 - 1]}. The ${F.youthLimit} is shared with the return-to-Poland relief and the relief for families with four or more children. The mini calculator shows your savings and when tax kicks in.`}
+  faqs={faqs}
+  related={[{ href: route('student', lang), name: label('student', lang), description: 'Students on zlecenie: no ZUS and no tax.' }, { href: route('kup', lang), name: label('kup', lang), description: `${F.kup} or ${F.kupRaised} a month once the relief runs out.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Net pay month by month, with and without the relief.' }]}
+  sources={[src('youth', lang), src('pit_act', lang), src('health_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>The month your exemption runs out</h2>
+  <ContentTable headers={['Monthly gross', 'Net with relief', 'Net without relief', 'Limit used up in', 'Tax saved in the year']} align={['r', 'r', 'r', 'l', 'r']} rows={rows} />
+  <p>The {F.youthLimit} limit applies to revenue, meaning gross pay before contributions, not income after costs. On a steady salary it lasts the whole year if you earn {evenMonthly} gross a month or less. Above that, one month's pay is only partly exempt, and from the next month your employer withholds tax on all of it. On {$(10000)} gross the early months pay {$(r10.y.months[0].net)} take-home; once the limit is gone, the payslip drops to {$(r10.y.months[11].net)}.</p>
+  <p>Plan for that drop, especially if you signed a lease based on your first payslips. When the relief runs out, the line zaliczka na podatek (income tax advance) reappears on your pasek wypłaty, and in the changeover month your pay is split into an exempt part and a taxed part.</p>
+
+  <h2>Who qualifies, and the birthday cut-off</h2>
+  <p>Two conditions: being under 26 and earning income of a type listed in the Act. Citizenship plays no role. The Ministry of Finance confirms that someone who does not live in Poland can use the relief on an employment contract taxed in Poland, which matters for young people relocating here for a first job. There is nothing to file and no university certificate to provide: payroll knows your date of birth from your HR records.</p>
+  <p>The age limit works to the day. Income received up to and including your 26th birthday is exempt; a payment received a day later is taxed. The Act speaks of income "received" before 26, so the payment date counts, not the period the salary covers. May's salary paid after your birthday is taxed even though you did the work earlier.</p>
+
+  <h2>Employment and mandate contracts in, dzieło and B2B out</h2>
+  <p>Article 21(1)(148) of the PIT Act names five sources: employment (including civil service, cooperative work and outwork), mandate contracts (umowa zlecenie), graduate internships, vocational school traineeships and maternity benefit. The mandate contract must be with a business, with the owner or manager of a building with rented units, or with an estate carrying on a deceased person's business. A mandate from a private individual who runs no business is not covered.</p>
+  <p>Left out are specific-work contracts (umowa o dzieło), self-employment, management contracts and company management agreements. Sickness benefit is taxed as well, because it counts as income from other sources, not from work; maternity benefit is the exception. Flat-taxed contracts of up to {F.smallContract} do not benefit either, since the flat tax sits outside this exemption.</p>
+  <p>On a {$(4000)} gross mandate contract, someone under 26 who is not a student takes home {$(zU.net)}, while someone older takes home {$(zN.net)}. The whole difference is the tax advance. School pupils and students do even better on a mandate contract because they also skip contributions; see our guide to <a href={route('student', lang)}>students on a mandate contract</a>.</p>
+
+  <h2>ZUS and health contributions do not go away</h2>
+  <p>The relief removes tax, not contributions. Out of {$(6000)} gross, an employee under 26 pays {$(a6.social)} in social contributions and {$(a6.health)} in health contribution, exactly what an older colleague pays. The health contribution is {F.health} of pay after social contributions.</p>
+  <p>One rule can lower the health contribution under the relief. Article 83(2a) of the healthcare act caps it at the tax advance the payer would have calculated without the exemption, using the 2021 rules. In practice this only bites on very low pay, such as a small part-time contract. On a full-time job, even at the minimum wage, the health contribution is charged in full.</p>
+  <p>Social contributions paid on exempt income cannot be deducted in your return. If part of your year was exempt and part taxed, you deduct only the contributions attributable to the taxed part. The calculators on this page handle that automatically.</p>
+
+  <h2>One limit across reliefs and payers</h2>
+  <p>The {F.youthLimit} is a combined limit for three reliefs: the youth relief, the return-to-Poland relief (ulga na powrót) and the relief for families with four or more children (ulga dla rodzin 4+). A 24-year-old who has moved back to Poland and also qualifies for the return relief gets one limit, not two. The working-seniors relief applies only from age 60 for women and 65 for men, so it never overlaps with this one.</p>
+  <p>Nor is the limit split between payers. The relief applies however many contracts you have, but each payer counts it separately. With a job at one company and a mandate contract at another, the two payers can exempt more than {F.youthLimit} between them, and the annual return taxes the excess.</p>
+
+  <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('annual', lang)} /></div>
+
+  <h2>Worked example: a first job at {$(8000)} gross</h2>
+  <p>A 24-year-old graduate starts work in January on {$(8000)} gross. Month after month she takes home {$(r8.y.months[0].net)}, because no tax advance is withheld at all. In {MONTHS[m8 - 1]} only the rest of the limit, {$(r8.y.months[m8 - 1].exempt)}, is exempt, and from the following month her pay is {$(r8.y.months[11].net)}. Over the year she pays {$(r8.y.total.pit)} in income tax instead of the {$(r8.n.total.pit)} she would owe without the relief.</p>
+  <p>Because the limit is annual rather than monthly, starting mid-year changes the picture. A graduate whose first {$(12000)} gross salary arrives in July earns {lateIncome} by December, less than {F.youthLimit}, and pays {$(late.total.pit)} in tax despite a monthly salary well above {evenMonthly}. The following year, if still under 26, the limit runs out in the autumn.</p>
+  <p>On your first payslip, check two things: that the tax advance line shows zero and that contributions are charged in full. If tax is withheld although you qualify, the usual causes are wrong HR data or an earlier request to switch the exemption off.</p>
+
+  <h2>Opting out during the year, and your annual return</h2>
+  <p>You are not forced to use the relief. Under article 32(6) of the PIT Act (article 41(1b) for mandate contracts) you can ask your payer in writing to withhold tax without the exemption; the payer must apply it by the following month at the latest. People do this when they have several income sources and want to avoid a tax bill after the year ends, or when they expect their total income to exceed the limit anyway.</p>
+  <p>It also works the other way. If the relief was not applied during the year but you qualify, you can claim it in your annual return and get the withheld tax refunded. If all your income was exempt you generally do not have to file at all. You must file if you also had taxable income, want a refund, or want to use the child relief up to the contributions you paid; exempt income then goes in part D of the PIT-37 or PIT-36 form.</p>
+  <p>Once the limit is used up, <a href={route('kup', lang)}>deductible employment costs</a> and the PIT-2 reduction return. For net pay month by month across the point where the limit runs out, use the <a href={route('annual', lang)}>annual salary calculator</a>.</p>
+</GuideLayout>

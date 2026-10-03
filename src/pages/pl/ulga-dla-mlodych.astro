@@ -1,0 +1,86 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const LIM = P.pit.youth_exempt_limit;
+const LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const inMonth = (m: number) => `${LOC[m - 1].startsWith('w') ? 'we' : 'w'} ${LOC[m - 1]}`;
+const MONTHS = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
+// Miesiąc, w którym wyczerpuje się limit, i roczna oszczędność na PIT (moteur, pensja stała).
+const youthRow = (g: number) => {
+  const y = uopYear({ gross: g, under26: true }), n = uopYear({ gross: g });
+  const used = y.total.exempt >= LIM - 1;
+  const last = y.months.filter((m) => m.exempt > 0).pop();
+  return { y, n, month: used && last ? last.month : null };
+};
+const grosses = [P.minimum_wage.monthly, 6000, 8000, 10000, 12000];
+const rows = grosses.map((g) => { const r = youthRow(g); return [$(g), $(r.y.months[0].net), $(r.n.months[0].net), r.month ? MONTHS[r.month - 1] : 'nie wyczerpiesz', $(r.n.total.pit - r.y.total.pit)]; });
+// Próg miesięczny: pensja, przy której limit starcza dokładnie na 12 miesięcy.
+const evenMonthly = $(LIM / 12);
+const r10 = youthRow(10000);
+const m10 = r10.month ?? 12;
+const r8 = youthRow(8000), m8 = r8.month ?? 12;
+const late = uopYear({ gross: 12000, months: [...Array(6).fill(0), ...Array(6).fill(12000)], under26: true });
+const lateIncome = $(12000 * 6);
+const a6 = uop({ gross: 6000, under26: true });
+const zU = zlecenie({ gross: 4000, under26: true }), zN = zlecenie({ gross: 4000 });
+const faqs = [
+  { q: 'Kończę 26 lat w czerwcu. Do kiedy nie płacę podatku?', a: `Zwolnione są przychody uzyskane do dnia 26. urodzin włącznie. Jeśli urodziny wypadają 15 czerwca, wynagrodzenie otrzymane do 15 czerwca korzysta z ulgi, a wypłacone od 16 czerwca jest już opodatkowane. Decyduje dzień otrzymania pieniędzy, nie miesiąc, za który są należne. Limit ${F.youthLimit} obowiązuje w całości także w roku urodzin, ale zwykle zostaje niewykorzystany.` },
+  { q: 'Mam 24 lata i pracuję na umowie o dzieło. Czy ulga dla młodych mnie obejmuje?', a: `Nie. Art. 21 ust. 1 pkt 148 ustawy o PIT wymienia przychody z pracy na etacie, z umów zlecenia, z praktyk absolwenckich, staży uczniowskich i zasiłku macierzyńskiego. Umowy o dzieło, działalności gospodarczej ani kontraktów menedżerskich na tej liście nie ma. Od dzieła płacisz zwykłą zaliczkę ${F.pitLow} po odliczeniu kosztów ${F.kupContract}.` },
+  { q: `Pracuję u dwóch pracodawców. Czy każdy z nich zwolni mi ${F.youthLimit}?`, a: `Każdy płatnik stosuje ulgę samodzielnie, bo nie widzi Twoich innych przychodów, ale limit ${F.youthLimit} jest jeden na cały rok i na wszystkie źródła. Jeśli razem przekroczysz limit, nadwyżka zostanie opodatkowana dopiero w zeznaniu rocznym i pojawi się dopłata. Możesz jej uniknąć, składając jednemu z płatników pisemny wniosek o liczenie zaliczek bez zwolnienia (art. 32 ust. 6).` },
+  { q: 'Czy przy uldze dla młodych płacę składkę zdrowotną i ZUS?', a: `Tak. Ulga zwalnia wyłącznie z podatku dochodowego. Składki emerytalna, rentowa i chorobowa oraz składka zdrowotna ${F.health} są pobierane normalnie, dlatego przy ${$(6000)} brutto na rękę zostaje ${$(a6.net)}, a nie pełna kwota. Składka zdrowotna jest obniżana tylko przy bardzo małych wynagrodzeniach, do wysokości zaliczki liczonej tak, jakby przychód nie był zwolniony (art. 83 ust. 2a ustawy o świadczeniach).` },
+  { q: `Co się dzieje z zaliczką po przekroczeniu limitu ${F.youthLimit}?`, a: `Od nadwyżki ponad ${F.youthLimit} pracodawca pobiera zaliczkę jak u każdego pracownika i zaczyna od stawki ${F.pitLow}, a nie od ${F.pitHigh}. Do podstawy wracają koszty uzyskania przychodu i, jeśli złożyłeś PIT-2, pomniejszenie o ${F.reducingMonth}. W zeznaniu rocznym możesz też skorzystać z kwoty wolnej ${F.freeAmount}, bo dochód ponad limit rozlicza się według skali.` },
+];
+---
+<GuideLayout lang={lang} id="youth" breadcrumbLabel={label('youth', lang)} title={`Ulga dla młodych ${F.year}: zero PIT do ${F.youthLimit} przychodu`} h1={`Ulga dla młodych w ${F.year} r.: PIT 0 do 26. roku życia`}
+  description={`Ulga dla młodych ${F.year}: do 26. urodzin bez podatku od ${F.youthLimit} przychodu z etatu i zlecenia. ZUS i zdrowotna zostają. Sprawdź, w którym miesiącu minie limit.`}
+  intro={`Ulga dla młodych zwalnia z podatku dochodowego przychody z pracy i zlecenia uzyskane przed 26. urodzinami, do rocznego limitu ${F.youthLimit}.`}
+  resume={`Do 26. urodzin nie płacisz podatku dochodowego od przychodów z umowy o pracę i umowy zlecenia, dopóki w ${F.year} r. nie przekroczą łącznie ${F.youthLimit}. Ulga działa automatycznie: pracodawca stosuje ją bez wniosku i bez dokumentów, a jedynym warunkiem jest wiek i rodzaj umowy. Zwolnienie nie obejmuje umowy o dzieło, działalności gospodarczej (B2B) ani umów do ${F.smallContract} opodatkowanych ryczałtem. Ulga dotyczy wyłącznie podatku: składki ZUS i składka zdrowotna ${F.health} są pobierane jak u każdego, więc netto rośnie o kwotę zaliczki, czyli przy ${$(6000)} brutto do ${$(a6.net)}. Limit liczy się od przychodu brutto, a nie od dochodu, i wyczerpuje się w roku przy pensji wyższej niż ${evenMonthly} miesięcznie: przy ${$(10000)} brutto następuje to ${inMonth(m10)}. Limit ${F.youthLimit} jest wspólny z ulgą na powrót i ulgą dla rodzin 4+. Mini-kalkulator pokazuje, ile oszczędzasz i kiedy zaczniesz płacić podatek.`}
+  faqs={faqs}
+  related={[{ href: route('student', lang), name: label('student', lang), description: 'Student na zleceniu: bez ZUS i bez podatku.' }, { href: route('kup', lang), name: label('kup', lang), description: `${F.kup} lub ${F.kupRaised} miesięcznie po wyczerpaniu ulgi.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Netto miesiąc po miesiącu, z ulgą i bez.' }]}
+  sources={[src('youth', lang), src('pit_act', lang), src('health_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>W którym miesiącu kończy się limit</h2>
+  <ContentTable headers={['Brutto miesięcznie', 'Netto z ulgą', 'Netto bez ulgi', 'Limit wyczerpany', 'Mniej podatku w roku']} align={['r', 'r', 'r', 'l', 'r']} rows={rows} />
+  <p>Limit {F.youthLimit} dotyczy przychodu, czyli kwoty brutto przed składkami, a nie dochodu po kosztach. Przy stałej pensji starcza na cały rok, jeśli zarabiasz najwyżej {evenMonthly} brutto miesięcznie. Powyżej tej kwoty przychodzi miesiąc, w którym zwolniona jest tylko część wypłaty, a od następnego pracodawca pobiera zaliczkę od całości. Przy {$(10000)} brutto pierwsze miesiące dają {$(r10.y.months[0].net)} na rękę, a po wyczerpaniu limitu wypłata spada do {$(r10.y.months[11].net)}.</p>
+  <p>Ten spadek warto przewidzieć, zwłaszcza jeśli umowa najmu czy rata kredytu zostały dopasowane do pierwszych pasków. Na pasku wypłaty po wyczerpaniu ulgi pojawia się znowu wiersz „zaliczka na podatek”, a w miesiącu przejściowym przychód dzieli się na część zwolnioną i opodatkowaną.</p>
+
+  <h2>Kto ma prawo do ulgi i od kiedy jej nie ma</h2>
+  <p>Warunki są dwa: wiek poniżej 26 lat i przychód z tytułu wymienionego w ustawie. Obywatelstwo nie ma znaczenia. Ministerstwo Finansów potwierdza, że z ulgi korzysta też osoba bez miejsca zamieszkania w Polsce, jeśli jej przychód z umowy o pracę jest opodatkowany w Polsce. Nie trzeba składać oświadczeń ani zaświadczeń z uczelni: płatnik zna Twoją datę urodzenia z dokumentów kadrowych.</p>
+  <p>Granica wieku jest liczona co do dnia. Zwolnione są przychody otrzymane do dnia 26. urodzin włącznie; wypłata otrzymana dzień później jest już opodatkowana. Ustawa mówi o przychodach „otrzymanych” przed ukończeniem 26 lat, więc liczy się dzień wypłaty, a nie okres, za który należy się pensja. Pensja za maj wypłacona już po urodzinach nie korzysta z ulgi, choć praca była wykonana wcześniej.</p>
+
+  <h2>Etat i zlecenie tak, dzieło i B2B nie</h2>
+  <p>Art. 21 ust. 1 pkt 148 ustawy o PIT wymienia pięć źródeł: stosunek pracy (także służbowy, spółdzielczy i pracę nakładczą), umowy zlecenia, praktyki absolwenckie, staże uczniowskie i zasiłek macierzyński. Zlecenie musi być zawarte z przedsiębiorcą, z właścicielem lub zarządcą nieruchomości z lokalami na wynajem albo z przedsiębiorstwem w spadku. Zlecenie od osoby prywatnej, która nie prowadzi firmy, ulgą nie jest objęte.</p>
+  <p>Poza ulgą zostają umowy o dzieło, przychody z działalności gospodarczej, kontrakty menedżerskie i umowy o zarządzanie przedsiębiorstwem. Także zasiłek chorobowy jest opodatkowany: to przychód z innych źródeł, a nie z pracy. Wyjątek dotyczy macierzyńskiego, który zwolnienie obejmuje. Umowy do {F.smallContract} opodatkowane ryczałtem również nie korzystają z ulgi, bo podatek zryczałtowany nie podlega temu zwolnieniu.</p>
+  <p>Przy zleceniu na {$(4000)} brutto osoba poniżej 26 lat, która nie jest studentem, dostaje {$(zU.net)}, a osoba starsza {$(zN.net)}. Różnica to sama zaliczka na podatek. Studenci i uczniowie mają na zleceniu jeszcze korzystniej, bo nie płacą też składek; ten przypadek opisuje poradnik <a href={route('student', lang)}>umowa zlecenie dla studenta</a>.</p>
+
+  <h2>Składki ZUS i zdrowotna zostają</h2>
+  <p>Ulga zwalnia z podatku, nie ze składek. Z pensji {$(6000)} brutto pracownik przed 26. rokiem życia oddaje {$(a6.social)} składek społecznych i {$(a6.health)} składki zdrowotnej, dokładnie tyle samo co starszy kolega. Składka zdrowotna to {F.health} podstawy po odjęciu składek społecznych.</p>
+  <p>Jest jeden mechanizm, który przy uldze obniża składkę zdrowotną. Art. 83 ust. 2a ustawy o świadczeniach ogranicza ją do wysokości zaliczki, którą płatnik obliczyłby, gdyby przychód nie był zwolniony, według zasad z 2021 roku. W praktyce ma to znaczenie tylko przy bardzo niskich wynagrodzeniach, na przykład przy małej części etatu. Przy pełnym etacie, nawet na płacy minimalnej, składka zdrowotna jest pełna.</p>
+  <p>Składki społeczne od przychodów zwolnionych nie podlegają odliczeniu w zeznaniu. Jeśli część roku była zwolniona, a część opodatkowana, odliczasz tylko składki przypadające na część opodatkowaną. Kalkulator na tej stronie robi to automatycznie.</p>
+
+  <h2>Jeden limit na kilka ulg i kilku płatników</h2>
+  <p>Kwota {F.youthLimit} to łączny limit dla trzech ulg: dla młodych, na powrót i dla rodzin 4+. Osoba poniżej 26 lat, która wróciła do Polski i korzysta też z ulgi na powrót, nie dostaje dwóch limitów, tylko jeden. Ulga dla pracujących seniorów z definicji dotyczy osób po 60. lub 65. roku życia, więc z ulgą dla młodych się nie spotyka.</p>
+  <p>Limit nie dzieli się też między pracodawców. Ulga obowiązuje niezależnie od liczby umów, ale każdy płatnik liczy ją osobno. Przy etacie i zleceniu u różnych firm obaj płatnicy mogą zwolnić łącznie więcej niż {F.youthLimit}, a nadwyżkę opodatkuje dopiero zeznanie roczne.</p>
+
+  <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('annual', lang)} /></div>
+
+  <h2>Przykład: pierwsza praca za {$(8000)} brutto</h2>
+  <p>Absolwentka w wieku 24 lat zaczyna pracę w styczniu z pensją {$(8000)} brutto. Od stycznia przez kolejne miesiące dostaje {$(r8.y.months[0].net)} na rękę, bo zaliczki na podatek nie ma wcale. {inMonth(m8).replace(/^w/, 'W')} zwolniona jest już tylko reszta limitu, {$(r8.y.months[m8 - 1].exempt)}, a od następnego miesiąca wypłata wynosi {$(r8.y.months[11].net)}. W całym roku zapłaci {$(r8.y.total.pit)} podatku zamiast {$(r8.n.total.pit)}, które oddałaby bez ulgi.</p>
+  <p>Limit jest roczny, a nie miesięczny, i to zmienia rachunek osób, które zaczynają pracę w połowie roku. Absolwent, który pierwszą pensję {$(12000)} brutto dostaje w lipcu, do grudnia uzyska {lateIncome} przychodu, czyli mniej niż {F.youthLimit}. Zapłaci więc {$(late.total.pit)} podatku, choć jego miesięczna pensja jest wyraźnie wyższa niż {evenMonthly}. W następnym roku, jeśli nadal nie skończy 26 lat, limit wyczerpie się już jesienią.</p>
+  <p>Na pierwszym pasku warto sprawdzić dwie rzeczy: czy wiersz zaliczki na podatek pokazuje zero i czy składki są naliczone w pełnej wysokości. Jeśli pracodawca pobiera zaliczkę mimo spełnionych warunków, zwykle chodzi o błąd w danych kadrowych albo o wcześniejszy wniosek o niestosowanie zwolnienia.</p>
+
+  <h2>Rezygnacja z ulgi w trakcie roku i rozliczenie roczne</h2>
+  <p>Ulgi nie trzeba stosować na siłę. Na podstawie art. 32 ust. 6 ustawy o PIT (a przy zleceniu art. 41 ust. 1b) możesz złożyć płatnikowi pisemny wniosek o liczenie zaliczek bez zwolnienia. Płatnik uwzględni go najpóźniej od następnego miesiąca. Robi się to przy kilku źródłach przychodu, żeby nie mieć dopłaty po roku, albo gdy spodziewasz się, że łączny przychód i tak przekroczy limit.</p>
+  <p>Odwrotna sytuacja też jest możliwa: jeśli ulga nie była stosowana w trakcie roku, a spełniasz warunki, uwzględnisz ją w zeznaniu rocznym i odzyskasz pobrane zaliczki jako zwrot. Gdy wszystkie przychody były zwolnione, zeznania co do zasady nie musisz składać. Obowiązek pojawia się, gdy masz też przychody opodatkowane, chcesz odzyskać nadpłatę albo skorzystać z ulgi na dzieci w części odpowiadającej zapłaconym składkom. Przychody zwolnione wykazuje się wtedy w części D formularza PIT-37 lub PIT-36.</p>
+  <p>Po wyczerpaniu limitu wracają <a href={route('kup', lang)}>koszty uzyskania przychodu</a> i pomniejszenie z PIT-2. Netto miesiąc po miesiącu, z przejściem przez limit, pokazuje <a href={route('annual', lang)}>kalkulator wynagrodzenia rocznego</a>.</p>
+</GuideLayout>

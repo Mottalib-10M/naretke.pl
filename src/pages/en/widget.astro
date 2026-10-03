@@ -1,0 +1,49 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { SITE_URL } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const code = `<iframe src="${SITE_URL}/embed/kalkulator/?lang=en" title="Polish salary calculator" width="100%" height="900" style="border:0;max-width:1100px" loading="lazy"></iframe>`;
+const codePl = `<iframe src="${SITE_URL}/embed/kalkulator/" title="Kalkulator wynagrodzeń brutto netto" width="100%" height="900" style="border:0;max-width:1100px" loading="lazy"></iframe>`;
+const title = `Embed the ${F.year} Polish salary calculator on your site free`;
+const description = `A free ${F.year} Polish gross-to-net calculator for your website: one iframe snippet, four contract types, no sign-up, no cookies or tracking, rates kept current.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('widget', lang), path: route('widget', lang) }])]}
+  breadcrumbs={[{ label: label('widget', lang) }]} showAuthor={false}>
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-navy-900 md:text-4xl">Put the salary calculator on your site</h1>
+    <p class="mt-3 text-lg text-navy-600">One snippet to copy, no sign-up and no fee. The widget loads the full calculator (employment contract, mandate contract, specific-work contract, B2B) in an iframe served from this site. HR teams, relocation services, job boards and expat blogs can have it running in a minute.</p>
+  </header>
+  <div class="prose prose-slate max-w-none">
+    <h2>The snippet</h2>
+    <p>Paste this HTML wherever you want the calculator to appear. The frame does not resize itself: 900 px is enough in a wide layout, while 1,200 px is safer in a narrow column. The <code>?lang=en</code> parameter at the end of the address switches the interface to English.</p>
+    <pre class="overflow-x-auto rounded-lg bg-navy-900 p-4 text-sm text-white"><code>{code}</code></pre>
+    <p>For a Polish-speaking audience, drop the parameter:</p>
+    <pre class="overflow-x-auto rounded-lg bg-navy-900 p-4 text-sm text-white"><code>{codePl}</code></pre>
+
+    <h2>What your visitors get</h2>
+    <p>The same engine that runs on our own pages, with the {F.year} rates: the {F.minWage} minimum wage, the {F.cap} contribution cap, the {F.pitLow} and {F.pitHigh} tax brackets, self-employed ZUS and the health contribution under each tax option. When Polish rules change we update the data here, and your widget shows the new rates without any work on your side.</p>
+
+    <h2>Conditions of use</h2>
+    <ul>
+      <li>The widget is free, commercial sites included.</li>
+      <li>The kalkulatorwynagrodzen.pl link under the calculator must stay visible. The snippet may not be altered beyond the frame's width and height.</li>
+      <li>Nothing in the presentation may suggest the tool is an official government service or your own product.</li>
+      <li>Results are estimates and do not constitute tax advice; availability is not guaranteed. The full rules are in our <a href={route('terms', lang)}>terms of use</a>.</li>
+    </ul>
+
+    <h2>Your visitors' privacy</h2>
+    <p>None of your readers' data reaches us: the calculation runs in their browser, and the frame sets no cookies and loads no trackers. You do not need to add us to your own cookie policy. Need a different size or have a question? Write to us through the <a href={route('contact', lang)}>contact page</a>.</p>
+
+    <h2>Live preview</h2>
+    <p>This is how the widget looks once embedded:</p>
+  </div>
+  <div class="mt-4 overflow-hidden rounded-xl border border-navy-200">
+    <iframe src="/embed/kalkulator/?lang=en" title="Polish salary calculator" width="100%" height="900" style="border:0" loading="lazy"></iframe>
+  </div>
+</PageLayout>

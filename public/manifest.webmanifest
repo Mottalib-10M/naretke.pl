@@ -1,9 +1,21 @@
 {
-  "name": "kalkulatorwynagrodzen.pl",
-  "short_name": "kalkulatorwynagrodzen",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1e40af",
-  "icons": [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+ "name": "KalkulatorWynagrodzen.pl",
+ "short_name": "Kalkulator wynagrodzeń",
+ "description": "Kalkulator wynagrodzeń 2026: brutto netto dla umowy o pracę, zlecenia, o dzieło i B2B, z ZUS, składką zdrowotną i PIT.",
+ "start_url": "/pl/",
+ "display": "standalone",
+ "background_color": "#ffffff",
+ "theme_color": "#DC143C",
+ "icons": [
+  {
+   "src": "/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ]
 }

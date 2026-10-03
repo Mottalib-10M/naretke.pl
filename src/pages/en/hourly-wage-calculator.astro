@@ -1,0 +1,61 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+// Hours assumption: the mini-calculator's default (168 h = 21 days × 8 h), editable by the user.
+const H = 168;
+const RATES = [P.minimum_wage.hourly, 40, 50, 75, 100, 150];
+const rows = RATES.map((r) => { const g = r * H; const u = uop({ gross: g }), z = zlecenie({ gross: g }); return [$2(r), $(g), $(u.net), $2(u.net / H), $(z.net), $2(z.net / H)]; });
+const HOURS = [160, 168, 176];
+const MONTHLY = [P.minimum_wage.monthly, 8000, 12000, 20000];
+const back = MONTHLY.map((g) => [$(g), ...HOURS.map((h) => $2(g / h))]);
+const minAtH = P.minimum_wage.hourly * H;
+const z50 = zlecenie({ gross: 50 * H }), zs50 = zlecenie({ gross: 50 * H, student: true });
+const minPerH = P.minimum_wage.monthly / H;
+const cross = RATES.find((r) => zlecenie({ gross: r * H }).net > uop({ gross: r * H }).net) ?? RATES[RATES.length - 1];
+const faqs = [
+  { q: 'A client offers me PLN 28 an hour on a mandate contract. Is that allowed in Poland?', a: `Not on a mandate contract (umowa zlecenie) paid by the hour. A Council of Ministers regulation sets the ${F.year} minimum hourly rate at ${F.minHourly} gross, and that is the floor for every hour worked. Over ${formatNumber(H, 0, lang)} hours a month it adds up to at least ${$(minAtH)} gross. An offer of PLN 28 an hour is therefore below the statutory minimum.` },
+  { q: 'How do I turn a monthly salary into an hourly rate to compare it with a mandate offer?', a: `Divide the monthly gross by the hours you work that month. The number changes every month with working days and public holidays, which is why the calculator asks you for it rather than assuming it. ${$(8000)} gross over 168 hours comes to ${$2(8000 / H)} an hour. When comparing with a mandate offer, remember that employment includes paid holiday and sick pay, which a mandate contract usually does not.` },
+  { q: 'How much of a PLN 50 gross hourly rate do I keep on a mandate contract?', a: `Over ${formatNumber(H, 0, lang)} hours a month, with mandatory pension and disability contributions, the health contribution and a ${F.pitLow} tax advance after ${F.kupContract} costs, you keep about ${$2(z50.net / H)} an hour, or ${$(z50.net)} a month. A student under 26 pays neither contributions nor tax and keeps ${$2(zs50.net / H)} an hour. The result depends on the monthly total, not only on the rate.` },
+];
+---
+<GuideLayout lang={lang} id="hourly" breadcrumbLabel={label('hourly', lang)} title={`Hourly Wage Poland ${F.year}: ${F.minHourly} Minimum and Net per Hour`} h1={`Hourly wage in Poland ${F.year}: from hours to salary and back`}
+  description={`Hourly wage in Poland ${F.year}: the minimum is ${F.minHourly} gross on a mandate contract. Convert an hourly rate into monthly net pay and back, for any number of hours.`}
+  intro={`Enter a gross hourly rate and your hours, and the calculator returns monthly gross, net pay on an employment contract and net per hour worked.`}
+  resume={`The minimum hourly rate in Poland for ${F.year} is ${F.minHourly} gross, and it mainly protects people on mandate contracts (umowa zlecenie), where pay for each hour may not fall below it. On an employment contract the minimum is monthly: the minimum wage of ${F.minWage} for full-time work. The calculator converts in both directions. It multiplies your hourly rate by the hours you enter, then works out employment-contract net pay for that salary. At PLN 50 an hour and ${formatNumber(H, 0, lang)} hours a month that is ${$(50 * H)} gross and ${$(uop({ gross: 50 * H }).net)} net on employment, or ${$2(uop({ gross: 50 * H }).net / H)} take-home per hour. You type the hours yourself because working time in Poland changes from month to month with working days and public holidays. The tables below show net pay on employment and on a mandate contract for six rates, and the hourly equivalent of four monthly salaries.`}
+  faqs={faqs}
+  related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Mandate contract net pay with every contribution option.' }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} a month and ${F.minHourly} an hour.` }, { href: route('overtime', lang), name: label('overtime', lang), description: `The ${F.ot50} or ${F.ot100} supplement for extra hours.` }]}
+  sources={[src('minimum', lang), src('pit_act', lang), src('zus_rates', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>From hourly rate to monthly take-home</h2>
+  <p>The table assumes {formatNumber(H, 0, lang)} hours a month, that is 21 days of 8 hours. Treat it as an example only: in the calculator, enter the hours from your own schedule or contract.</p>
+  <ContentTable headers={['Gross rate/h', 'Monthly gross', 'Net, employment', 'Net/h, employment', 'Net, mandate', 'Net/h, mandate']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={0} />
+  <p>The employment columns assume PIT-2 and {F.kup} work costs. The mandate columns assume mandatory pension and disability contributions, no voluntary sickness insurance, {F.kupContract} costs and no PIT-2. At low rates employment leaves more, because a client without a PIT-2 form does not take {F.reducingMonth} off the tax advance. From {$2(cross)} an hour the mandate contract pulls ahead: there is no sickness contribution, and the {F.kupContract} cost allowance grows with the amount while employment keeps a flat {F.kup}. That edge disappears once you put a value on paid holiday and sick pay, which a mandate contract does not provide.</p>
+
+  <h2>The minimum hourly rate and where it applies</h2>
+  <p>The {F.minHourly} gross minimum chiefly protects people on mandate contracts. Pay for each hour worked should not fall below it, however large the monthly total. Over {formatNumber(H, 0, lang)} hours that comes to {$(minAtH)} gross a month.</p>
+  <p>Employment contracts use a different floor: the minimum wage of {F.minWage} for a full-time month, whatever the number of hours in that month. Divided by {formatNumber(H, 0, lang)} hours it gives {$2(minPerH)}, but the same salary means a higher hourly rate in a short month and a lower one in a long month. So on employment you compare the monthly salary with the minimum wage, not the hourly rate with {F.minHourly}.</p>
+
+  <h2>From monthly salary to hourly rate</h2>
+  <p>The reverse direction helps when you weigh an employment offer against a mandate or contractor offer. The same salary gives a different hourly rate depending on the hours:</p>
+  <ContentTable headers={['Monthly gross', '160 h', '168 h', '176 h']} align={['r', 'r', 'r', 'r']} rows={back} />
+  <p>The gap between 160 and 176 hours is a few złoty an hour on an average salary and more than ten on a high one. When comparing offers, use the same hours on both sides and add the value of paid holiday to the employment side.</p>
+
+  <h2>Common conversion mistakes</h2>
+  <p>The first is multiplying a net rate by hours. Rates in Polish job ads and contracts are almost always gross; net depends on the contract type and on the monthly total, because fixed allowances on employment are spread over all your hours. The second is comparing a mandate rate with an employment rate without accounting for holiday and sickness. The third is assuming every month has the same number of hours: a monthly salary arrives unchanged, while hourly pay moves with the schedule.</p>
+  <p>The calculator does not add supplements for overtime, night work or public holidays; work those out in the <a href={route('overtime', lang)}>overtime pay calculator</a>. Nor does it apply the under-26 relief or student exemptions. For mandate contracts with those options, use the <a href={route('zlecenie', lang)}>mandate contract calculator</a>.</p>
+
+  <h2>Hours on a mandate contract: what you take home</h2>
+  <p>Enter the monthly mandate total (rate times hours) to see net pay with a breakdown of contributions, including the student option.</p>
+  <div data-chrome><MiniSim client:load kind="zlecenie" lang={lang} href={route('zlecenie', lang)} /></div>
+</GuideLayout>

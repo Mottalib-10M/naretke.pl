@@ -1,0 +1,54 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { zlecenie, sickPay, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const rows = [1000, 2000, 3000, 4000, P.minimum_wage.monthly, 6000, 8000].map((g) => [$(g), $(zlecenie({ gross: g }).net), $(zlecenie({ gross: g, sickness: true }).net), $(zlecenie({ gross: g, student: true }).net)]);
+const z4 = zlecenie({ gross: 4000 }), z4s = zlecenie({ gross: 4000, sickness: true });
+const hours = 160, h160 = P.minimum_wage.hourly * hours, zh = zlecenie({ gross: h160 });
+const z200 = zlecenie({ gross: P.pit.flat_small_contract_limit });
+const sick4 = sickPay({ gross: 4000, days: 30 });
+const faqs = [
+  { q: 'How much net do I get for 160 hours on a mandate contract at the minimum rate?', a: `The minimum hourly rate on a mandate contract (umowa zlecenie) is ${F.minHourly} in ${F.year}. For ${hours} hours that is ${$2(h160)} gross, which leaves ${$(zh.net)} after pension and disability contributions, health contribution and the PIT advance (without sickness cover or PIT-2). The rate applies to every hour worked, so fewer hours mean proportionally lower gross pay.` },
+  { q: 'Is voluntary sickness cover on a mandate contract worth paying?', a: `It costs ${F.chorobowa} of gross: ${$2(z4s.chorobowa)} a month on ${$(4000)}, taking net pay from ${$(z4.net)} to ${$(z4s.net)}. In return you can claim sickness benefit at ${F.sickRate} of gross minus ${F.sickReduction}. A month of illness on such a contract brings roughly ${$(sick4.benefit)} of gross benefit, instead of nothing without cover.` },
+  { q: `How is a mandate contract worth ${F.smallContract} or less taxed?`, a: `If the contract amount does not exceed ${F.smallContract} and you are not the payer's employee, the payer withholds a flat ${F.pitLow} tax on the whole amount, with no deductible costs. ZUS and health contributions apply as on any mandate contract. On ${F.smallContract} gross you take home ${$2(z200.net)}. The calculator applies this rule automatically.` },
+  { q: `What does a ${$(4000)} gross mandate contract cost the client?`, a: `On top of gross pay, the client (zleceniodawca) adds its share of pension (${F.emerytalnaEr}), disability (${F.rentowaEr}) and accident contributions; on higher amounts the Labour, Solidarity and FGŚP funds come in too. At ${$(4000)} gross, the total cost is ${$2(z4.employerCost)} a month, of which the contractor receives ${$(z4.net)}.` },
+];
+---
+<GuideLayout lang={lang} id="zlecenie" breadcrumbLabel={label('zlecenie', lang)} title={`Mandate contract ${F.year}: zlecenie net pay, ZUS, health, PIT`} h1={`Mandate contract calculator (umowa zlecenie) ${F.year}: gross to net`}
+  description={`Mandate contract (umowa zlecenie) in ${F.year}: ${$(4000)} gross leaves ${$(z4.net)} take-home without sickness cover. Work out net with sickness cover or as a student.`}
+  intro="Enter the gross amount from your contract and the calculator deducts ZUS, the health contribution and the tax advance under this year's rules."
+  resume={`A mandate contract (umowa zlecenie) for ${$(4000)} gross leaves ${$(z4.net)} take-home in ${F.year} if you do not pay voluntary sickness cover and have not filed PIT-2. From gross pay come pension at ${F.emerytalnaEe} and disability at ${F.rentowaEe} (together ${$2(z4.emerytalna + z4.rentowa)}), the ${F.health} health contribution on the amount after social contributions (${$2(z4.health)}) and a ${F.pitLow} PIT advance (${$(z4.pit)}). Deductible costs are ${F.kupContract} of income after contributions, or ${F.kupAuthors} when you transfer copyright. Sickness cover at ${F.chorobowa} is optional; with it you keep ${$(z4s.net)}. A pupil or student under 26 is not compulsorily covered by pension and disability insurance on a mandate contract; the calculator also assumes no health contribution or tax for them, so net equals gross. A contract up to ${F.smallContract} is taxed at a flat ${F.pitLow} without costs. The minimum hourly rate on a mandate contract is ${F.minHourly}. The calculator below works out net pay for any amount and option.`}
+  faqs={faqs}
+  related={[{ href: route('student', lang), name: label('student', lang), description: 'Mandate contracts without ZUS or health for pupils and students.' }, { href: route('zlecdzielo', lang), name: label('zlecdzielo', lang), description: 'Which contract pays more for the same amount.' }, { href: route('dzielo', lang), name: 'Specific-work contract calculator', description: `Net pay on dzieło with ${F.kupContract} or ${F.kupAuthors} costs.` }]}
+  sources={[src('sus_act', lang), src('pit_act', lang), src('minimum', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="zlecenie" lockContract={true} defaultGross={4000} methodHref={route('method', lang)} />
+  </div>
+
+  <h2>Mandate contract net pay at common amounts</h2>
+  <p>The table shows amounts without PIT-2. The student column covers a pupil or student under 26, who on a mandate contract is not compulsorily covered by pension and disability insurance (Article 6(4) of the Social Insurance System Act).</p>
+  <ContentTable headers={['Gross', 'Net without sickness cover', 'Net with sickness cover', 'Student under 26']} align={['r', 'r', 'r', 'r']} rows={rows} />
+  <p>The gap between the first two columns is the sickness contribution itself, less a small tax effect. The student column looks like a mistake but is not: with no contributions, no health contribution and, up to the annual {F.youthLimit} limit, no tax, gross equals net.</p>
+
+  <h2>How the calculator handles {$(4000)} gross</h2>
+  <p>First come the contractor's social contributions: pension {$2(z4.emerytalna)} and disability {$2(z4.rentowa)}. Then deductible costs, {F.kupContract} of gross minus those contributions: {$2(z4.kup)}. The tax base after rounding is {$(z4.taxBase)}, and the {F.pitLow} advance comes to {$(z4.pit)}. The {F.health} health contribution on gross after social contributions is {$2(z4.health)}. You keep {$2(z4.net)}.</p>
+  <p>The switches in the calculator change these items one at a time. Sickness cover adds the {F.chorobowa} contribution. Student status removes all contributions and tax. PIT-2 lowers the advance by {F.reducingMonth}, explained in our <a href={route('pit2', lang)}>PIT-2 guide</a>. Creative costs replace {F.kupContract} with {F.kupAuthors}, but only for creative work, as our guide to <a href={route('authors', lang)}>creative work costs</a> explains.</p>
+
+  <h2>What this calculator does not cover</h2>
+  <p>It assumes a single mandate contract with full pension and disability contributions. It does not handle several mandate contracts at once, with one client or several, nor overlapping insurance titles (zbieg tytułów), when besides the mandate you also have a job or your own business. In those cases the contributions on the mandate may look different, and which titles are compulsory depends on the Social Insurance System Act and your exact situation. Ask your client which statement about other titles they need from you.</p>
+  <p>The calculator does not track the whole year either. The PIT exemption for people under 26 only runs up to {F.youthLimit} of income a year, and high earnings from several sources can end in extra tax in your annual return, which the monthly {F.pitLow} advance does not show.</p>
+
+  <h2>Reading your mandate contract bill</h2>
+  <p>The bill (rachunek) for a mandate contract should show the same lines as the calculator: gross, pension, disability, sickness if chosen, health, costs, tax base and advance. If the health contribution is clearly above {F.health} of the amount after social contributions, or costs are calculated on full gross, ask for a correction before you sign the next bill.</p>
+  <div data-chrome><MiniSim client:load kind="student" lang={lang} href={route('student', lang)} /></div>
+</GuideLayout>

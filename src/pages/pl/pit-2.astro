@@ -1,0 +1,87 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const RY = P.pit.tax_reducing_amount_year;
+// Tableau calculé par le moteur : effet du PIT-2 à plusieurs niveaux de brut.
+const rows = [4806, 6000, 8000, 12000].map((g) => { const a = uop({ gross: g }), b = uop({ gross: g, pit2: false }); return [$(g), $(b.net), $(a.net), $(a.net - b.net)]; });
+const r24 = $(RY / 24), r36 = $(RY / 36);
+const minShare = Math.round(((RY / 12) / uop({ gross: P.minimum_wage.monthly, pit2: false }).net) * 100);
+const z = zlecenie({ gross: 3000, pit2: true }), z0 = zlecenie({ gross: 3000 });
+const d = dzielo({ gross: 3000, pit2: true }), d0 = dzielo({ gross: 3000 });
+// Podział pomniejszenia między płatników (art. 31b ust. 3), wartości z parametrów.
+const split = [
+  ['Jeden płatnik', '1/12', $(RY / 12), $(RY / 12), $(0)],
+  ['Dwóch płatników', '1/24 + 1/24', `${$(RY / 24)} + ${$(RY / 24)}`, $(RY / 12), $(0)],
+  ['Trzech płatników', '1/36 × 3', `${$(RY / 36)} × 3`, $(RY / 12), $(0)],
+  ['Dwóch płatników', '1/24 + 1/36', `${$(RY / 24)} + ${$(RY / 36)}`, $(RY / 24 + RY / 36), $((RY / 12 - RY / 24 - RY / 36) * 12)],
+];
+const mixGap = $(RY / 12 - RY / 24 - RY / 36), mixYear = $((RY / 12 - RY / 24 - RY / 36) * 12);
+// Roczne skutki: zaliczki pobrane w roku przy 6 000 zł brutto, z PIT-2 i bez.
+const y1 = uopYear({ gross: 6000 }).total.pit, y0 = uopYear({ gross: 6000, pit2: false }).total.pit;
+const half = $((RY / 12) * 6);
+const faqs = [
+  { q: 'Czy PIT-2 trzeba składać co roku?', a: `Nie. Oświadczenie PIT-2 działa do odwołania, więc złożone raz u pracodawcy obowiązuje także w kolejnych latach. Nowe trzeba złożyć dopiero wtedy, gdy zmieniają się okoliczności: chcesz podzielić kwotę ${F.reducingMonth} między dwóch lub trzech płatników, rezygnujesz z pomniejszenia albo zmieniasz pracę. Nowy pracodawca nie widzi dokumentów poprzedniego, więc u niego składasz oświadczenie od nowa.` },
+  { q: 'Mam dwie prace na etacie. Czy mogę złożyć PIT-2 u obu pracodawców?', a: `Tak, ale tylko dzieląc kwotę. Ustawa (art. 31b) pozwala rozłożyć pomniejszenie na maksymalnie trzech płatników: po 1/24 rocznej kwoty zmniejszającej (${r24}) u dwóch albo po 1/36 (${r36}) u trzech. Złożenie pełnego PIT-2 u dwóch pracodawców oznacza, że w roku odliczysz za dużo i dopłacisz różnicę w zeznaniu rocznym.` },
+  { q: 'Czy PIT-2 obniża podatek roczny?', a: `Nie zmienia podatku za cały rok, tylko rozkłada ulgę na miesiące. Kwota zmniejszająca ${F.reducingYear} przysługuje i tak w zeznaniu rocznym. Bez PIT-2 pracodawca pobiera wyższe zaliczki, a nadpłata wraca dopiero jako zwrot podatku wiosną następnego roku. Z PIT-2 dostajesz te pieniądze od razu, w każdej wypłacie.` },
+  { q: 'Czy mogę złożyć PIT-2 na umowie zlecenie albo o dzieło?', a: `Tak. Ustawa o PIT (art. 31b w związku z art. 41 ust. 1) pozwala zleceniodawcy i zamawiającemu pomniejszać zaliczkę o 1/12 kwoty zmniejszającej, jeśli złożysz im oświadczenie. Przy zleceniu na ${$(3000)} brutto daje to ${$(z.net - z0.net)} więcej na rękę. Uwaga: przy umowie do ${F.smallContract} płatnik pobiera podatek zryczałtowany i pomniejszenia nie stosuje.` },
+  { q: 'Od której wypłaty pracodawca uwzględni złożony PIT-2?', a: `Najpóźniej od wypłaty za miesiąc następujący po tym, w którym oświadczenie do niego trafiło. Jeśli oddasz PIT-2 w marcu, pomniejszenie o ${F.reducingMonth} zobaczysz najpóźniej w zaliczce za kwiecień. Miesięcy sprzed złożenia pracodawca nie koryguje wstecz: tę część kwoty zmniejszającej odzyskasz dopiero w zeznaniu rocznym, jako zwrot nadpłaconego podatku.` },
+  { q: 'Jestem na emeryturze i dorabiam na etacie. Czy składać PIT-2 pracodawcy?', a: `Organ rentowy, czyli zwykle ZUS, stosuje pomniejszenie ${F.reducingMonth} do emerytury z urzędu, bez oświadczenia. Pełny PIT-2 u pracodawcy oznaczałby podwójną ulgę i dopłatę w zeznaniu. Możesz za to podzielić kwotę: oświadczenie 1/24 dla ZUS i 1/24 dla pracodawcy daje po ${r24} u każdego. Możesz też złożyć w ZUS wniosek o niestosowanie pomniejszenia i pełny PIT-2 u pracodawcy.` },
+];
+---
+<GuideLayout lang={lang} id="pit2" breadcrumbLabel={label('pit2', lang)} title={`PIT-2 ${F.year}: ${F.reducingMonth} więcej na rękę w każdej wypłacie`} h1={`PIT-2 w ${F.year} r.: kiedy złożyć i ile zyskujesz`}
+  description={`PIT-2 w ${F.year} r. obniża zaliczkę o ${F.reducingMonth} miesięcznie. Kto może go złożyć, u ilu płatników, na jakich umowach i ile tracisz bez niego, z kalkulatorem netto.`}
+  intro={`Oświadczenie PIT-2 pozwala pracodawcy co miesiąc odejmować od zaliczki na podatek 1/12 kwoty zmniejszającej, czyli ${F.reducingMonth}.`}
+  resume={`Bez PIT-2 płacisz co miesiąc ${F.reducingMonth} podatku więcej i odzyskujesz tę kwotę dopiero w zeznaniu rocznym. Kwota zmniejszająca podatek wynosi w ${F.year} r. ${F.reducingYear} rocznie, bo odpowiada podatkowi ${F.pitLow} od kwoty wolnej ${F.freeAmount}. Pracodawca może ją uwzględniać w każdej wypłacie tylko wtedy, gdy złożysz mu oświadczenie PIT-2. Formularz składa się raz i działa do odwołania. Można je złożyć także zleceniodawcy lub zamawiającemu przy umowie o dzieło oraz podzielić pomniejszenie między dwóch lub trzech płatników, po 1/24 albo 1/36 rocznej kwoty. Przy płacy minimalnej ${F.minWage} brutto różnica to około ${minShare} % pensji netto, a przy wyższych zarobkach wciąż ${F.reducingMonth}, bo kwota nie zależy od wysokości pensji ani od progu podatkowego. Kalkulator poniżej pokazuje Twoje netto z PIT-2 i bez niego.`}
+  faqs={faqs}
+  related={[{ href: route('home', lang), name: 'Kalkulator wynagrodzeń', description: 'Netto dla każdej umowy, z PIT-2 lub bez.' }, { href: route('allowance', lang), name: 'Kwota wolna od podatku', description: `${F.freeAmount} wolne od podatku: jak to działa.` }, { href: route('zlecdzielo', lang), name: 'Zlecenie czy dzieło', description: 'Porównanie netto obu umów przy tej samej kwocie.' }]}
+  sources={[src('pit2', lang), src('pit_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="pit2" lang={lang} href={route('home', lang)} /></div>
+  <h2>Ile daje PIT-2 przy różnych pensjach</h2>
+  <ContentTable headers={['Brutto', 'Netto bez PIT-2', 'Netto z PIT-2', 'Różnica']} align={['r', 'r', 'r', 'r']} rows={rows} />
+  <p>Różnica jest stała, bo kwota zmniejszająca nie zależy od dochodu: polski system nie wygasza jej po przekroczeniu progu, inaczej niż w wielu krajach. Nawet przy pensji w drugim progu pomniejszenie zostaje w każdej wypłacie.</p>
+  <p>Na pasku wypłaty PIT-2 nie ma osobnej pozycji. Widać go pośrednio w wierszu „zaliczka na podatek”: kadry liczą {F.pitLow} od podstawy opodatkowania, a potem odejmują {F.reducingMonth}. Jeśli zaliczka na Twoim pasku wydaje się wyższa niż u kolegi z identycznym brutto, pierwsze pytanie brzmi, czy oświadczenie w ogóle trafiło do działu płac.</p>
+
+  <h2>Kto składa oświadczenie i komu je oddać</h2>
+  <p>Oświadczenie składa podatnik, nie firma. Adresatem jest płatnik, czyli podmiot, który co miesiąc wylicza i odprowadza za Ciebie zaliczkę do urzędu skarbowego: pracodawca przy umowie o pracę, zleceniodawca przy zleceniu, zamawiający przy umowie o dzieło. Według podatki.gov.pl oświadczenie przysługuje też przy kontraktach menedżerskich, umowach o zarządzanie przedsiębiorstwem i przychodach z praw majątkowych.</p>
+  <p>Forma jest swobodna. Możesz wypełnić urzędowy wzór PIT-2 z serwisu Ministerstwa Finansów, ale płatnik może też przyjmować oświadczenia w swoim systemie kadrowo-płacowym albo na własnym formularzu. Ważne, żeby z dokumentu wynikało, jaką część kwoty zmniejszającej płatnik ma stosować. Złożyć je można w dowolnym momencie roku, nie tylko w styczniu czy przy podpisywaniu umowy.</p>
+  <p>Do urzędu skarbowego niczego się nie wysyła. To częste nieporozumienie wśród osób, które pierwszy raz zaczynają pracę: PIT-2 zostaje w aktach osobowych lub w dokumentacji płacowej firmy, a urząd dowiaduje się o nim dopiero pośrednio, z niższych zaliczek wykazanych w deklaracjach płatnika.</p>
+  <p>Jest jeden wyjątek, w którym pomniejszenie działa bez Twojego podpisu. Organ rentowy, zwykle ZUS, stosuje je do emerytur i rent z urzędu. Emeryt, który dorabia na etacie, ma więc już wykorzystane {F.reducingMonth} miesięcznie, zanim cokolwiek złoży pracodawcy. Może jednak zdecydować inaczej: podzielić kwotę między ZUS i pracodawcę albo poprosić organ rentowy o niestosowanie pomniejszenia i przenieść całość do zakładu pracy.</p>
+
+  <h2>Podział na dwóch lub trzech płatników: 1/12, 1/24, 1/36</h2>
+  <p>Art. 31b ustawy o PIT pozwala złożyć oświadczenie najwyżej trzem płatnikom. W każdym z nich wskazujesz, czy płatnik ma odejmować 1/12, 1/24 czy 1/36 rocznej kwoty zmniejszającej. Warunek jest jeden, ale twardy: łączne pomniejszenie zastosowane przez wszystkich płatników w danym miesiącu nie może przekroczyć 1/12, czyli {F.reducingMonth}.</p>
+  <ContentTable headers={['Sytuacja', 'Ułamki w oświadczeniach', 'Pomniejszenie u płatników', 'Razem w miesiącu', 'Do odzyskania w zeznaniu rocznie']} align={['l', 'l', 'r', 'r', 'r']} rows={split} />
+  <p>Ostatni wiersz pokazuje układ dozwolony, ale nieoptymalny. Przy 1/24 u jednego płatnika i 1/36 u drugiego co miesiąc zostaje niewykorzystane {mixGap}, łącznie {mixYear} w roku. Nie przepada, bo wraca w zeznaniu rocznym jako nadpłata, ale przez cały rok pracuje dla urzędu, nie dla Ciebie. Lepiej dobierać ułamki tak, by sumowały się dokładnie do 1/12: dwa razy 1/24 albo trzy razy 1/36. Ministerstwo Finansów dopuszcza też proporcje nierówne, byle łącznie nie przekroczyć {F.reducingMonth} w miesiącu.</p>
+  <p>Przy kilku umowach u tego samego płatnika (na przykład etat i dodatkowe zlecenie w jednej firmie) oświadczenie obejmuje oba źródła, ale suma pomniejszeń u tego płatnika nadal nie przekroczy kwoty wpisanej w oświadczeniu. Nie trzeba więc składać dwóch dokumentów jednej firmie.</p>
+
+  <h2>PIT-2 na zleceniu i przy umowie o dzieło</h2>
+  <p>Od 2023 roku zleceniodawca i zamawiający dzieło mogą stosować pomniejszenie na tych samych zasadach co pracodawca. Przy zleceniu na {$(3000)} brutto na rękę zostaje {$(z0.net)} bez oświadczenia i {$(z.net)} z nim. Przy umowie o dzieło na tę samą kwotę, bez składek ZUS, różnica wynosi {$(d.net - d0.net)}: {$(d0.net)} zamiast {$(d.net)}.</p>
+  <p>Dla zleceniobiorców z jednym stałym zleceniem PIT-2 działa tak samo jak na etacie. Kłopot zaczyna się przy umowach krótkich i zmiennych. Jeśli w danym miesiącu zaliczka z umowy jest niższa niż {F.reducingMonth}, płatnik zejdzie najwyżej do zera, a niewykorzystana część nie przechodzi na kolejny miesiąc. Dopiero zeznanie roczne wyrówna rachunek.</p>
+  <p>Granica, poniżej której oświadczenie nie ma znaczenia, to umowa do {F.smallContract} zawarta z osobą, która nie jest pracownikiem płatnika. Od takiej kwoty pobiera się podatek zryczałtowany {F.pitLow} od całego przychodu, bez kosztów i bez pomniejszenia. Szczegółowe porównanie obu umów, ze składkami i kosztami uzyskania, jest w poradniku <a href={route('zlecdzielo', lang)}>zlecenie czy umowa o dzieło</a>.</p>
+
+  <h2>Zmiana albo wycofanie oświadczenia</h2>
+  <p>Raz złożone oświadczenie obowiązuje także w następnych latach. Płatnik stosuje je do chwili, w której je zmienisz lub wycofasz, albo do końca stosunku prawnego, na przykład rozwiązania umowy o pracę. Po odejściu z firmy dokument wygasa i nowego pracodawcy nie wiąże.</p>
+  <p>Ministerstwo Finansów podkreśla, że gdy zmieniają się okoliczności, masz obowiązek oświadczenie zaktualizować. Typowe sytuacje to druga praca, nowe zlecenie, przejście na emeryturę albo założenie działalności opodatkowanej według skali, w której i tak korzystasz z pełnej kwoty {F.reducingYear} rocznie. Nowe oświadczenie, z innym ułamkiem, zastępuje poprzednie.</p>
+  <p>Odpowiedzialność rozkłada się prosto: płatnik nie odpowiada za zbyt niskie zaliczki, jeśli zastosował się do Twojego oświadczenia. Jeśli podałeś nieaktualne informacje, skutek, czyli dopłatę w zeznaniu rocznym, ponosisz Ty.</p>
+
+  <h2>Najczęstsze błędy przy PIT-2</h2>
+  <p>Najdroższy błąd to pełne oświadczenie u dwóch pracodawców naraz. Każdy z nich odejmuje {F.reducingMonth}, więc w ciągu całego roku odliczysz dwa razy więcej, niż przysługuje. W zeznaniu rocznym urząd policzy kwotę zmniejszającą tylko raz i różnica, do {F.reducingYear}, staje się podatkiem do zapłaty.</p>
+  <p>Drugi błąd to zapomnienie o oświadczeniu po zmianie pracy. Wiele osób zakłada, że dokument „idzie za nimi”. Tak nie jest: nowy pracodawca bez oświadczenia pobiera wyższe zaliczki. Jeśli zmieniasz pracę w połowie roku i dokumenty oddasz w czerwcu, pomniejszenie ruszy najpóźniej w lipcu; za pierwsze pół roku u nowego pracodawcy możesz odzyskać do {half}, ale dopiero wiosną następnego roku.</p>
+  <p>Trzeci dotyczy osób z działalnością gospodarczą na skali. Przedsiębiorca liczący zaliczki samodzielnie stosuje pełną kwotę zmniejszającą od pierwszego miesiąca. Jeśli do tego złoży pełny PIT-2 na etacie, pomniejszenie w roku przekroczy {F.reducingYear} i w rozliczeniu może pojawić się podatek do zapłaty. Ministerstwo Finansów potwierdza natomiast, że osoba z działalnością na podatku liniowym może złożyć pracodawcy PIT-2 bez takich zastrzeżeń.</p>
+  <p>Czwarty to oczekiwanie, że oświadczenie zadziała przy bardzo małych umowach. Przy umowie do {F.smallContract} podatek jest zryczałtowany i nie ma czego pomniejszać.</p>
+
+  <div data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('allowance', lang)} /></div>
+
+  <h2>Jak PIT-2 wpływa na rozliczenie PIT-37</h2>
+  <p>Zeznanie roczne PIT-37 liczy podatek od dochodu z całego roku, odejmuje od niego kwotę zmniejszającą {F.reducingYear} i porównuje wynik z sumą zaliczek pobranych przez płatników. PIT-2 zmienia tylko tę drugą stronę rachunku. Przy pensji {$(6000)} brutto przez cały rok pracodawca pobierze {$(y1)} zaliczek z oświadczeniem albo {$(y0)} bez niego. Podatek należny w zeznaniu jest w obu przypadkach taki sam, więc osoba bez PIT-2 dostanie około {$(y0 - y1)} zwrotu.</p>
+  <p>Wybór sprowadza się więc do pytania: wolisz pieniądze co miesiąc czy jednorazowo po roku. Dla większości osób z jedną umową PIT-2 jest rozsądnym ustawieniem domyślnym. Rezygnacja ma sens, gdy wiesz, że w zeznaniu i tak wyjdzie dopłata, bo masz kilka źródeł przychodu, albo gdy świadomie traktujesz zwrot jako przymusową oszczędność.</p>
+  <p>Jeśli w ciągu roku pracowałeś u kilku płatników, w zeznaniu sumujesz przychody i zaliczki ze wszystkich, a kwotę zmniejszającą odejmujesz jeden raz, niezależnie od liczby złożonych oświadczeń. Dlatego suma pomniejszeń z całego roku nie powinna przekraczać {F.reducingYear}. Mechanizm samej kwoty wolnej opisuje poradnik o <a href={route('allowance', lang)}>kwocie wolnej od podatku</a>, a netto przy dowolnej umowie policzysz w <a href={route('home', lang)}>kalkulatorze wynagrodzeń</a>.</p>
+</GuideLayout>

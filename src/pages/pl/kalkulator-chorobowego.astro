@@ -1,0 +1,61 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { sickPay, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const S = P.sickness;
+// Tableau moteur : 10 jours d'arrêt pour quatre salaires.
+const D = 10;
+const GS = [P.minimum_wage.monthly, 7000, 10000, 15000];
+const rows = GS.map((g) => { const s = sickPay({ gross: g, days: D }); return [$(g), $2(s.base), $2(s.daily), $(s.benefit), $(s.lostSalary), $(s.lostSalary - s.benefit), $2(s.health)]; });
+const s7 = sickPay({ gross: 7000, days: D });
+const s7full = sickPay({ gross: 7000, days: S.employer_days });
+const s7preg = sickPay({ gross: 7000, days: 30, rate: 1 }), s7std30 = sickPay({ gross: 7000, days: 30 });
+const floor = P.minimum_wage.monthly * (1 - S.base_reduction);
+const effective = pct(S.rate_standard * (1 - S.base_reduction), lang);
+const faqs = [
+  { q: 'Mam 52 lata. Od którego dnia zwolnienia zamiast pracodawcy płaci mi ZUS?', a: `Pracownik, który ukończył 50 lat, dostaje wynagrodzenie chorobowe od pracodawcy tylko przez ${F.sickDays50} dni choroby w roku kalendarzowym, a nie przez ${F.sickDays}. Od kolejnego dnia przysługuje zasiłek chorobowy z ZUS. Jego wysokość liczy się tak samo, ${F.sickRate} podstawy, więc w przelewie zmienia się zwykle tylko płatnik, nie kwota. Licznik dni zeruje się z nowym rokiem kalendarzowym.` },
+  { q: 'Czy od pieniędzy za L4 potrąca się składki ZUS?', a: `Od wynagrodzenia chorobowego i zasiłku nie pobiera się składek emerytalnej, rentowej ani chorobowej, ale pobiera się składkę zdrowotną ${F.health} i zaliczkę na PIT. Dlatego spadek netto jest mniejszy niż spadek brutto. Przy pensji ${$(7000)} i ${D} dniach zwolnienia świadczenie wynosi ${$(s7.benefit)} brutto, a składka zdrowotna od niego ${$2(s7.health)}.` },
+  { q: 'Jestem w ciąży i przebywam na zwolnieniu. Ile dostanę?', a: `Za zwolnienie przypadające w okresie ciąży przysługuje ${pct(1, lang)} podstawy zamiast ${F.sickRate} (art. 92 Kodeksu pracy, a dalej ustawa zasiłkowa). Przy średniej pensji ${$(7000)} brutto za 30 dni zwolnienia to ${$(s7preg.benefit)} brutto zamiast ${$(s7std30.benefit)}. Podstawa jest ta sama: średnia z ${S.base_months} miesięcy pomniejszona o ${F.sickReduction} składek pracownika.` },
+];
+---
+<GuideLayout lang={lang} id="sick" breadcrumbLabel={label('sick', lang)} title={`Chorobowe ${F.year}: ${F.sickRate} pensji na L4, kalkulator wynagrodzenia`} h1={`Chorobowe ${F.year}: ile dostaniesz za dni na zwolnieniu lekarskim`}
+  description={`Chorobowe ${F.year}: ${F.sickRate} podstawy, czyli przy ${$(7000)} brutto ${$2(s7.daily)} za dzień L4. Pracodawca płaci przez ${F.sickDays} dni w roku, potem zasiłek z ZUS. Policz swoje L4.`}
+  intro={`Kalkulator liczy wynagrodzenie chorobowe za dni na L4 z umowy o pracę i pokazuje, ile tracisz w porównaniu ze zwykłą pensją.`}
+  resume={`Za dni na zwolnieniu lekarskim (L4) pracownik na umowie o pracę dostaje w ${F.year} r. ${F.sickRate} podstawy wymiaru. Podstawa to przeciętne wynagrodzenie z ${S.base_months} miesięcy przed miesiącem zachorowania, pomniejszone o składki pracownika na ubezpieczenia emerytalne, rentowe i chorobowe, czyli o ${F.sickReduction}; za jeden dzień przysługuje 1/30 tej kwoty. Przy pensji ${$(7000)} brutto daje to ${$2(s7.daily)} dziennie, a za ${D} dni ${$(s7.benefit)} brutto zamiast ${$(s7.lostSalary)}. Przez pierwsze ${F.sickDays} dni choroby w roku kalendarzowym płaci pracodawca (wynagrodzenie chorobowe), a pracownikowi po 50. roku życia tylko przez ${F.sickDays50} dni. Później wypłaca się zasiłek chorobowy z ZUS, liczony tak samo. Od świadczenia nie pobiera się składek ZUS, ale pobiera się składkę zdrowotną i podatek. W czasie ciąży i po wypadku w drodze do pracy lub z pracy przysługuje ${pct(1, lang)} podstawy.`}
+  faqs={faqs}
+  related={[{ href: route('zus', lang), name: label('zus', lang), description: `Składka chorobowa ${F.chorobowa}, z której finansowane są zasiłki.` }, { href: route('home', lang), name: label('home', lang), description: 'Netto z pełnej pensji, bez dni choroby.' }, { href: route('compare', lang), name: label('compare', lang), description: 'Na B2B chorobowe jest tylko dobrowolne.' }]}
+  sources={[src('sickness', lang), src('labour_code', lang), src('health_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="sick" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Dziesięć dni L4 przy czterech pensjach</h2>
+  <p>Tabela zakłada, że pensja była taka sama przez ostatnie {S.base_months} miesięcy. Kolumna „Pensja za te dni” to 1/30 brutto razy liczba dni, czyli kwota, którą dostałbyś bez choroby.</p>
+  <ContentTable headers={['Brutto', 'Podstawa', 'Za dzień', `${D} dni L4`, 'Pensja za te dni', 'Różnica brutto', 'Zdrowotna od świadczenia']} align={['r', 'r', 'r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={1} />
+  <p>Na rękę strata jest mniejsza niż w kolumnie „Różnica brutto”, bo od świadczenia chorobowego nie potrąca się składek emerytalnej, rentowej i chorobowej. Świadczenie to w praktyce około {effective} pensji brutto za te same dni ({F.sickRate} kwoty pomniejszonej o {F.sickReduction}), ale wolne od tych składek.</p>
+
+  <h2>Jak powstaje podstawa i stawka dzienna</h2>
+  <p>Punktem wyjścia jest przeciętne wynagrodzenie wypłacone za {S.base_months} pełnych miesięcy kalendarzowych przed miesiącem, w którym zaczęła się niezdolność do pracy. Od tej średniej odejmuje się składki pracownika: emerytalną {F.emerytalnaEe}, rentową {F.rentowaEe} i chorobową {F.chorobowa}, razem {F.sickReduction}. Wynik dzieli się przez 30, a stawkę dzienną mnoży przez {F.sickRate} i przez liczbę dni zwolnienia.</p>
+  <p>Przy pełnym etacie podstawa nie może być niższa od płacy minimalnej pomniejszonej o {F.sickReduction}, czyli od {$2(floor)}. Jeśli w ostatnich miesiącach dostawałeś premie albo dodatki zmienne, ich część trafia do średniej; kalkulator tego nie odtworzy, bo pracuje na jednej kwocie brutto.</p>
+
+  <h2>{F.sickDays} dni od pracodawcy, potem ZUS</h2>
+  <p>Kodeks pracy dzieli chorobę w roku kalendarzowym na dwa etapy. Przez pierwsze {F.sickDays} dni (łącznie, nawet jeśli to kilka osobnych zwolnień) świadczenie wypłaca pracodawca jako wynagrodzenie chorobowe. Pracownik po ukończeniu 50 lat ma ten okres skrócony do {F.sickDays50} dni. Od następnego dnia przysługuje zasiłek chorobowy z ZUS. Stawka się nie zmienia: ustawa zasiłkowa także przewiduje {F.sickRate} podstawy, więc przy {$(7000)} brutto pełne {F.sickDays} dni u pracodawcy to {$(s7full.benefit)} brutto, a każdy kolejny dzień z ZUS kosztuje tyle samo, {$2(s7.daily)}.</p>
+  <p>Na pasku wypłaty dni choroby widać zwykle jako osobną pozycję „wynagrodzenie chorobowe” albo „zasiłek chorobowy”, a pensja zasadnicza jest za ten miesiąc pomniejszona o dni nieobecności. Jeśli suma obu pozycji wydaje się za niska, porównaj stawkę dzienną z paska z wynikiem kalkulatora: różnica zwykle wynika z premii lub dodatków, które weszły do średniej z ostatnich miesięcy.</p>
+
+  <h2>Kiedy przysługuje {pct(1, lang)} podstawy</h2>
+  <p>Stawka {F.sickRate} ma wyjątki. Pełne {pct(1, lang)} podstawy należy się za niezdolność do pracy przypadającą w okresie ciąży oraz spowodowaną wypadkiem w drodze do pracy lub z pracy. W kalkulatorze wybierz liczbę dni, a wynik pomnóż przez {pct(1 / S.rate_standard, lang)}, żeby otrzymać kwotę dla tych przypadków; przy {$(7000)} brutto 30 dni to {$(s7preg.benefit)} zamiast {$(s7std30.benefit)}.</p>
+
+  <h2>Czego kalkulator chorobowego nie uwzględnia</h2>
+  <p>Narzędzie liczy świadczenie z umowy o pracę dla stałej pensji. Nie obejmuje zleceniobiorców i przedsiębiorców, u których prawo do zasiłku zależy od dobrowolnej składki chorobowej, ani sytuacji, gdy nie masz jeszcze za sobą {S.base_months} pełnych miesięcy pracy u pracodawcy. Pokazuje kwotę brutto, a nie netto, bo podatek od świadczenia rozlicza się razem z całą wypłatą za dany miesiąc. Netto z pensji w zdrowym miesiącu sprawdzisz w <a href={route('home', lang)}>kalkulatorze wynagrodzeń</a>, a o tym, z czego finansowane są zasiłki, przeczytasz w przewodniku o <a href={route('zus', lang)}>składkach ZUS</a>.</p>
+
+  <h2>Twoja składka chorobowa</h2>
+  <p>Zasiłki finansuje składka chorobowa {F.chorobowa}, którą co miesiąc w całości płaci pracownik. Sprawdź, ile wynosi przy Twojej pensji.</p>
+  <div data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('zus', lang)} /></div>
+</GuideLayout>

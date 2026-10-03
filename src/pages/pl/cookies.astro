@@ -1,0 +1,41 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { CONTACT_EMAIL, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const title = `Pliki cookies ${F.year}: serwis nie zapisuje żadnych ciasteczek`;
+const description = `W ${F.year} r. KalkulatorWynagrodzen.pl nie zapisuje cookies ani danych w localStorage, nie ma analityki ani reklam, więc nie ma banera zgody. Jak to sprawdzić.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}
+  breadcrumbs={[{ label: label('cookies', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Pliki cookies i podobne technologie</h1>
+    <p class="lead">Ta strona uzupełnia <a href={route('privacy', lang)}>politykę prywatności</a>. Odpowiedź jest krótka: obecnie serwis nie zapisuje na Twoim urządzeniu żadnych plików cookies.</p>
+
+    <h2>Stan na dziś</h2>
+    <ul>
+      <li><strong>Cookies niezbędne:</strong> brak. Kalkulator działa bez nich.</li>
+      <li><strong>Cookies analityczne:</strong> brak. Nie używamy Google Analytics, Microsoft Clarity ani żadnego innego narzędzia do mierzenia ruchu.</li>
+      <li><strong>Cookies reklamowe:</strong> brak. Serwis nie wyświetla reklam.</li>
+      <li><strong>Pamięć przeglądarki (localStorage, sessionStorage):</strong> kalkulator z niej nie korzysta. Twoich danych nie zapisujemy nawet lokalnie.</li>
+    </ul>
+    <p>Dlatego nie widzisz banera ze zgodą na cookies: nie ma na co się zgadzać. Widget osadzany na innych stronach działa tak samo i również niczego nie zapisuje.</p>
+
+    <h2>A co z linkiem z wynikiem?</h2>
+    <p>Kalkulator zapisuje wpisane wartości w adresie strony, żeby można było wysłać komuś gotowe wyliczenie. To nie jest plik cookie: nic nie zostaje na urządzeniu poza zwykłą historią przeglądania, a link zawiera Twoje kwoty tylko wtedy, gdy sam go skopiujesz i przekażesz dalej.</p>
+
+    <h2>Jak to sprawdzić samemu</h2>
+    <p>W przeglądarce Chrome, Edge lub Firefox otwórz narzędzia deweloperskie (klawisz F12), przejdź do zakładki „Aplikacja” albo „Pamięć” i wybierz „Pliki cookie” dla tej domeny. Lista jest pusta. W zakładce „Sieć” zobaczysz też, że strona nie łączy się z serwerami analitycznymi ani reklamowymi.</p>
+
+    <h2>Jeśli to się zmieni</h2>
+    <p>Gdybyśmy kiedyś dodali narzędzie do mierzenia ruchu albo reklamy, najpierw zaktualizujemy tę stronę i <a href={route('privacy', lang)}>politykę prywatności</a>, opisując każdy plik cookie, jego cel i czas przechowywania. Narzędzia, które wymagają zgody, uruchomią się dopiero po tym, jak ją wyrazisz w banerze, a zgodę będzie można w każdej chwili wycofać.</p>
+    <p>Pytania: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Wersja z dnia {updated}.</p>
+  </div>
+</PageLayout>

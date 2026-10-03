@@ -1,0 +1,78 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, b2bZusMonth, sickPay, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const tot = (z: ReturnType<typeof b2bZusMonth>) => z.emerytalna + z.rentowa + z.chorobowa + z.wypadkowa + z.fp;
+const V = [['Full ZUS', 'full'], ['Preferential ZUS', 'preferential'], ['Start-up relief', 'start']] as const;
+const rows = V.flatMap(([n, k]) => [true, false].map((s) => { const z = b2bZusMonth(k, s); return [`${n}${k === 'start' ? '' : s ? ', with sickness' : ', without sickness'}`, $2(z.base), $2(z.emerytalna + z.rentowa), $2(z.wypadkowa), $2(z.chorobowa), $2(z.fp), $2(tot(z))]; })).filter((r, i) => i !== 5);
+const full = b2bZusMonth('full', true), fullNo = b2bZusMonth('full', false), pref = b2bZusMonth('preferential', true), prefNo = b2bZusMonth('preferential', false);
+const yearFull = tot(full) * 12, yearPref = tot(pref) * 12;
+const nets = (['full', 'preferential', 'start'] as const).map((k) => b2b({ revenue: 10000, form: 'liniowy', zus: k }));
+const sick = sickPay({ gross: P.b2b.zus_base_full, days: 30 }), sickPref = sickPay({ gross: P.b2b.zus_base_preferential, days: 30 });
+const taxFull = b2b({ revenue: 15000, form: 'liniowy', zus: 'full' }).tax, taxStart = b2b({ revenue: 15000, form: 'liniowy', zus: 'start' }).tax;
+const startHealthRyc = P.b2b.health.ryczalt_bands[0].monthly;
+const prefShare = pct(P.b2b.zus_base_preferential / P.minimum_wage.monthly, lang), fullShare = pct(P.b2b.zus_base_full / P.average_wage.forecast_2026, lang);
+// Ages from which the Labour and Solidarity Funds are no longer due (ZUS "Wysokość składek" page, note 3; params-pl-2026.md §2).
+const FP_AGE = { women: 55, men: 60 };
+const wypMin = P.b2b.zus_base_full * P.zus.wypadkowa_min, wypMax = P.b2b.zus_base_full * P.zus.wypadkowa_max;
+const at15 = (['skala', 'liniowy', 'ryczalt'] as const).map((f) => { const x = b2b({ revenue: 15000, form: f }); return { social: x.social + x.fp, health: x.health }; });
+const faqs = [
+  { q: 'Do I pay anything to ZUS while on start-up relief?', a: `Yes, the health contribution. Start-up relief (ulga na start) only exempts you from social insurance contributions. The health contribution depends on how you are taxed: on the tax scale or the flat tax it is at least ${F.healthMin} a month (${F.healthMinJan} for January ${F.year}), and on the lump-sum tax with revenue up to ${F.ryczaltLimit1} a year it is ${F.ryczaltBand1}. Forget it and you build up arrears with ZUS while believing you owe nothing.` },
+  { q: 'What does voluntary sickness cover cost a sole trader, and what does it pay?', a: `The sickness contribution is ${F.chorobowa} of your base: ${$2(full.chorobowa)} a month on full ZUS and ${$2(pref.chorobowa)} on preferential ZUS. In return you can claim sickness benefit (zasiłek chorobowy) of ${F.sickRate} of the base after a ${F.sickReduction} deduction. On a ${F.b2bBaseFull} base, a month on sick leave pays about ${$(sick.benefit)} gross; on the preferential base about ${$(sickPref.benefit)}.` },
+  { q: 'I am 61 and run my own business. Do I still pay the Labour Fund?', a: `No. According to ZUS, Labour Fund and Solidarity Fund contributions stop from the month in which a woman turns ${FP_AGE.women} or a man turns ${FP_AGE.men}. On full ZUS that is ${$2(full.fp)} a month less, or ${$(full.fp * 12)} a year. On preferential ZUS nothing changes, because ZUS charges no Labour or Solidarity Fund on the ${F.b2bBasePref} base in the first place.` },
+  { q: 'Do my ZUS contributions as a sole trader reduce my income tax?', a: `Yes. Social contributions are deducted from income on the tax scale and the flat tax, and from revenue on the lump-sum tax. With ${$(15000)} of monthly revenue on the flat tax, full ZUS brings tax down from ${$(taxStart)} (on start-up relief) to ${$(taxFull)} a month. Each zloty of contributions therefore really costs you less by your tax rate, but it is never refunded in full.` },
+  { q: 'What is Mały ZUS plus and how much would I pay?', a: `It is a scheme in which the base for social contributions depends on your income from the previous year. ZUS states that the base cannot be lower than ${F.b2bBasePref} (${prefShare} of the minimum wage) or higher than ${F.b2bBaseFull} (${fullShare} of the forecast average wage). Contributions therefore fall between ${F.b2bZusPrefNoSick} and ${F.b2bZusFullNoSick} without sickness cover. Working out the exact base follows ZUS rules, which our calculator does not model.` },
+];
+---
+<GuideLayout lang={lang} id="zusb2b" breadcrumbLabel={label('zusb2b', lang)} title={`ZUS for the self-employed ${F.year}: ${F.b2bZusFull} a month`} h1={`ZUS for the self-employed in ${F.year}: full, preferential and start-up relief`}
+  description={`ZUS for sole traders in ${F.year}: ${F.b2bZusFull} a month on full contributions with sickness cover, ${F.b2bZusPref} preferential, nothing on start-up relief. Every base.`}
+  intro="If you run a sole proprietorship in Poland, you pay your own social insurance contributions, and the amount depends on the stage of your business rather than on what you earn."
+  resume={`In ${F.year}, a sole trader on full ZUS pays social contributions on a base of ${F.b2bBaseFull}: ${F.b2bZusFull} a month with voluntary sickness cover or ${F.b2bZusFullNoSick} without it, Labour and Solidarity Funds included. On preferential ZUS the base is ${F.b2bBasePref}, which is ${prefShare} of the minimum wage, and contributions come to ${F.b2bZusPref} with sickness cover or ${F.b2bZusPrefNoSick} without, because no Labour or Solidarity Fund is charged on that base. Start-up relief (ulga na start) removes every social contribution but not the health contribution. Mały ZUS plus uses an income-based base that sits between those two amounts. Accident insurance is charged at ${F.wypadkowa}, and the ${F.chorobowa} sickness contribution is optional. On top comes the health contribution, which depends on how you are taxed: at least ${F.healthMin} a month on the tax scale and flat tax, from ${F.ryczaltBand1} on the lump-sum tax. The mini-calculator below shows the contributions for the option you pick.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: 'B2B calculator', description: 'Take-home pay on the tax scale, flat tax or lump sum, with your ZUS option.' }, { href: route('health', lang), name: label('health', lang), description: `Health contribution for employees and businesses: ${F.health}, ${F.healthLiniowy} and lump sum.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `When the ${F.liniowy} flat tax beats the tax scale.` }]}
+  sources={[src('zus_b2b', lang), src('sus_act', lang), src('budget', lang), src('sickness', lang)]}>
+  <div data-chrome><MiniSim client:load kind="zusb2b" lang={lang} href={route('b2b', lang)} /></div>
+
+  <h2>Monthly contributions in {F.year}, line by line</h2>
+  <ContentTable headers={['Option', 'Base', 'Pension and disability', 'Accident', 'Sickness', 'Labour + Solidarity Funds', 'Total']} align={['l', 'r', 'r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>The amounts follow directly from the rates: pension (emerytalna) {F.emerytalnaTotal}, disability (rentowa) {F.rentowaTotal}, accident (wypadkowa) {F.wypadkowa}, sickness (chorobowa) {F.chorobowa}, and the Labour and Solidarity Funds together {F.fpfs}. A sole trader pays the whole lot alone, with no employee and employer split, which is why the pension rate of {F.emerytalnaTotal} is twice the {F.emerytalnaEe} deducted on an employee's payslip. Over a year, full ZUS with sickness cover costs {$(yearFull)}, and the preferential option {$(yearPref)}.</p>
+
+  <h2>Full ZUS: a {F.b2bBaseFull} base</h2>
+  <p>The full contribution base is {fullShare} of the forecast average wage, which was set at {F.avgForecast} for {F.year}. Whether your business earns {$(8000)} or {$(80000)} a month makes no difference: social contributions stay the same. For a high earner this is a big advantage over a job, where pension and disability contributions grow with salary. For someone still building a client base, {F.b2bZusFull} a month can be the heaviest item in the budget.</p>
+  <p>The same flatness works against you later. Your state pension depends on the contributions paid in, and at a high income, contributions on {F.b2bBaseFull} are well below those of an employee on a similar salary. Many sole traders top this up with savings of their own.</p>
+
+  <h2>Preferential ZUS: a smaller base and no Labour Fund</h2>
+  <p>The preferential base of {F.b2bBasePref} equals {prefShare} of the minimum wage ({F.minWage}). Pension and disability contributions fall in proportion, and the {F.year} ZUS table shows no Labour or Solidarity Fund on that base at all. That is why the gap between full and preferential ZUS without sickness cover reaches {$2(tot(fullNo) - tot(prefNo))} a month.</p>
+  <p>Preferential ZUS does not touch the health contribution. People are often disappointed here: they move to the lower rate expecting their whole ZUS bill to shrink by three quarters, but the health contribution stays put because it is based on income or revenue, not on the social insurance base.</p>
+
+  <h2>Start-up relief: social contributions only</h2>
+  <p>During start-up relief you pay no pension, disability, accident or sickness contributions. That also means no cover: without the sickness contribution there is no sickness benefit, so a week in bed is a week without income. The health contribution is due from the first month. On the lump-sum tax with modest revenue it is {$2(startHealthRyc)} a month; on the tax scale and flat tax, at least {F.healthMin}.</p>
+  <p>Your tax deductions are smaller in this period too, since there are no contributions to deduct. With {$(10000)} of monthly revenue on the flat tax, take-home is {$(nets[2].net)} on start-up relief, {$(nets[1].net)} on preferential ZUS and {$(nets[0].net)} on full ZUS. The drop from start-up relief to full ZUS is smaller than the contributions themselves because part of them comes back as lower tax.</p>
+
+  <h2>Mały ZUS plus: a base in between</h2>
+  <p>Mały ZUS plus is aimed at people on lower incomes: the social contribution base depends on the previous year's income. According to ZUS, it cannot fall below {F.b2bBasePref} or rise above {F.b2bBaseFull}. We do not give a formula for the base, because how it is set and who qualifies need to be checked in the regulations and on the ZUS website. Our B2B calculator handles full ZUS, preferential ZUS and start-up relief, but not Mały ZUS plus.</p>
+
+  <h2>Voluntary sickness cover: when it pays off</h2>
+  <p>The {F.chorobowa} sickness contribution costs {$2(full.chorobowa)} a month on full ZUS and {$2(pref.chorobowa)} on preferential ZUS. Benefit is calculated on the base minus {F.sickReduction} and paid at {F.sickRate}. On the full base, a month off sick brings roughly {$(sick.benefit)}; on the preferential base roughly {$(sickPref.benefit)}. The base for voluntary sickness insurance cannot exceed {F.money(P.b2b.sickness_base_max, 2)} a month.</p>
+  <p>The maths is simple: a year of sickness contributions on full ZUS costs {$(full.chorobowa * 12)}, less than half the benefit for a single month of illness. If you have no savings to carry you through a few weeks without revenue, the contribution is cheap insurance.</p>
+
+  <h2>Accident insurance at {F.wypadkowa}: why that rate</h2>
+  <p>The law sets the accident contribution between {F.wypadkowaMin} and {F.wypadkowaMax} of the base. ZUS uses {F.wypadkowa} in its {F.year} figures and notes that if a different rate applies to you, the amount changes. On the full base the range runs from {$2(wypMin)} to {$2(wypMax)} a month, so for most one-person businesses it is a small item. Still, check your own rate before copying the table into a bank transfer: being a few groszy short on a contribution leaves an underpayment.</p>
+
+  <h2>The whole picture: ZUS plus health</h2>
+  <p>Social contributions are only part of the monthly bill. With {$(15000)} of monthly revenue, no costs and full ZUS without sickness cover, the total looks like this: on the tax scale {$(at15[0].social)} social and {$(at15[0].health)} health, on the flat tax {$(at15[1].social)} and {$(at15[1].health)}, on the lump-sum tax {$(at15[2].social)} and {$(at15[2].health)}. Social contributions are identical everywhere; the whole difference sits in the health contribution, which is {F.health} of income on the scale, {F.healthLiniowy} on the flat tax, and a fixed amount tied to annual revenue on the lump sum.</p>
+  <p>Choosing a tax regime and choosing a ZUS option are therefore two separate decisions. The first changes health and tax, the second changes social contributions. The B2B calculator lets you set both and see the take-home figure straight away.</p>
+
+  <h2>The usual mistakes with business ZUS</h2>
+  <p>Treating start-up relief as a full ZUS holiday and skipping the health contribution. Adding the Labour Fund to the preferential base. Assuming higher revenue raises social contributions on full ZUS. And comparing a B2B offer with a job without subtracting {F.b2bZusFullNoSick} of contributions plus health. For the full comparison, with holidays and sick pay, see <a href={route('compare', lang)}>B2B versus employment contract</a>.</p>
+  <div data-chrome><MiniSim client:load kind="health" lang={lang} href={route('health', lang)} /></div>
+</GuideLayout>

@@ -1,0 +1,59 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { AUTHOR_NAME, CONTACT_EMAIL, REVIEW_CYCLE_MONTHS, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const checked = displayDate(F.retrieved, LANG_TAGS[lang]);
+const title = `Editorial policy: where our ${F.year} ZUS and PIT rates come from`;
+const description = `Where our ${F.year} ZUS and PIT rates come from, who answers for them, how often we recheck them (every ${REVIEW_CYCLE_MONTHS} months at least), how we test the engine and fix errors.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('editorial', lang), path: route('editorial', lang) }])]}
+  breadcrumbs={[{ label: label('editorial', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Editorial and corrections policy</h1>
+    <p class="lead">A salary calculator tells people how much money will reach their account. Being a hundred złoty out can wreck a pay negotiation or a household budget, so this page explains where our figures come from, who is answerable for them, and what happens when one turns out to be wrong.</p>
+
+    <h2>Who is responsible</h2>
+    <p>{AUTHOR_NAME} is responsible for the text, the data and the calculation engine. There are no anonymous authors and no outsourced copy published without review. Editorial questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
+
+    <h2>Official sources only</h2>
+    <p>We do not copy rates from other calculators, news articles or forums. Every parameter comes from an official Polish publication:</p>
+    <ul>
+      <li><strong>Dziennik Ustaw</strong> (the Journal of Laws): the Social Insurance System Act, the Personal Income Tax Act, the Lump-Sum Tax Act, the PPK Act, the Labour Code, the Budget Act (which sets the Labour Fund, Solidarity Fund and FGŚP rates) and the minimum wage regulation ({F.minWage}). We read the consolidated texts through the Sejm's official API, the same data that feeds the ISAP legal database;</li>
+      <li><strong>Monitor Polski</strong> (the Official Gazette): the forecast average wage that sets the annual contribution cap of {F.cap}, and the average wage published by GUS, the statistics office;</li>
+      <li><strong>ZUS</strong>, the social insurance institution: contribution rates, the amounts self-employed people pay (full ZUS of {F.b2bZusFull} with sickness cover) and the health contribution bands;</li>
+      <li><strong>podatki.gov.pl</strong>, the Ministry of Finance tax portal: official guidance on the PIT-2 form, the youth relief and deducting the health contribution, among others.</li>
+    </ul>
+    <p>All rates are stored in a single data file with the source address and the date each one was read. Last full check: {checked}. Our house rule is no hand-typed rate or amount: figures in the text are pulled from that file or computed by the engine when the page is built, so the text and the calculator cannot drift apart.</p>
+
+    <h2>What we do not write</h2>
+    <p>If we have not confirmed something in the statute or on an official page, we do not present it as fact. That applies above all to announced reforms, deadlines and rates quoted from memory. Where a provision is read in different ways, we say which assumption the calculator makes instead of pretending the question is simple. Those assumptions are gathered in the <a href={route('method', lang)}>methodology</a>.</p>
+
+    <h2>Tests before every release</h2>
+    <p>The engine has an automated test suite built on reference cases: the minimum wage, crossing the {F.threshold} tax threshold, the contribution cap, a student on a mandate contract, self-employed ZUS, and B2B on the lump-sum and flat tax. The tests run on every deployment. If any one of them fails, the new version never reaches the server and the previous one stays online.</p>
+
+    <h2>Update cycle</h2>
+    <p>All parameters are reviewed in full at least every {REVIEW_CYCLE_MONTHS} months. On top of that, the data is updated whenever Polish law changes in a way that affects pay: a new minimum wage regulation, the announcement of the forecast average wage, a budget act, an amendment to the PIT or contributions legislation. The update date shown on each page moves only when the data has actually been checked or changed.</p>
+
+    <h2>How we correct errors</h2>
+    <p>Every report is compared with the source. When an error is confirmed:</p>
+    <ol>
+      <li>we fix the data or the code and add the case to the tests, so the same mistake cannot come back;</li>
+      <li>the affected page gets a new update date;</li>
+      <li>if the mistake materially changed a result, the page says a correction was made rather than swapping figures in silence.</li>
+    </ol>
+    <p>We do not delete pages to hide mistakes. How to report one is explained on the <a href={route('contact', lang)}>contact page</a>.</p>
+
+    <h2>Independence</h2>
+    <p>The site is free. It currently shows no advertising. If ads ever appear, they will not be placed above the calculator and will have no influence on the calculations or the guides. We pass no leads to accounting firms, banks or insurers and accept no payment for mentions. We are not affiliated with ZUS or the Ministry of Finance.</p>
+
+    <h2>Where the calculator stops</h2>
+    <p>A result is an estimate for a standard situation. It does not replace your employer's payroll, a decision by an authority or advice from a tax adviser. More about the site on the <a href={route('about', lang)}>about page</a>.</p>
+  </div>
+</PageLayout>

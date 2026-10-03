@@ -1,0 +1,71 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, secondBracketMonth, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const MIES = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
+const MIES_LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const MIES_GEN = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+const mies = (m: number | null) => (m ? MIES[m - 1] : 'nie w tym roku');
+// Tableau moteur : net annuel et mois clés pour huit bruts mensuels.
+const GS = [6000, 8000, 10000, 12000, 15000, 20000, 25000, 30000];
+const rows = GS.map((g) => { const y = uopYear({ gross: g }); return [$(g), $(y.total.net), $(y.months[0].net), $(y.months[11].net), mies(secondBracketMonth({ gross: g })), mies(capMonth(g))]; });
+const y15 = uopYear({ gross: 15000 }); const m15 = secondBracketMonth({ gross: 15000 }) ?? 12;
+const y30 = uopYear({ gross: 30000 }); const b30 = secondBracketMonth({ gross: 30000 }) ?? 12; const c30 = capMonth(30000) ?? 12;
+const low30 = y30.months[b30].net, after30 = y30.months[11].net;
+const y10 = uopYear({ gross: 10000 });
+// Sans PIT-2 : surplus d'avances rendu au PIT-37.
+const noPit2Refund = uopYear({ gross: 8000, pit2: false }).total.pit - uopYear({ gross: 8000 }).total.pit;
+// Deux employeurs à 8 000 zł chacun : chacun retient 12 %, l'impôt annuel dépasse le seuil.
+const yA = uopYear({ gross: 8000 }), yB = uopYear({ gross: 8000, pit2: false });
+// Koszty : 2 × 3 000 zł retenus par les payeurs, mais au plus 4 500 zł sur l'année pour plusieurs contrats (art. 22 ust. 2 pkt 2).
+const base2 = yA.total.taxBase + yB.total.taxBase + (2 * P.pit.kup_employee_year - P.pit.kup_multi_year);
+const due2 = Math.round(Math.min(base2, P.pit.threshold) * P.pit.rate_low + Math.max(0, base2 - P.pit.threshold) * P.pit.rate_high - P.pit.tax_reducing_amount_year);
+const extra2 = due2 - (yA.total.pit + yB.total.pit);
+const faqs = [
+  { q: 'Zarabiam co miesiąc tyle samo, a jesienią przelew nagle zmalał. Czy pracodawca się pomylił?', a: `Najpewniej nie. Zaliczkę na PIT liczy się od podstawy skumulowanej od stycznia. Gdy przekroczy ona ${F.threshold}, nadwyżka jest opodatkowana stawką ${F.pitHigh} zamiast ${F.pitLow}. Przy pensji ${$(15000)} brutto dzieje się to w ${MIES_LOC[m15 - 1]}, a netto spada z ${$(y15.months[0].net)} do ${$(y15.months[11].net)} w grudniu. Od stycznia następnego roku licznik startuje od zera.` },
+  { q: 'Mam dwie umowy o pracę po 8 000 zł. Czy w rozliczeniu rocznym dopłacę podatek?', a: `Prawie na pewno tak. Każdy pracodawca liczy zaliczki tak, jakby był jedynym, więc obaj stosują stawkę ${F.pitLow} przez cały rok. Łączna podstawa wynosi jednak ${$(base2)}, czyli ponad próg ${F.threshold}, a koszty przy kilku umowach są ograniczone do ${F.kupMulti} rocznie. Przy PIT-2 złożonym u jednego z nich w PIT-37 dopłacisz około ${$(extra2)}. Możesz tego uniknąć, prosząc jednego pracodawcę o pobieranie wyższych zaliczek.` },
+  { q: 'Ile wynosi roczne netto przy pensji 10 000 zł brutto i czy wszystkie miesiące są równe?', a: `Przy ${$(10000)} brutto miesięcznie, z PIT-2 i kosztami ${F.kup}, roczne netto wynosi ${$(y10.total.net)}. Wszystkie miesiące są w tym przypadku równe, bo skumulowana podstawa opodatkowania nie dochodzi do ${F.threshold} i nie ma drugiego progu. Różnice zaczynają się mniej więcej od ${$(12000)} brutto, gdzie grudzień wypada już niżej niż styczeń.` },
+];
+---
+<GuideLayout lang={lang} id="annual" breadcrumbLabel={label('annual', lang)} title={`Wynagrodzenie roczne ${F.year}: netto miesiąc po miesiącu`} h1={`Wynagrodzenie roczne ${F.year}: ile netto zarobisz w całym roku`}
+  description={`Wynagrodzenie roczne ${F.year}: ${$(15000)} brutto miesięcznie daje ${$(y15.total.net)} netto w roku, ale grudzień jest niższy niż styczeń. Zobacz netto każdego miesiąca.`}
+  intro={`Kalkulator przelicza umowę o pracę na dwanaście kolejnych wypłat, bo przy wyższych pensjach netto zmienia się w trakcie roku.`}
+  resume={`Przy pensji ${$(15000)} brutto miesięcznie zarobisz w ${F.year} r. ${$(y15.total.net)} netto, ale nie w dwunastu równych częściach: od stycznia do ${MIES_GEN[m15 - 2] ?? 'grudnia'} przelew wynosi ${$(y15.months[0].net)}, a w grudniu już ${$(y15.months[11].net)}. Przyczyną jest skala podatkowa liczona narastająco. Zaliczka na PIT wynosi ${F.pitLow}, dopóki suma podstaw opodatkowania od stycznia nie przekroczy ${F.threshold}; potem nadwyżka jest opodatkowana stawką ${F.pitHigh}. Przy bardzo wysokich pensjach działa też mechanizm odwrotny: po przekroczeniu limitu ${F.cap} przychodu w roku znikają składki emerytalna i rentowa, więc netto pod koniec roku znowu rośnie. Do pensji około ${$(10000)} brutto wszystkie miesiące są równe. Kalkulator pokazuje każdy miesiąc osobno, a tabela niżej zestawia roczne netto, styczeń i grudzień dla ośmiu poziomów pensji, z PIT-2, kosztami ${F.kup} i bez PPK.`}
+  faqs={faqs}
+  related={[{ href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh}: jak działa próg ${F.threshold}.` }, { href: route('cap', lang), name: label('cap', lang), description: `Limit ${F.cap}: kiedy kończą się składki emerytalna i rentowa.` }, { href: route('bonus', lang), name: label('bonus', lang), description: 'Ile zostaje z premii w styczniu, a ile w grudniu.' }]}
+  sources={[src('pit_act', lang), src('cap', lang), src('zus_rates', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="uop" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
+    <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('home', lang)} /></div>
+  </div>
+
+  <h2>Roczne netto dla ośmiu poziomów pensji</h2>
+  <p>Tabela zakłada stałą pensję przez cały rok u jednego pracodawcy. Kolumna „Drugi próg od” wskazuje pierwszy miesiąc, w którym część podstawy wchodzi w stawkę {F.pitHigh}; kolumna „Limit ZUS” miesiąc, w którym suma brutto przekracza {F.cap}.</p>
+  <ContentTable headers={['Brutto miesięcznie', 'Netto za rok', 'Netto w styczniu', 'Netto w grudniu', 'Drugi próg od', 'Limit ZUS']} align={['r', 'r', 'r', 'r', 'l', 'l']} rows={rows} highlightRow={4} />
+
+  <h2>Dlaczego grudzień różni się od stycznia</h2>
+  <p>Polska zaliczka na podatek nie jest liczona od każdej pensji z osobna, tylko od sumy od początku roku. Pracodawca co miesiąc dodaje nową podstawę do wcześniejszych i sprawdza, czy łącznie nie przekroczyły już {F.threshold}. W miesiącu przekroczenia część podstawy jest opodatkowana stawką {F.pitLow}, a część {F.pitHigh}, dlatego ten jeden przelew bywa „pośredni”. W kolejnych miesiącach cała podstawa trafia już do drugiego progu.</p>
+  <p>Przy {$(30000)} brutto widać oba mechanizmy naraz. Drugi próg zaczyna się w {MIES_LOC[b30 - 1]} i netto spada do {$(low30)}. W {MIES_LOC[c30 - 1]} suma brutto przekracza limit {F.cap}, więc z wypłaty przestają znikać składki emerytalna ({F.emerytalnaEe}) i rentowa ({F.rentowaEe}), a grudniowe netto rośnie do {$(after30)}. Składka chorobowa i zdrowotna są pobierane dalej, bo limit ich nie dotyczy.</p>
+  <p>Planując wydatki, lepiej patrzeć na średnią miesięczną z rocznego netto niż na styczniowy przelew. Kto bierze kredyt albo podpisuje najem z czynszem dopasowanym do wypłaty ze stycznia, pod koniec roku może mieć mniej, niż zakładał.</p>
+
+  <h2>Od zaliczek do PIT-37: rozliczenie roczne</h2>
+  <p>Zaliczki pobierane co miesiąc to przedpłata. Po zakończeniu roku pracodawca przekazuje Ci informację PIT-11 z sumą przychodów, składek i pobranych zaliczek, a Ty rozliczasz się w zeznaniu PIT-37. Przy jednej umowie o pracę, stałej pensji i złożonym PIT-2 podatek z zeznania zwykle niemal pokrywa się z sumą zaliczek, więc różnica wynika głównie z zaokrągleń albo z ulg, których pracodawca nie znał.</p>
+  <p>Większe różnice pojawiają się w trzech sytuacjach. Pierwsza to brak PIT-2: pracodawca pobiera wtedy wyższe zaliczki, a nadpłata wraca w zeznaniu; przy {$(8000)} brutto to {$(noPit2Refund)} za rok. Druga to kilka umów o pracę: każdy pracodawca stosuje pierwszy próg tak, jakby był jedynym, a w zeznaniu dochody się sumują, koszty spadają do limitu {F.kupMulti}, i przy dwóch etatach po {$(8000)} trzeba dopłacić około {$(extra2)}. Trzecia to zmiana pracy w trakcie roku: nowy pracodawca liczy próg od zera, więc dopłata może pojawić się nawet przy jednej pensji naraz.</p>
+  <p>Kalkulator pokazuje zaliczki pobrane przez jednego pracodawcę. Nie uwzględnia ulg odliczanych dopiero w zeznaniu ani przychodów z innych źródeł, które w PIT-37 sumują się z pensją.</p>
+
+  <h2>Jak czytać roczne zestawienie na pasku wypłaty</h2>
+  <p>Wiele systemów płacowych drukuje na pasku wypłaty kolumnę „narastająco” albo „od początku roku”. Warto ją sprawdzać od jesieni: jeśli suma podstaw opodatkowania zbliża się do {F.threshold}, następny przelew będzie niższy. Ta sama kolumna pokazuje sumę przychodu oskładkowanego, czyli odległość od limitu {F.cap}. Jeśli zmieniasz pracę w trakcie roku, nowy pracodawca nie widzi tych sum i liczy wszystko od zera, a rozliczenie nastąpi dopiero w PIT-37.</p>
+
+  <h2>Kiedy kończą się składki emerytalna i rentowa</h2>
+  <p>Przy wysokiej pensji sprawdź, w którym miesiącu przekroczysz limit roczny i o ile wzrośnie wtedy przelew.</p>
+  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('cap', lang)} /></div>
+</GuideLayout>

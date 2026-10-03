@@ -1,0 +1,90 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const T = P.pit;
+const MONTHS = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
+const MONTHS_LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+// Skala roczna (art. 27 ust. 1): podatek od podstawy, przed kwotą zmniejszającą.
+const scale = (b: number) => Math.max(0, Math.min(b, T.threshold) * T.rate_low + Math.max(0, b - T.threshold) * T.rate_high - T.tax_reducing_amount_year);
+const fixedPart = $(T.threshold * T.rate_low - T.tax_reducing_amount_year);
+const rows = [10000, 12000, 15000, 20000, 25000].map((g) => { const y = uopYear({ gross: g }); const m = secondBracketMonth({ gross: g }); return [$(g), $(y.total.taxBase), m ? MONTHS[m - 1] : 'nie w tym roku', $(y.total.pit), $(y.months[0].net), $(y.months[11].net)]; });
+// Najniższe stałe brutto miesięczne, przy którym roczna podstawa przekracza próg (szukanie po 10 zł).
+let edge = 0; for (let g = 8000; g <= 20000; g += 10) { if (secondBracketMonth({ gross: g })) { edge = g; break; } }
+const y15 = uopYear({ gross: 15000 }); const m15 = secondBracketMonth({ gross: 15000 }) ?? 12;
+const before = y15.months[m15 - 2], cross = y15.months[m15 - 1], after = y15.months[Math.min(11, m15)];
+// Dwa etaty po 8 000 zł: każdy pracodawca zostaje w pierwszym progu, zeznanie roczne łączy dochody.
+const two = uopYear({ gross: 8000 }), twoNo = uopYear({ gross: 8000, pit2: false });
+const twoIncome = 2 * (two.total.gross - two.total.social) - Math.min(2 * T.kup_employee_year, T.kup_multi_year);
+const twoBase = Math.round(twoIncome), twoTax = Math.round(scale(twoBase)), twoAdv = two.total.pit + twoNo.total.pit, twoDue = twoTax - twoAdv;
+const mg = (g: number, i: number) => uopYear({ gross: g + 100 }).months[i].net - uopYear({ gross: g }).months[i].net;
+const mJan = mg(15000, 0), mDec = mg(15000, 11);
+const bonusMonths = Array.from({ length: 12 }, (_, i) => (i === 5 ? 12000 + 30000 : 12000));
+const bY = uopYear({ gross: 12000, months: bonusMonths }); const bM = bY.months.find((m) => m.secondBracket)?.month ?? null;
+const m12 = secondBracketMonth({ gross: 12000 });
+const sol = 1200000, solTax = (sol - T.solidarity_threshold) * T.solidarity_rate;
+const faqs = [
+  { q: 'Czy próg 120 000 zł dotyczy pensji brutto czy dochodu?'.replace('120 000 zł', F.threshold), a: `Dochodu, czyli podstawy opodatkowania. Od brutto odejmuje się najpierw składki ZUS pracownika i koszty uzyskania przychodu (${F.kupYear} rocznie na jednym etacie). Dlatego pensja ${$(10000)} brutto miesięcznie, czyli ${$(120000)} rocznie, nie przekracza progu: podstawa wynosi ${rows[0][1]}. Drugi próg zaczyna się dopiero przy wyższym brutto.` },
+  { q: 'Od jakiej pensji brutto wejdę w drugi próg podatkowy?', a: `Na jednym etacie, przy stałej pensji przez cały rok, standardowych kosztach i bez ulg, roczna podstawa przekracza ${F.threshold} od około ${$(edge)} brutto miesięcznie. Wtedy ${F.pitHigh} obejmuje tylko końcówkę grudniowej pensji. Przy ${$(15000)} brutto drugi próg zaczyna się w ${MONTHS_LOC[m15 - 1]}, a przy ${$(20000)} już w ${MONTHS_LOC[(secondBracketMonth({ gross: 20000 }) ?? 12) - 1]}. Premie przyspieszają ten moment.` },
+  { q: 'Czy po przekroczeniu progu cała pensja jest opodatkowana stawką 32 %?'.replace('32 %', F.pitHigh), a: `Nie. ${F.pitHigh} dotyczy tylko nadwyżki dochodu ponad ${F.threshold}. Podatek roczny to ${fixedPart} plus ${F.pitHigh} od nadwyżki, czyli pierwsze ${F.threshold} nadal kosztuje ${F.pitLow} pomniejszone o kwotę zmniejszającą. W miesiącu przekroczenia pracodawca dzieli podstawę na dwie części, a wyższą stawkę stosuje od tego miesiąca do grudnia.` },
+  { q: 'Mam dwa etaty i żaden pracodawca nie pobiera 32 %. Czy to błąd?'.replace('32 %', F.pitHigh), a: `Nie, tak działa pobór zaliczek. Każdy płatnik liczy próg tylko od wypłat, które sam wypłacił. Dopiero w zeznaniu PIT-37 dochody się sumują. Przy dwóch pensjach po ${$(8000)} brutto łączna podstawa to około ${$(twoBase)}, a dopłata podatku w zeznaniu wynosi około ${$(twoDue)}, jeśli PIT-2 złożyłeś u jednego pracodawcy.` },
+  { q: 'Od jakiego dochodu płaci się daninę solidarnościową?', a: `Od nadwyżki dochodów ponad ${F.solidarityThreshold} w roku, w wysokości ${F.solidarity} (art. 30h ustawy o PIT). To osobna danina, płacona obok podatku według skali. Przy dochodzie ${$(sol)} wynosi ${$(solTax)}. Dotyczy niewielkiej grupy, bo wymaga dochodu średnio ponad ${$(T.solidarity_threshold / 12)} miesięcznie.` },
+];
+---
+<GuideLayout lang={lang} id="brackets" breadcrumbLabel={label('brackets', lang)}
+  title={`Progi podatkowe ${F.year}: ${F.pitLow} i ${F.pitHigh} od ${F.threshold} dochodu`}
+  h1={`Progi podatkowe w ${F.year} r.: kiedy wchodzisz w drugi próg`}
+  description={`Progi podatkowe ${F.year}: ${F.pitLow} do ${F.threshold} dochodu, ${F.pitHigh} od nadwyżki. Od którego miesiąca zapłacisz więcej, dwa etaty i PIT-37, danina ${F.solidarity}, z kalkulatorem.`}
+  intro={`Skala podatkowa ma w ${F.year} r. dwa progi: ${F.pitLow} do ${F.threshold} dochodu rocznie i ${F.pitHigh} od nadwyżki ponad tę kwotę.`}
+  resume={`W ${F.year} r. dochód do ${F.threshold} rocznie opodatkowany jest stawką ${F.pitLow}, pomniejszoną o kwotę zmniejszającą ${F.reducingYear}, a nadwyżka ponad ${F.threshold} stawką ${F.pitHigh}; podatek roczny w drugim progu to ${fixedPart} plus ${F.pitHigh} od nadwyżki (art. 27 ustawy o PIT). Próg dotyczy dochodu, nie brutto: najpierw odejmuje się składki ZUS i koszty uzyskania przychodu. Pracodawca liczy go narastająco od stycznia, od wypłat, które sam wypłacił, i stosuje ${F.pitHigh} od miesiąca, w którym podstawa przekroczy próg. Na jednym etacie zdarza się to od około ${$(edge)} brutto miesięcznie; przy ${$(15000)} brutto drugi próg zaczyna się w ${MONTHS_LOC[m15 - 1]}, a netto spada z ${$(y15.months[0].net)} do ${$(y15.months[11].net)}. Przy kilku źródłach dochodu ostateczny podatek wylicza się dopiero w zeznaniu PIT-37. Od dochodów ponad ${F.solidarityThreshold} płaci się dodatkowo ${F.solidarity} daniny solidarnościowej. Mini-kalkulator wskazuje miesiąc wejścia w drugi próg dla Twojej pensji.`}
+  faqs={faqs}
+  related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Netto w każdym miesiącu roku, z progiem i limitem ZUS.' }, { href: route('allowance', lang), name: label('allowance', lang), description: `${F.freeAmount} kwoty wolnej i ${F.reducingYear} ulgi w podatku.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} bez progów: dla kogo na działalności.` }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('annual', lang)} /></div>
+
+  <h2>Skala {F.year}: dwie stawki i jedna kwota zmniejszająca</h2>
+  <p>Art. 27 ust. 1 ustawy o podatku dochodowym od osób fizycznych zawiera tabelę z dwoma wierszami. Do {F.threshold} podstawy podatek wynosi {F.pitLow} minus kwota zmniejszająca podatek {F.reducingYear}. Powyżej {F.threshold} podatek to {fixedPart} plus {F.pitHigh} nadwyżki. Kwota {fixedPart} to po prostu podatek od pierwszych {F.threshold}, już pomniejszony o kwotę zmniejszającą. Dzięki temu ulga zostaje także u osób w drugim progu: polska skala jej nie wygasza.</p>
+  <p>Tej samej skali podlegają pensje z umowy o pracę, umowy zlecenia i o dzieło oraz dochody przedsiębiorców, którzy nie wybrali podatku liniowego ani ryczałtu. Osoba na <a href={route('liniowy', lang)}>podatku liniowym</a> płaci {F.liniowy} od każdej złotówki dochodu, bez progów i bez kwoty zmniejszającej.</p>
+
+  <h2>Próg liczy się od dochodu, nie od brutto</h2>
+  <p>To najczęstsze nieporozumienie. Kwota {F.threshold} nie oznacza pensji {$(10000)} brutto miesięcznie. Zanim cokolwiek trafi do progu, z brutto schodzą składki emerytalna, rentowa i chorobowa (razem {F.socialEe}) oraz koszty uzyskania przychodu: {F.kupYear} rocznie na jednym etacie albo {F.kupRaisedYear} przy kosztach podwyższonych dla dojeżdżających. Składka zdrowotna podstawy nie zmniejsza.</p>
+  <p>Przykład: {$(10000)} brutto przez dwanaście miesięcy to {$(120000)} brutto, ale podstawa opodatkowania wynosi tylko {rows[0][1]}. Taka osoba przez cały rok zostaje w pierwszym progu. Na jednym etacie, przy stałej pensji, drugi próg pojawia się dopiero od około {$(edge)} brutto miesięcznie, i to tylko w grudniu.</p>
+
+  <h2>Od którego miesiąca zapłacisz {F.pitHigh}</h2>
+  <p>Pracodawca nie czeka na koniec roku. Zgodnie z art. 32 ustawy liczy zaliczki narastająco: sumuje podstawy od stycznia i w miesiącu, w którym suma przekracza {F.threshold}, stosuje {F.pitHigh} do części ponad próg. W kolejnych miesiącach cała podstawa opodatkowana jest już wyższą stawką. Tabela pokazuje ten moment dla pięciu pensji przy kosztach {F.kup}, z PIT-2, bez PPK i ulg.</p>
+  <ContentTable headers={['Brutto miesięcznie', 'Podstawa w roku', 'Drugi próg od', 'PIT za rok', 'Netto w styczniu', 'Netto w grudniu']} align={['r', 'r', 'l', 'r', 'r', 'r']} rows={rows} />
+  <p>Przy {$(25000)} brutto spadek netto w grudniu jest mniejszy, niż wynikałoby z samego progu, bo w tym samym roku pensja przekracza też limit składek emerytalnej i rentowej, {F.cap}. Ich zniknięcie częściowo równoważy wyższą stawkę podatku. Oba efekty miesiąc po miesiącu pokazuje kalkulator <a href={route('annual', lang)}>wynagrodzenia rocznego</a>.</p>
+
+  <h2>Miesiąc przejścia na przykładzie {$(15000)} brutto</h2>
+  <p>Przy {$(15000)} brutto miesięcznie podstawa narasta o około {$(cross.taxBase)} co miesiąc. W miesiącu poprzedzającym przekroczenie ({MONTHS[m15 - 2]}) skumulowana podstawa wynosi {$(before.cumTaxBase)}, a zaliczka {$(before.pit)}. W {MONTHS_LOC[m15 - 1]} suma przekracza {F.threshold}: część podstawy idzie jeszcze po {F.pitLow}, reszta już po {F.pitHigh}, i zaliczka rośnie do {$(cross.pit)}. Od następnego miesiąca cała podstawa opodatkowana jest wyższą stawką, a zaliczka to {$(after.pit)}.</p>
+  <p>Na rękę oznacza to spadek z {$(before.net)} do {$(after.net)}. Wiele osób odbiera to jako obniżkę pensji, a pracodawcy dostają w tym okresie pytania o błąd w liście płac. Błędu nie ma; w styczniu zaliczka wraca do {F.pitLow}, bo próg liczy się od nowa w każdym roku podatkowym.</p>
+
+  <h2>Kilka źródeł dochodu i rozliczenie w PIT-37</h2>
+  <p>Każdy płatnik widzi tylko swoje wypłaty. Jeśli masz dwa etaty, etat i zlecenie albo zmieniłeś pracę w trakcie roku, żaden z płatników może nie dojść do progu, choć łączny dochód go przekroczy. Brakujący podatek wychodzi wtedy w zeznaniu rocznym PIT-37, w którym sumuje się dochody ze wszystkich źródeł.</p>
+  <p>Weźmy dwie umowy o pracę po {$(8000)} brutto przez cały rok. Każdy pracodawca pobiera zaliczki po {F.pitLow}. W zeznaniu łączna podstawa wynosi około {$(twoBase)}, a koszty uzyskania przychodu z dwóch etatów są ograniczone do {F.kupMulti} rocznie. Podatek według skali to około {$(twoTax)}, a zaliczki pobrane przez obu pracodawców, gdy PIT-2 złożono tylko u jednego, wyniosły {$(twoAdv)}. Do dopłaty zostaje więc około {$(twoDue)}. Warto odkładać tę kwotę w ciągu roku, żeby dopłata nie zaskoczyła przy składaniu zeznania.</p>
+
+  <h2>Ile zostaje z każdych {$(100)} podwyżki</h2>
+  <p>Drugi próg najlepiej widać na krańcowej złotówce. Przy pensji {$(15000)} brutto z każdych dodatkowych {$(100)} brutto w styczniu zostaje na rękę {formatMoney(mJan, 2, lang)}, a w grudniu, już w drugim progu, tylko {formatMoney(mDec, 2, lang)}. Różnica to nie tylko {F.pitHigh} zamiast {F.pitLow}: od podwyżki płacisz też składki ZUS i składkę zdrowotną, które progu nie znają. Dlatego podwyżka negocjowana pod koniec roku wydaje się mniejsza, niż jest, a w styczniu wraca do pełnej wartości.</p>
+
+  <h2>Premia przyspiesza drugi próg</h2>
+  <p>Próg liczy się od sumy podstaw, więc jednorazowa wypłata przesuwa moment przekroczenia. Przy stałych {$(12000)} brutto drugi próg zaczyna się {m12 ? `w ${MONTHS_LOC[m12 - 1]}` : 'dopiero w kolejnym roku'}. Jeśli w czerwcu ta sama osoba dostanie {$(30000)} premii, przekroczy próg już w {bM ? MONTHS_LOC[bM - 1] : 'tym roku'}, a podatek za rok wzrośnie do {$(bY.total.pit)}. Rozłożenie premii na raty w tym samym roku niczego nie zmienia, bo liczy się suma wypłat w roku. Ile zostaje z samej premii, pokazuje kalkulator <a href={route('bonus', lang)}>premii netto</a>.</p>
+
+  <h2>Danina solidarnościowa: {F.solidarity} ponad {F.solidarityThreshold}</h2>
+  <p>Najwyższe dochody obciąża jeszcze jedna danina. Art. 30h ustawy o PIT nakłada {F.solidarity} od nadwyżki dochodów ponad {F.solidarityThreshold} w roku. To nie jest trzeci próg skali, tylko osobna danina liczona od sumy dochodów, płacona niezależnie od podatku według skali. Przy dochodzie {$(sol)} wynosi {$(solTax)}. Danina nie dotyczy zdecydowanej większości pracowników: wymaga dochodu średnio ponad {$(T.solidarity_threshold / 12)} miesięcznie.</p>
+
+  <h2>Jak ograniczyć wpływ drugiego progu</h2>
+  <p>Na etacie pole manewru jest niewielkie, ale istnieje. Osoby przed 26. rokiem życia korzystają z <a href={route('youth', lang)}>ulgi dla młodych</a>, która zwalnia przychód do {F.youthLimit} rocznie i przesuwa moment wejścia w drugi próg. Jeśli część Twojej pensji to wynagrodzenie za przeniesienie praw autorskich, pracodawca może stosować <a href={route('authors', lang)}>koszty autorskie {F.kupAuthors}</a>, które obniżają podstawę, z limitem {F.kupAuthorsLimit} rocznie. Przy dochodach wyraźnie powyżej progu część osób rozważa działalność na podatku liniowym; porównanie pokazuje strona <a href={route('compare', lang)}>B2B czy umowa o pracę</a>.</p>
+
+  <h2>Twój rok miesiąc po miesiącu</h2>
+  <p>Drugi kalkulator pokazuje netto za cały rok, najwyższe i najniższe netto w miesiącu oraz średnią. Różnica między nimi to w dużej mierze efekt drugiego progu.</p>
+  <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('annual', lang)} /></div>
+  <p>Wynik zakłada stałą pensję u jednego pracodawcy, PIT-2 i standardowe koszty. Przy premii albo zmianie pracy w trakcie roku policz rok w pełnym kalkulatorze.</p>
+</GuideLayout>

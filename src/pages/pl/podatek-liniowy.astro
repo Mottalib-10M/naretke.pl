@@ -1,0 +1,85 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const H = P.b2b.health;
+// Tableau calculé par le moteur : skala vs liniowy, pełny ZUS bez chorobowego, sans coûts.
+const rows = [10000, 15000, 20000, 30000, 50000].map((g) => { const s = b2b({ revenue: g, form: 'skala' }), l = b2b({ revenue: g, form: 'liniowy' }); return [$(g), $(s.net), $(l.net), `${l.net - s.net >= 0 ? '+' : '−'}${$(Math.abs(l.net - s.net))}`, $2(l.health)]; });
+// Przychód (pas de 100 zł) od którego liniowy daje więcej niż skala.
+let cross = 5000; while (b2b({ revenue: cross, form: 'liniowy' }).net <= b2b({ revenue: cross, form: 'skala' }).net) cross += 100;
+// Przychód, od którego roczna zdrowotna przekracza limit odliczenia.
+let limRev = 5000; while (b2b({ revenue: limRev, form: 'liniowy' }).health * 12 <= H.liniowy_deduction_limit) limRev += 100;
+const minIncome = H.minimum_monthly / H.liniowy_rate;
+const maxSaving = H.liniowy_deduction_limit * P.b2b.liniowy_rate;
+const x6 = b2b({ revenue: 6000, form: 'liniowy' }); const eff6 = x6.health / (6000 - x6.social - x6.fp);
+const x20 = b2b({ revenue: 20000, form: 'liniowy' });
+const x30 = b2b({ revenue: 30000, form: 'liniowy' });
+// Marginal : combien reste-t-il de 1 000 zł de przychód supplémentaire.
+const mg = (g: number, f: 'skala' | 'liniowy') => b2b({ revenue: g + 1000, form: f }).net - b2b({ revenue: g, form: f }).net;
+const lp = b2b({ revenue: 15000, form: 'liniowy', zus: 'preferential' }), lf = b2b({ revenue: 15000, form: 'liniowy' });
+const c20s = b2b({ revenue: 20000, costs: 6000, form: 'skala' }).net, c20l = b2b({ revenue: 20000, costs: 6000, form: 'liniowy' }).net;
+const faqs = [
+  { q: 'Od jakiego przychodu podatek liniowy opłaca się bardziej niż skala?', a: `W naszym modelu, bez kosztów i na pełnym ZUS, liniowy zaczyna dawać więcej na rękę od około ${$(cross)} przychodu miesięcznie. Poniżej tej kwoty wygrywa skala dzięki kwocie zmniejszającej ${F.reducingYear} i stawce ${F.pitLow}. Jeśli masz koszty, liczy się dochód, a nie przychód, więc próg przesuwa się w górę mniej więcej o wysokość kosztów.` },
+  { q: `Ile składki zdrowotnej odliczę na liniowym w ${F.year} r.?`, a: `Zapłaconą zdrowotną odliczasz od dochodu, ale najwyżej ${F.liniowyLimit} w roku. Przy stawce ${F.liniowy} oznacza to maksymalnie ${$(maxSaving)} niższego podatku rocznie. Limit zaczyna ograniczać odliczenie przy przychodzie około ${$(limRev)} miesięcznie bez kosztów: powyżej tej kwoty każda kolejna złotówka zdrowotnej nie obniża już podatku.` },
+  { q: `Czy na podatku liniowym przysługuje kwota wolna ${F.freeAmount}?`, a: `Nie. Podatek liniowy to ${F.liniowy} podstawy od pierwszej złotówki dochodu. Kwota wolna ${F.freeAmount}, czyli ${F.reducingYear} mniej podatku w roku, istnieje tylko na skali podatkowej. To główny powód, dla którego przy dochodzie do kilkunastu tysięcy miesięcznie skala daje więcej, mimo wyższej zdrowotnej ${F.health}.` },
+  { q: `Dlaczego przy niskim dochodzie płacę więcej zdrowotnej niż ${F.healthLiniowy}?`, a: `Bo zdrowotna na liniowym ma minimum ${F.healthMin} miesięcznie. Stawka ${F.healthLiniowy} daje więcej dopiero przy dochodzie powyżej ${$(minIncome)} miesięcznie. Przy przychodzie ${$(6000)} bez kosztów płacisz minimum, co odpowiada mniej więcej ${pct(Math.round(eff6 * 1000) / 1000, lang)} dochodu. Im niższy dochód, tym wyższa ta efektywna stawka.` },
+  { q: `Ile wynosi składka zdrowotna na liniowym w styczniu ${F.year} r.?`, a: `Za styczeń ${F.year} r. minimum wynosi ${F.healthMinJan}, bo styczeń należy jeszcze do poprzedniego roku składkowego. Od lutego ${F.year} r. do stycznia następnego roku minimum to ${F.healthMin}, liczone od płacy minimalnej ${F.minWage}. Jeśli ${F.healthLiniowy} Twojego dochodu daje więcej, płacisz tę wyższą kwotę.` },
+];
+---
+<GuideLayout lang={lang} id="liniowy" breadcrumbLabel={label('liniowy', lang)} title={`Podatek liniowy ${F.year}: ${F.liniowy}, zdrowotna ${F.healthLiniowy} i opłacalność`} h1={`Podatek liniowy ${F.liniowy} w ${F.year} r.: kiedy wygrywa ze skalą`}
+  description={`Podatek liniowy w ${F.year} r.: ${F.liniowy} dochodu, zdrowotna ${F.healthLiniowy} (minimum ${F.healthMin}), odliczenie do ${F.liniowyLimit}. Opłaca się od ok. ${$(cross)} przychodu miesięcznie.`}
+  intro="Podatek liniowy to jedna stawka dla całego dochodu z działalności, bez progów, ale też bez kwoty wolnej i bez części ulg."
+  resume={`Podatek liniowy wynosi w ${F.year} r. ${F.liniowy} podstawy obliczenia podatku, bez względu na wysokość dochodu (art. 30c ustawy o PIT). Nie ma na nim kwoty wolnej od podatku ani drugiego progu ${F.pitHigh}, a ulga dla młodych dotyczy etatu i zlecenia, nie działalności. Składka zdrowotna to ${F.healthLiniowy} dochodu, ale nie mniej niż ${F.healthMin} miesięcznie od lutego ${F.year} r. (za styczeń ${F.healthMinJan}). Zapłaconą zdrowotną można odliczyć od dochodu do limitu ${F.liniowyLimit} rocznie. W naszym modelu, bez kosztów i na pełnym ZUS bez chorobowego, liniowy zaczyna dawać więcej na rękę niż skala od około ${$(cross)} przychodu miesięcznie. Przy ${$(20000)} różnica sięga ${$(b2b({ revenue: 20000, form: 'liniowy' }).net - b2b({ revenue: 20000, form: 'skala' }).net)} miesięcznie, a przy ${$(50000)} jest kilkukrotnie większa, bo na skali dochód powyżej ${F.threshold} rocznie płaci ${F.pitHigh}. Mini-kalkulator poniżej liczy netto na liniowym z Twoimi kosztami.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: 'Kalkulator B2B', description: 'Skala, liniowy i ryczałt dla Twojego przychodu i kosztów.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: `Stawki od ${pct(P.b2b.ryczalt_rates[6].rate, lang)} i zdrowotna w trzech progach.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh} na skali: jak działa próg ${F.threshold}.` }]}
+  sources={[src('pit_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
+  <div data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
+
+  <h2>Skala czy liniowy: netto przy pięciu poziomach przychodu</h2>
+  <p>Tabela zakłada brak kosztów, pełny ZUS bez dobrowolnego chorobowego i średnią z całego roku. Kolumna różnicy pokazuje, o ile liniowy daje więcej (plus) albo mniej (minus) na rękę.</p>
+  <ContentTable headers={['Przychód miesięcznie', 'Netto na skali', 'Netto na liniowym', 'Różnica', 'Zdrowotna na liniowym']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Przy {$(10000)} skala wyraźnie wygrywa. Działa tu kwota zmniejszająca podatek, której liniowy nie zna, oraz niska stawka {F.pitLow} na pierwszym progu. Około {$(cross)} szala się przechyla, a im wyżej, tym przewaga liniowego szybciej rośnie. Powyżej mniej więcej {$(P.pit.threshold / 12)} dochodu miesięcznie część rocznego dochodu na skali wpada w {F.pitHigh}, podczas gdy liniowy zostaje przy {F.liniowy}.</p>
+
+  <h2>Składka zdrowotna {F.healthLiniowy} i jej minimum</h2>
+  <p>Zdrowotna na liniowym jest niższa procentowo niż na skali ({F.health}), ale ma dolną granicę {F.healthMin} miesięcznie. Stawka {F.healthLiniowy} daje więcej niż minimum dopiero przy dochodzie powyżej {$(minIncome)} miesięcznie. Przy niższym dochodzie płacisz kwotę stałą, więc efektywna stawka jest wyższa: przy przychodzie {$(6000)} bez kosztów to około {pct(Math.round(eff6 * 1000) / 1000, lang)} dochodu.</p>
+  <p>Rok składkowy dla zdrowotnej trwa od lutego do stycznia. Dlatego za styczeń {F.year} r. minimum wynosi jeszcze {F.healthMinJan}, a od lutego {F.healthMin}. Nasz kalkulator dla prostoty stosuje minimum lutowe do całego roku, co przy niskich dochodach zawyża roczną zdrowotną o różnicę za jeden miesiąc.</p>
+
+  <h2>Limit odliczenia {F.liniowyLimit}</h2>
+  <p>Na liniowym zapłaconą zdrowotną odliczasz od dochodu, ale łącznie nie więcej niż {F.liniowyLimit} w roku. Najwyższa możliwa oszczędność podatkowa to więc {$(maxSaving)} rocznie. Przy przychodzie {$(20000)} bez kosztów zdrowotna wynosi {$2(x20.health)} miesięcznie i mieści się w limicie w całości. Przy {$(30000)} to już {$2(x30.health)}, a odliczyć można tylko {$2(x30.healthDeducted)} miesięcznie, czyli limit podzielony na dwanaście miesięcy.</p>
+  <p>Limit zaczyna obcinać odliczenie przy przychodzie około {$(limRev)} miesięcznie. Powyżej tej kwoty zdrowotna jest dla Ciebie czystym kosztem bez żadnej ulgi. Nie zmienia to jednak ogólnego obrazu: przy takich przychodach liniowy i tak zostawia wyraźnie więcej niż skala.</p>
+  <p>Limit jest roczny, a nie miesięczny. Jeśli przychody rozkładają się nierówno, na przykład duży projekt w drugiej połowie roku, zdrowotna z mocnych miesięcy może wyczerpać limit szybciej, niż wynikałoby ze średniej. Przy planowaniu zaliczek patrz więc na sumę z całego roku, a nie na pojedynczy miesiąc z wysoką fakturą.</p>
+
+  <h2>Czego na liniowym nie ma</h2>
+  <p>Nie ma kwoty wolnej od podatku ani kwoty zmniejszającej {F.reducingYear} rocznie. Nie ma drugiego progu, ale nie ma też niskiej stawki {F.pitLow}: każda złotówka dochodu, także pierwsza, płaci {F.liniowy}. Ulga dla młodych obejmuje przychody z etatu i zlecenia, a nie z działalności, więc dwudziestolatek z jednoosobową firmą na liniowym płaci podatek od pierwszej złotówki.</p>
+  <p>To sprawia, że liniowy jest formą dla osób z dochodem stabilnie wysokim. Kto ma rok słabszy, z przychodem kilka tysięcy złotych miesięcznie, płaci na liniowym więcej niż płaciłby na skali, i to od razu w dwóch miejscach: w podatku i w zdrowotnej, która trzyma się minimum.</p>
+
+  <h2>Koszty przesuwają punkt opłacalności</h2>
+  <p>Porównanie w tabeli dotyczy przychodu bez kosztów. Koszty obniżają dochód na obu formach jednocześnie, więc to dochód decyduje o wyborze. Przy przychodzie {$(20000)} i kosztach {$(6000)} miesięcznie skala daje {$(c20s)}, a liniowy {$(c20l)}. Dla kogoś z dużymi kosztami, na przykład z leasingiem samochodu i wynajmem biura, liniowy może się więc opłacać później, niż sugeruje sam przychód na fakturach.</p>
+  <p>Jeśli Twoje koszty są niskie, warto porównać liniowy także z ryczałtem: przy pracy z domu bez wydatków ryczałt {pct(P.b2b.ryczalt_rates[0].rate, lang)} często zostawia więcej. Różnice między trzema formami pokazuje <a href={route('b2b', lang)}>kalkulator B2B</a>, a mechanikę ryczałtu poradnik o <a href={route('ryczalt', lang)}>ryczałcie ewidencjonowanym</a>.</p>
+
+  <h2>Ile zostaje z każdego dodatkowego tysiąca</h2>
+  <p>Porównanie średnich ukrywa coś ważnego: to, ile zostaje z kolejnej faktury. Przy przychodzie {$(8000)} dodatkowe {$(1000)} daje na skali {$(mg(8000, 'skala'))} na rękę, a na liniowym {$(mg(8000, 'liniowy'))}. Przy {$(20000)} proporcje się odwracają: na skali z tysiąca zostaje {$(mg(20000, 'skala'))}, na liniowym {$(mg(20000, 'liniowy'))}. Na skali każda nadwyżka powyżej progu płaci {F.pitHigh} podatku plus {F.health} zdrowotnej, na liniowym {F.liniowy} plus {F.healthLiniowy}.</p>
+  <p>Ta krańcowa perspektywa przydaje się przy negocjowaniu stawki. Jeśli rozważasz dodatkowy projekt na kilka tysięcy złotych miesięcznie, policz, ile z niego zostanie przy Twojej formie opodatkowania, a nie przy średniej stawce z całego roku.</p>
+
+  <h2>Liniowy na preferencyjnym ZUS</h2>
+  <p>Wariant ZUS nie zmienia zasad liniowego, ale zmienia liczby. Przy przychodzie {$(15000)} i preferencyjnym ZUS podatek wynosi {$(lp.tax)} miesięcznie, a zdrowotna {$2(lp.health)}, wobec {$(lf.tax)} i {$2(lf.health)} na pełnym ZUS. Niższe składki społeczne oznaczają wyższy dochód, więc rośnie i podatek, i zdrowotna. Netto i tak jest wyższe: {$(lp.net)} zamiast {$(lf.net)}. Warianty składek opisuje poradnik o <a href={route('zusb2b', lang)}>ZUS przedsiębiorcy</a>.</p>
+
+  <h2>Jak samodzielnie sprawdzić miesięczną zaliczkę</h2>
+  <p>Na liniowym nikt nie wystawia Ci paska wypłaty, więc to Ty albo biuro rachunkowe liczycie zaliczkę. Schemat jest stały: przychód minus koszty minus składki społeczne minus odliczana część zdrowotnej, razy {F.liniowy}. Przy {$(20000)} przychodu bez kosztów podstawa wynosi około {$(x20.taxBase)}, a podatek {$(x20.tax)} miesięcznie. Jeśli Twoja zaliczka odbiega od tej kwoty o setki złotych, sprawdź najpierw, czy zdrowotna nie jest odliczana ponad limit.</p>
+
+  <h2>Dla kogo liniowy jest naturalnym wyborem</h2>
+  <p>Najczęściej dla osoby, która rozlicza stały kontrakt z jednym klientem, ma przewidywalny dochód wyraźnie powyżej punktu opłacalności i ponosi realne koszty: sprzęt, samochód, biuro, szkolenia. Takie koszty na ryczałcie przepadają, a na liniowym obniżają i podatek, i zdrowotną. Jeśli kosztów prawie nie masz, porównaj jeszcze ryczałt, a jeśli dochód jest niski lub niepewny, zostań przy skali.</p>
+
+  <h2>Najczęstsze błędy przy wyborze liniowego</h2>
+  <p>Wybór liniowego „bo {F.liniowy} to mniej niż {F.pitHigh}”, choć przy umiarkowanym dochodzie w ogóle nie wchodzisz w drugi próg. Odliczanie całej zdrowotnej bez względu na limit {F.liniowyLimit}. Zakładanie, że zdrowotna {F.healthLiniowy} zawsze jest niższa niż {F.health}, mimo minimum {F.healthMin}. Pomijanie kosztów przy porównaniu ze skalą.</p>
+  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('ryczalt', lang)} /></div>
+</GuideLayout>

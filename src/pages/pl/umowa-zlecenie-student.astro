@@ -1,0 +1,72 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const MH = P.minimum_wage.hourly;
+// Cztery osoby, ta sama kwota brutto (moteur).
+const rows = [1500, 2500, 3500, P.minimum_wage.monthly].map((g) => [$(g), $(zlecenie({ gross: g, student: true }).net), $(zlecenie({ gross: g, under26: true }).net), $(zlecenie({ gross: g }).net), $(uop({ gross: g, under26: true }).net)]);
+const g = 3000;
+const s = zlecenie({ gross: g, student: true }), u = zlecenie({ gross: g, under26: true }), o = zlecenie({ gross: g }), e = uop({ gross: g, under26: true });
+const h80 = MH * 80;
+const sum = zlecenie({ gross: 4000, student: true }), job = uop({ gross: 3000, under26: true });
+const small = 150, smallTax = $(Math.round(small * P.pit.rate_low));
+const faqs = [
+  { q: 'Mam 25 lat i studiuję zaocznie. Czy zleceniodawca pobierze mi składki ZUS?', a: `Nie. Art. 6 ust. 4 ustawy o systemie ubezpieczeń społecznych zwalnia z obowiązkowych składek emerytalnej i rentowej zleceniobiorców, którzy są studentami lub uczniami szkół ponadpodstawowych, do ukończenia 26 lat. Przepis nie rozróżnia studiów stacjonarnych i niestacjonarnych. Przy zleceniu na ${$(g)} brutto dostaniesz więc ${$(s.net)}, czyli całą kwotę, o ile zleceniodawca prowadzi firmę.` },
+  { q: 'Obroniłem dyplom, ale mam dopiero 24 lata. Co się zmienia na zleceniu?', a: `Znika zwolnienie ze składek, bo przestajesz być studentem, ale ulga dla młodych działa dalej do 26. urodzin. Zleceniodawca pobierze składki emerytalną ${F.emerytalnaEe} i rentową ${F.rentowaEe} oraz składkę zdrowotną ${F.health}, a podatku nadal nie będzie. Przy ${$(g)} brutto netto spada z ${$(s.net)} do ${$(u.net)}. Dokładny dzień utraty statusu studenta wynika z przepisów o szkolnictwie wyższym.` },
+  { q: 'Studiuję i dorabiam na zleceniu u firmy, w której mam też umowę o pracę. Czy jestem zwolniony z ZUS?', a: `Nie. Art. 8 ust. 2a ustawy systemowej każe traktować jak pracownika osobę, która zawarła zlecenie z własnym pracodawcą albo w ramach zlecenia pracuje na jego rzecz. Przychód ze zlecenia dolicza się wtedy do pensji i jest oskładkowany jak wynagrodzenie z etatu, bez zwolnienia studenckiego. Podatku do 26. urodzin nadal nie zapłacisz, w granicach limitu ${F.youthLimit}.` },
+  { q: 'Czy student na zleceniu może dostać mniej niż minimalna stawka godzinowa?', a: `Nie. Minimalna stawka godzinowa ${F.minHourly} brutto obowiązuje na zleceniu niezależnie od wieku i statusu studenta. Student, który przepracuje 80 godzin, powinien dostać co najmniej ${$(h80)} brutto, a ponieważ nie płaci składek ani podatku, tyle samo trafi na jego konto. Niższa stawka w umowie nie zmienia prawa do pełnego minimum za faktycznie przepracowane godziny.` },
+  { q: `Mam umowę na ${$(small)}. Czy jako student też nie zapłacę podatku?`, a: `Zapłacisz. Umowa do ${F.smallContract} zawarta z osobą, która nie jest pracownikiem płatnika, jest opodatkowana ryczałtem ${F.pitLow} od całej kwoty, a ulga dla młodych nie obejmuje podatku zryczałtowanego. Od ${$(small)} zleceniodawca pobierze ${smallTax}. Składek jako student nadal nie płacisz, więc na rękę dostaniesz ${$(small - Math.round(small * P.pit.rate_low))}.` },
+];
+---
+<GuideLayout lang={lang} id="student" breadcrumbLabel={label('student', lang)} title={`Umowa zlecenie student ${F.year}: bez ZUS i PIT do 26 lat`} h1={`Umowa zlecenie dla studenta w ${F.year} r.: netto równa się brutto`}
+  description={`Umowa zlecenie student ${F.year}: do 26 lat bez składek ZUS, zdrowotnej i podatku, więc ${$(g)} brutto to ${$(s.net)} na rękę. Co zmienia koniec studiów i 26 lat.`}
+  intro={`Student albo uczeń szkoły ponadpodstawowej przed 26. urodzinami nie płaci na zleceniu ani składek ZUS, ani składki zdrowotnej, ani podatku.`}
+  resume={`Student lub uczeń szkoły ponadpodstawowej, który nie skończył 26 lat, dostaje na umowie zlecenie całą kwotę brutto. Art. 6 ust. 4 ustawy o systemie ubezpieczeń społecznych zwalnia go z obowiązkowych składek emerytalnej i rentowej, a skoro nie podlega ubezpieczeniom społecznym z tego tytułu, nie płaci też składki zdrowotnej. Podatku nie ma dzięki uldze dla młodych, która zwalnia przychody ze zlecenia do ${F.youthLimit} rocznie. Przy zleceniu na ${$(g)} brutto student dostaje ${$(s.net)}, rówieśnik, który już nie studiuje, ${$(u.net)}, a osoba po 26. urodzinach ${$(o.net)}. Zwolnienie kończy się z dniem utraty statusu studenta albo z 26. urodzinami, zależnie od tego, co nastąpi wcześniej. Nie obejmuje umowy o pracę ani zlecenia u własnego pracodawcy. Minimalna stawka ${F.minHourly} za godzinę obowiązuje także studentów. Mini-kalkulator porównuje netto studenta z netto innych zleceniobiorców.`}
+  faqs={faqs}
+  related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Pełny kalkulator zlecenia, z opcją studenta.' }, { href: route('youth', lang), name: label('youth', lang), description: `Zerowy PIT do ${F.youthLimit} przychodu przed 26. urodzinami.` }, { href: route('hourly', lang), name: label('hourly', lang), description: `Stawka godzinowa i minimum ${F.minHourly}.` }]}
+  sources={[src('sus_act', lang), src('youth', lang), src('health_act', lang), src('minimum', lang)]}>
+  <div data-chrome><MiniSim client:load kind="student" lang={lang} href={route('zlecenie', lang)} /></div>
+
+  <h2>Trzy zwolnienia, które się sumują</h2>
+  <p>Netto równe brutto to efekt trzech osobnych przepisów, które przypadkiem spotykają się w jednej osobie. Pierwszy to art. 6 ust. 4 ustawy systemowej: zleceniobiorcy będący uczniami szkół ponadpodstawowych lub studentami nie podlegają obowiązkowo ubezpieczeniom emerytalnemu i rentowym do ukończenia 26 lat. Drugi wynika z tego pierwszego: dobrowolne ubezpieczenie chorobowe przysługuje tylko osobom objętym obowiązkowo emerytalnym i rentowym, a ustawa o świadczeniach opieki zdrowotnej nakłada obowiązek ubezpieczenia zdrowotnego na zleceniobiorców spełniających warunki objęcia ubezpieczeniami społecznymi. Student ich nie spełnia, więc składka zdrowotna z tej umowy nie powstaje.</p>
+  <p>Trzeci przepis jest podatkowy. Ulga dla młodych zwalnia z PIT przychody z umów zlecenia otrzymane przed 26. urodzinami, do {F.youthLimit} w roku. Działa bez wniosku, pod warunkiem że zleceniodawca prowadzi działalność gospodarczą (albo jest zarządcą nieruchomości z lokalami na wynajem lub przedsiębiorstwem w spadku). Zlecenie od osoby prywatnej, na przykład korepetycje u sąsiadów zawarte na umowie, z ulgi nie korzysta.</p>
+  <p>Na pasku czy rachunku do umowy wszystkie wiersze potrąceń pokazują więc zero: składki społeczne, zdrowotna i zaliczka na podatek. Jeśli widzisz tam kwoty, zleceniodawca prawdopodobnie nie wie, że studiujesz, albo nie ma aktualnych danych o Twoim wieku.</p>
+
+  <h2>Ile dostaje student, a ile inni zleceniobiorcy</h2>
+  <ContentTable headers={['Brutto', 'Student do 26 lat', 'Nie student, do 26 lat', 'Po 26. urodzinach', 'Student na umowie o pracę']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Kolumna „po 26. urodzinach” zakłada brak dobrowolnej składki chorobowej i brak oświadczenia PIT-2, czyli najczęstszy układ przy zleceniu. Ostatnia kolumna pokazuje studenta zatrudnionego na etacie: podatku nie płaci dzięki uldze dla młodych, ale składki ZUS i zdrowotna są pobierane w pełnej wysokości, bo zwolnienie studenckie dotyczy wyłącznie zleceniobiorców. Przy {$(g)} brutto student na etacie dostaje {$(e.net)}, a student na zleceniu {$(s.net)}.</p>
+  <p>Różnica między studentem a rówieśnikiem, który już nie studiuje, to wyłącznie składki: przy {$(g)} brutto {$(u.social)} społecznych i {$(u.health)} zdrowotnej. Podatku nie płaci żaden z nich.</p>
+
+  <h2>Koniec studiów i 26. urodziny: dwie różne granice</h2>
+  <p>Zwolnienie ze składek wymaga spełnienia dwóch warunków jednocześnie: statusu ucznia lub studenta i wieku poniżej 26 lat. Wystarczy, że jeden z nich przestanie być spełniony. Absolwent w wieku 23 lat traci zwolnienie ze składek, choć wciąż ma ulgę podatkową. Student piątego roku, który skończy 26 lat przed obroną, traci je w dniu urodzin, choć wciąż studiuje.</p>
+  <p>Ulga podatkowa ma tylko jeden warunek, wiek. Obowiązuje do dnia 26. urodzin włącznie i nie zależy od tego, czy studiujesz. Dlatego po obronie dyplomu zleceniodawca zaczyna pobierać składki, ale zaliczki na podatek nadal nie pobiera.</p>
+  <p>Kiedy dokładnie kończy się status studenta, rozstrzygają przepisy o szkolnictwie wyższym, a nie ustawa podatkowa ani systemowa, i tu nie podajemy konkretnej daty. Jeśli kończysz studia w trakcie trwającego zlecenia, poinformuj zleceniodawcę od razu: to on zgłasza Cię do ubezpieczeń i od tej informacji zależy, czy zacznie pobierać składki.</p>
+
+  <h2>Etat zamiast zlecenia i zlecenie u własnego pracodawcy</h2>
+  <p>Na umowie o pracę status studenta nie zmienia nic w składkach. Pracownicy podlegają ubezpieczeniom emerytalnemu i rentowym obowiązkowo, bez wyjątku dla studentów. Student na etacie płaci więc {F.emerytalnaEe} na emerytalną, {F.rentowaEe} na rentową, {F.chorobowa} na chorobową i {F.health} składki zdrowotnej, a od podatku chroni go tylko ulga dla młodych.</p>
+  <p>Pułapką jest zlecenie podpisane z firmą, w której ma się też etat. Art. 8 ust. 2a ustawy systemowej traktuje taką osobę jak pracownika, także wtedy, gdy zlecenie zawarła inna firma, ale praca jest wykonywana na rzecz pracodawcy. Przychód ze zlecenia jest wtedy oskładkowany razem z pensją i zwolnienie studenckie nie działa.</p>
+  <p>Kilka zleceń u różnych firm nie stanowi problemu: student pozostaje zwolniony ze składek przy każdym z nich. Limit ulgi podatkowej {F.youthLimit} jest jednak wspólny dla wszystkich umów w roku.</p>
+
+  <div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('hourly', lang)} /></div>
+
+  <h2>Stawka godzinowa i małe umowy</h2>
+  <p>Minimalna stawka godzinowa {F.minHourly} brutto obowiązuje na zleceniu każdego, także studenta. Przy 80 godzinach w miesiącu to co najmniej {$(h80)} brutto, a u studenta ta sama kwota netto. Liczy się czas faktycznie przepracowany, więc warto prowadzić własną ewidencję godzin, zwłaszcza przy pracy zmianowej w gastronomii czy handlu.</p>
+  <p>Wyjątek od „netto równa się brutto” to umowy do {F.smallContract} zawierane z osobą, która nie jest pracownikiem płatnika. Od takiej kwoty pobiera się ryczałt {F.pitLow} od całości, a ulga dla młodych podatku zryczałtowanego nie obejmuje. Przy umowie na {$(small)} student dostanie {$(small - Math.round(small * P.pit.rate_low))}. Mini-kalkulator i tabela na tej stronie zakładają umowy powyżej tej granicy.</p>
+
+  <h2>Przykład: wakacje na zleceniu, od września etat</h2>
+  <p>Studentka w wieku 21 lat pracuje w lipcu i sierpniu na zleceniu w sieci restauracji za {$(4000)} brutto miesięcznie. Co miesiąc na konto trafia {$(sum.net)}: bez składek i bez podatku. We wrześniu podpisuje umowę o pracę na część etatu za {$(3000)} brutto. Podatku nadal nie płaci dzięki uldze dla młodych, ale pracodawca pobiera już składki społeczne i zdrowotną, więc na rękę zostaje {$(job.net)}.</p>
+  <p>W całym roku jej przychody pozostają daleko poniżej {F.youthLimit}, więc ulga podatkowa się nie wyczerpie. Zmiana we wrześniu dotyczy wyłącznie składek, a razem z nimi początku stażu emerytalnego i prawa do zasiłku chorobowego. Gdyby od września zatrudniła ją ta sama sieć restauracji, każde kolejne zlecenie u niej byłoby oskładkowane jak pensja, zgodnie z art. 8 ust. 2a.</p>
+  <p>Przy takim układzie warto pilnować dokumentów. Zleceniodawca musi wiedzieć, że jesteś studentką lub studentem, a pracodawca, że masz mniej niż 26 lat; oba fakty zmieniają, co zobaczysz na rachunku i na pasku wypłaty.</p>
+
+  <h2>Czego student na zleceniu nie ma</h2>
+  <p>Brak składek ma swoją cenę. Od takiego zlecenia nie trafiają pieniądze na konto emerytalne w ZUS, a bez ubezpieczenia chorobowego nie ma zasiłku chorobowego w razie choroby. Ubezpieczenie zdrowotne z tej umowy też nie powstaje, więc prawo do leczenia trzeba mieć z innego tytułu. Dla większości studentów to rozsądna wymiana, ale przy dłuższej pracy warto ją świadomie policzyć.</p>
+  <p>Pełny rachunek dla zleceniobiorców w każdym wieku robi <a href={route('zlecenie', lang)}>kalkulator umowy zlecenia</a>, a szczegóły ulgi podatkowej opisuje poradnik o <a href={route('youth', lang)}>uldze dla młodych</a>.</p>
+</GuideLayout>

@@ -1,0 +1,79 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const T = P.pit;
+const raw = (b: number) => Math.min(b, T.threshold) * T.rate_low + Math.max(0, b - T.threshold) * T.rate_high;
+const due = (b: number) => Math.max(0, raw(b) - T.tax_reducing_amount_year);
+const rows = [2000, 3000, P.minimum_wage.monthly, 8000, 15000, 25000].map((g) => { const b = uopYear({ gross: g }).total.taxBase; return [$(g), $(b), $(raw(b)), $(due(b)), $(raw(b) - due(b))]; });
+const lowG = 2000, low = uopYear({ gross: lowG }), lowNo = uopYear({ gross: lowG, pit2: false });
+const lowBase = low.total.taxBase, lowDue = due(lowBase);
+const g6 = 6000, a6 = uop({ gross: g6 }), b6 = uop({ gross: g6, pit2: false });
+const big = 25000, bigB = uopYear({ gross: big }).total.taxBase;
+const z = zlecenie({ gross: 3000, pit2: true }), z0 = zlecenie({ gross: 3000 });
+const sk = b2b({ revenue: 8000, form: 'skala' }), li = b2b({ revenue: 8000, form: 'liniowy' });
+const sk6 = b2b({ revenue: 6000, form: 'skala' }), li6 = b2b({ revenue: 6000, form: 'liniowy' });
+const lowAnnualGross = $(lowG * 12);
+const secondFixed = $(T.threshold * T.rate_low - T.tax_reducing_amount_year);
+const faqs = [
+  { q: `Does the ${F.freeAmount} allowance mean the first ${F.freeAmount} I earn each year is tax-free?`, a: `Not month by month. Nobody earns a tax-free "first ${F.freeAmount}" and then pays advances afterwards. The allowance works as a fixed ${F.reducingYear} deducted from tax for the whole year, spread at ${F.reducingMonth} a month if you file PIT-2. The effect is as if ${F.freeAmount} of income were untaxed, but only at the ${F.pitLow} rate.` },
+  { q: `Do I lose the tax-free allowance above ${F.threshold} of income?`, a: `No. The Polish scale does not taper the allowance at higher incomes. In the second bracket, tax is ${secondFixed} plus ${F.pitHigh} of the excess, and that first figure already includes the ${F.reducingYear} reduction. On ${$(big)} gross a month, with an annual base of ${$(bigB)}, the relief is worth exactly as much as on the minimum wage.` },
+  { q: `I earn less than ${F.freeAmount} a year. Do I get my tax advances back?`, a: `Yes. If income after contributions and costs does not exceed ${F.freeAmount}, tax for the year is zero and the advances withheld come back once you file the PIT-37 return. On ${$(lowG)} gross a month the annual base is ${$(lowBase)}. Without PIT-2 the employer would withhold ${$(lowNo.total.pit)} over the year; with PIT-2, ${$(low.total.pit)}.` },
+  { q: `Why do people talk about ${F.reducingYear} when the allowance is ${F.freeAmount}?`, a: `They are two ways of writing the same relief. The ${F.freeAmount} allowance multiplied by the first-bracket rate of ${F.pitLow} gives ${F.reducingYear}, the tax-reducing amount (kwota zmniejszająca podatek). The Act (article 27(1)) uses that second figure: tax is ${F.pitLow} of the base minus ${F.reducingYear}. Per month that is ${F.reducingMonth}.` },
+  { q: 'Does the tax-free allowance apply on the flat tax or lump-sum tax?', a: `No. The tax-reducing amount is part of the tax scale in article 27 of the PIT Act. The flat tax is ${F.liniowy} of the base (article 30c), and the lump-sum tax is a percentage of revenue under its own act, both without the reduction. On revenue of ${$(8000)} a month with no costs, a sole trader on the scale pays ${$(sk.tax)} tax a month on average, against ${$(li.tax)} on the flat tax.` },
+];
+---
+<GuideLayout lang={lang} id="allowance" breadcrumbLabel={label('allowance', lang)}
+  title={`Tax-Free Allowance ${F.year} in Poland: ${F.freeAmount}, ${F.reducingYear} Off`}
+  h1={`Tax-free allowance in Poland ${F.year}: how it works and what it is worth`}
+  description={`The Polish tax-free allowance for ${F.year} is ${F.freeAmount}: ${F.reducingYear} less tax a year, ${F.reducingMonth} in each payslip with PIT-2. No taper at high incomes. Calculator.`}
+  intro={`The tax-free allowance (kwota wolna od podatku) is ${F.freeAmount} in ${F.year}, which means ${F.reducingYear} less tax a year for everyone taxed on the progressive scale.`}
+  resume={`The Polish tax-free allowance for ${F.year} is ${F.freeAmount} of income. In practice it works as a tax-reducing amount of ${F.reducingYear} a year, because that is ${F.pitLow} of ${F.freeAmount}. Article 27 of the PIT Act spells it out: tax in the first bracket is ${F.pitLow} of the base minus ${F.reducingYear}. Everyone taxed on the progressive scale gets it, which covers employees, mandate and specific-work contractors and sole traders on the scale; there is none on the flat tax or the lump-sum tax. It does not taper at high incomes: in the second bracket, tax is ${secondFixed} plus ${F.pitHigh} of the excess, with the relief already built in. On your payslip it shows up as a tax advance ${F.reducingMonth} lower each month if you have given your employer the PIT-2 form; without it, you only get the money back in your annual return. Anyone with income below ${F.freeAmount} pays no income tax at all. The calculator shows what the allowance is worth in your pay.`}
+  faqs={faqs}
+  related={[{ href: route('pit2', lang), name: label('pit2', lang), description: `The statement that gives you ${F.reducingMonth} a month.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh}: when the second bracket starts.` }, { href: route('youth', lang), name: label('youth', lang), description: `Exemption up to ${F.youthLimit} for people under 26.` }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>{F.freeAmount} and {F.reducingYear}: one relief, two numbers</h2>
+  <p>People talk about a {F.freeAmount} allowance; the Act and your payslip show {F.reducingYear} or {F.reducingMonth}. It is the same relief. The law does not exempt the first {F.freeAmount} from tax; it tells you to subtract a fixed {F.reducingYear} from tax calculated at {F.pitLow}. Since {F.pitLow} of {F.freeAmount} is exactly {F.reducingYear}, the outcome is as if {F.freeAmount} of income were tax-free. Hence the everyday name.</p>
+  <p>The way it is written has practical consequences. The relief has a fixed value in złoty rather than in income, so it does not depend on how much you earn or on the time of year. There are no "tax-free months" at the start of the year followed by taxed ones: with PIT-2, every payslip gets the same slice of the relief.</p>
+
+  <h2>What the relief is worth at different salaries</h2>
+  <p>The table shows annual tax on the scale with and without the relief, for several steady salaries on an employment contract with {F.kup} costs. The base is income after ZUS contributions and costs.</p>
+  <ContentTable headers={['Monthly gross', 'Annual base', 'Tax without relief', 'Tax with relief', 'Value of relief']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Beyond a certain level the relief is worth a flat {F.reducingYear}. It is worth less only on the lowest incomes, where tax at {F.pitLow} is below {F.reducingYear}: the relief wipes out the tax, but anything left over is lost, because tax cannot go negative. The tax-reducing amount is not a payment from the tax office.</p>
+
+  <h2>No taper in the second bracket</h2>
+  <p>In many countries a personal allowance shrinks as income rises. Not in Poland in {F.year}. For income above {F.threshold}, the table in article 27(1) gives tax of {secondFixed} plus {F.pitHigh} of the excess. That fixed part is {F.pitLow} of {F.threshold} minus {F.reducingYear}, so the relief survives in full. On a salary of {$(big)} gross, with an annual base of {$(bigB)}, the tax saved thanks to the allowance is the same as on the minimum wage. The second bracket is covered in our guide to <a href={route('brackets', lang)}>income tax brackets</a>.</p>
+
+  <h2>How the relief reaches your payslip</h2>
+  <p>Your employer can subtract {F.reducingMonth} from each month's tax advance only if you have given it the PIT-2 statement. On {$(g6)} gross, the advance is then {$(a6.pit)} instead of {$(b6.pit)}, and take-home pay rises from {$(b6.net)} to {$(a6.net)}. Without the statement the relief is not lost, it comes back in one go as a refund after you file your annual return. How to fill in the statement, how many payers to give it to and how to split it are covered on our page about the <a href={route('pit2', lang)}>PIT-2 form</a>.</p>
+  <p>The annual relief is available once, whatever the number of payers. If you work for two employers and both deduct the full {F.reducingMonth}, you will have claimed twice your entitlement over the year and will pay the difference with your return.</p>
+
+  <h2>Income under {F.freeAmount}: zero tax</h2>
+  <p>Anyone whose income for the year does not exceed {F.freeAmount} pays no tax on the scale. Income here means revenue minus ZUS contributions and costs, so gross pay can be noticeably higher. On {$(lowG)} gross a month, {lowAnnualGross} a year, the taxable base is {$(lowBase)} and tax for the year is {$(lowDue)}.</p>
+  <p>During the year, though, the employer still withholds advances: {$(lowNo.total.pit)} in total without PIT-2, {$(low.total.pit)} with it. You recover the difference between advances withheld and tax due as an overpayment in the PIT-37 return (zwrot podatku from the urząd skarbowy, the tax office). This often applies to part-time workers, students over 26 and people who worked only part of the year.</p>
+
+  <h2>Who the allowance covers</h2>
+  <p>The relief belongs to the tax scale, so it covers any income taxed on the scale: employment, mandate contracts, specific-work contracts and business income where the owner has not chosen another regime. You can file PIT-2 on a mandate contract too: on a {$(3000)} gross contract it lifts take-home pay from {$(z0.net)} to {$(z.net)}. The exception is very small contracts of up to {F.smallContract} with someone who is not the payer's employee: the payer then withholds a flat {F.pitLow} of revenue and does not apply the relief.</p>
+  <p>A sole trader on the scale benefits from the same tax-reducing amount: on revenue of {$(6000)} a month with no costs, tax on the scale averages {$(sk6.tax)} a month against {$(li6.tax)} on the flat tax. The {F.liniowy} flat tax and the lump-sum tax on recorded revenue do not include it. That is one reason the scale often works out better than the flat tax at lower incomes. The <a href={route('b2b', lang)}>B2B calculator</a> compares the regimes.</p>
+
+  <h2>Spotting the allowance on your payslip</h2>
+  <p>Payslips rarely show the allowance as a separate line. You see it indirectly in the tax advance: some payroll systems print a "kwota zmniejszająca" line of {F.reducingMonth}, others simply show the advance after the reduction. A quick check in the first bracket: multiply the taxable base on your payslip by {F.pitLow} and subtract {F.reducingMonth}. If the result matches the advance to the złoty, your employer is applying the relief. If the advance is {F.reducingMonth} higher, the relief is waiting for your annual return, and over the year you go without {F.reducingYear} of cash flow.</p>
+
+  <h2>Three misconceptions</h2>
+  <p>First, "the allowance is for low earners". Everyone taxed on the scale gets it, and its value in złoty is identical on the minimum wage and on a high salary. Second, "the allowance rises with the minimum wage". The {F.freeAmount} figure is written into the PIT Act and is not linked to the minimum wage; in {F.year} it is the same all year. Third, "without PIT-2 I lose the relief". You do not lose it, you receive it later, as a refund in your annual return.</p>
+
+  <h2>The allowance and the youth relief</h2>
+  <p>These are two different mechanisms. The youth relief exempts revenue up to {F.youthLimit} a year before any tax is calculated; the tax-reducing amount lowers tax on whatever income remains taxable. Someone under 26 with revenue above the limit therefore uses both: the exemption covers revenue up to the limit, and {F.reducingYear} comes off the tax on the excess. The second calculator shows what the youth relief alone is worth.</p>
+  <div data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('youth', lang)} /></div>
+  <p>Eligibility, including the contract types the exemption covers, is explained on our page about the <a href={route('youth', lang)}>youth tax relief</a>.</p>
+</GuideLayout>

@@ -1,0 +1,82 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, b2bZusMonth, sickPay, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const tot = (z: ReturnType<typeof b2bZusMonth>) => z.emerytalna + z.rentowa + z.chorobowa + z.wypadkowa + z.fp;
+// Tableau calculé par le moteur : les trois niveaux de cotisations sociales, avec et sans chorobowa.
+const V = [['Pełny ZUS', 'full'], ['Preferencyjny ZUS', 'preferential'], ['Ulga na start', 'start']] as const;
+const rows = V.flatMap(([n, k]) => [true, false].map((s) => { const z = b2bZusMonth(k, s); return [`${n}${k === 'start' ? '' : s ? ', z chorobowym' : ', bez chorobowego'}`, $2(z.base), $2(z.emerytalna + z.rentowa), $2(z.wypadkowa), $2(z.chorobowa), $2(z.fp), $2(tot(z))]; })).filter((r, i) => i !== 5);
+const full = b2bZusMonth('full', true), fullNo = b2bZusMonth('full', false), pref = b2bZusMonth('preferential', true), prefNo = b2bZusMonth('preferential', false);
+const yearFull = tot(full) * 12, yearPref = tot(pref) * 12;
+// Effet sur le net : 10 000 zł de przychód au liniowy selon le niveau de ZUS.
+const nets = (['full', 'preferential', 'start'] as const).map((k) => b2b({ revenue: 10000, form: 'liniowy', zus: k }));
+const sick = sickPay({ gross: P.b2b.zus_base_full, days: 30 }), sickPref = sickPay({ gross: P.b2b.zus_base_preferential, days: 30 });
+const taxFull = b2b({ revenue: 15000, form: 'liniowy', zus: 'full' }).tax, taxStart = b2b({ revenue: 15000, form: 'liniowy', zus: 'start' }).tax;
+const startHealthRyc = P.b2b.health.ryczalt_bands[0].monthly;
+// Rapports des assiettes, recalculés depuis les paramètres (30 % du minimum, 60 % du salaire moyen prévu).
+const prefShare = pct(P.b2b.zus_base_preferential / P.minimum_wage.monthly, lang), fullShare = pct(P.b2b.zus_base_full / P.average_wage.forecast_2026, lang);
+// Âges à partir desquels FP et FS ne sont plus dus (page ZUS « Wysokość składek », note 3 ; params-pl-2026.md §2).
+const FP_AGE = { women: 55, men: 60 };
+// Wypadkowa aux bornes légales sur l'assiette pleine, et charge totale ZUS + santé à 15 000 zł selon la forme d'imposition.
+const wypMin = P.b2b.zus_base_full * P.zus.wypadkowa_min, wypMax = P.b2b.zus_base_full * P.zus.wypadkowa_max;
+const at15 = (['skala', 'liniowy', 'ryczalt'] as const).map((f) => { const x = b2b({ revenue: 15000, form: f }); return { social: x.social + x.fp, health: x.health }; });
+const faqs = [
+  { q: 'Czy na uldze na start płacę cokolwiek do ZUS?', a: `Tak, składkę zdrowotną. Ulga na start zwalnia wyłącznie ze składek na ubezpieczenia społeczne. Zdrowotna zależy od formy opodatkowania: na skali i podatku liniowym wynosi co najmniej ${F.healthMin} miesięcznie (${F.healthMinJan} za styczeń ${F.year} r.), a na ryczałcie przy przychodzie do ${F.ryczaltLimit1} rocznie ${F.ryczaltBand1}. Kto o niej zapomni, ma zaległość wobec ZUS, choć był przekonany, że w tym okresie nic nie płaci.` },
+  { q: 'Ile kosztuje dobrowolne chorobowe przedsiębiorcy i co z niego mam?', a: `Składka chorobowa to ${F.chorobowa} podstawy: ${$2(full.chorobowa)} miesięcznie przy pełnym ZUS i ${$2(pref.chorobowa)} przy preferencyjnym. W zamian masz prawo do zasiłku chorobowego, który wynosi ${F.sickRate} podstawy po odjęciu ${F.sickReduction}. Przy podstawie ${F.b2bBaseFull} miesiąc na L4 to około ${$(sick.benefit)} brutto zasiłku, przy preferencyjnej około ${$(sickPref.benefit)}.` },
+  { q: 'Mam 61 lat i prowadzę firmę. Czy nadal płacę Fundusz Pracy?', a: `Nie. Według ZUS składek na Fundusz Pracy i Fundusz Solidarnościowy nie opłaca się od miesiąca, w którym kobieta ma ${FP_AGE.women} lat, a mężczyzna ${FP_AGE.men}. Przy pełnym ZUS to ${$2(full.fp)} miesięcznie mniej, czyli ${$(full.fp * 12)} w roku. Na preferencyjnym ZUS nic się nie zmienia, bo od podstawy ${F.b2bBasePref} ZUS w ogóle nie nalicza FP i FS.` },
+  { q: 'Czy składki ZUS przedsiębiorcy obniżają podatek?', a: `Tak. Składki społeczne odlicza się od dochodu na skali i podatku liniowym, a na ryczałcie od przychodu. Przy przychodzie ${$(15000)} miesięcznie na podatku liniowym pełny ZUS obniża podatek z ${$(taxStart)} (na uldze na start) do ${$(taxFull)} miesięcznie. Każda złotówka składek kosztuje więc realnie mniej o stawkę podatku, ale nigdy się nie zwraca w całości.` },
+  { q: 'Co to jest Mały ZUS plus i ile wtedy płacę?', a: `To wariant, w którym podstawa składek społecznych zależy od dochodu z poprzedniego roku. ZUS podaje, że nie może być niższa niż ${F.b2bBasePref} (${prefShare} płacy minimalnej) i wyższa niż ${F.b2bBaseFull} (${fullShare} prognozowanego przeciętnego wynagrodzenia). Składki mieszczą się więc między ${F.b2bZusPrefNoSick} a ${F.b2bZusFullNoSick} bez chorobowego. Dokładną podstawę wylicza się według przepisów ZUS, czego nasz kalkulator nie robi.` },
+];
+---
+<GuideLayout lang={lang} id="zusb2b" breadcrumbLabel={label('zusb2b', lang)} title={`ZUS przedsiębiorcy ${F.year}: od ${F.b2bZusPref} do ${F.b2bZusFull}`} h1={`ZUS przedsiębiorcy w ${F.year} r.: pełny, preferencyjny i ulga na start`}
+  description={`ZUS przedsiębiorcy w ${F.year} r.: pełne składki ${F.b2bZusFull} miesięcznie z chorobowym, preferencyjne ${F.b2bZusPref}, ulga na start bez społecznych. Podstawy i warianty.`}
+  intro="Kto prowadzi jednoosobową działalność, sam płaci składki na swoje ubezpieczenia społeczne, a ich wysokość zależy od etapu działalności, nie od zarobków."
+  resume={`W ${F.year} r. przedsiębiorca na pełnym ZUS płaci od podstawy ${F.b2bBaseFull} składki społeczne ${F.b2bZusFull} miesięcznie z dobrowolnym chorobowym albo ${F.b2bZusFullNoSick} bez niego, razem z Funduszem Pracy i Solidarnościowym. Na preferencyjnym ZUS podstawa wynosi ${F.b2bBasePref}, czyli ${prefShare} płacy minimalnej, a składki ${F.b2bZusPref} z chorobowym lub ${F.b2bZusPrefNoSick} bez, bo od tej podstawy nie płaci się FP ani FS. Ulga na start zwalnia ze wszystkich składek społecznych, ale nie ze zdrowotnej. Mały ZUS plus daje podstawę zależną od dochodu, mieszczącą się między tymi dwiema kwotami. Składka wypadkowa jest liczona według stawki ${F.wypadkowa}, a chorobowa ${F.chorobowa} jest dobrowolna. Do tego dochodzi składka zdrowotna, której wysokość zależy od formy opodatkowania: minimum ${F.healthMin} miesięcznie na skali i liniowym, od ${F.ryczaltBand1} na ryczałcie. Mini-kalkulator poniżej pokazuje składki dla wybranego wariantu.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: 'Kalkulator B2B', description: 'Netto na skali, liniowym i ryczałcie z wybranym ZUS.' }, { href: route('health', lang), name: label('health', lang), description: `Zdrowotna na etacie i w firmie: ${F.health}, ${F.healthLiniowy} i ryczałt.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `Kiedy ${F.liniowy} opłaca się bardziej niż skala.` }]}
+  sources={[src('zus_b2b', lang), src('sus_act', lang), src('budget', lang), src('sickness', lang)]}>
+  <div data-chrome><MiniSim client:load kind="zusb2b" lang={lang} href={route('b2b', lang)} /></div>
+
+  <h2>Składki miesięczne w {F.year} r. pozycja po pozycji</h2>
+  <ContentTable headers={['Wariant', 'Podstawa', 'Emerytalna i rentowa', 'Wypadkowa', 'Chorobowa', 'FP i FS', 'Razem']} align={['l', 'r', 'r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Kwoty pochodzą wprost ze stawek: emerytalna {F.emerytalnaTotal}, rentowa {F.rentowaTotal}, wypadkowa {F.wypadkowa}, chorobowa {F.chorobowa} oraz FP i FS łącznie {F.fpfs}. Przedsiębiorca płaci całość sam, bez podziału na część pracownika i pracodawcy, dlatego stawka emerytalnej ({F.emerytalnaTotal}) jest dwa razy wyższa niż potrącenie na pasku wypłaty etatowca ({F.emerytalnaEe}). W skali roku pełny ZUS z chorobowym to {$(yearFull)}, preferencyjny {$(yearPref)}.</p>
+
+  <h2>Pełny ZUS: podstawa {F.b2bBaseFull}</h2>
+  <p>Podstawa pełnych składek to {fullShare} prognozowanego przeciętnego wynagrodzenia, które na {F.year} r. ustalono na {F.avgForecast}. Nie ma znaczenia, czy firma zarabia {$(8000)} czy {$(80000)} miesięcznie: składki społeczne są takie same. Dla osoby z wysokim przychodem to duża zaleta w porównaniu z etatem, gdzie emerytalna i rentowa rosną razem z pensją. Dla kogoś, kto dopiero buduje klientów, {F.b2bZusFull} miesięcznie bywa za to najcięższą pozycją w budżecie. Przy przychodzie {$(8000)} składki społeczne z chorobowym pochłaniają około {pct(Math.round(tot(full) / 8000 * 100) / 100, lang)} wpływów, zanim w ogóle policzysz podatek i zdrowotną.</p>
+  <p>Ta sama płaskość działa na niekorzyść w przyszłości. Emerytura zależy od zgromadzonych składek, a przy wysokim dochodzie te liczone od {F.b2bBaseFull} są wyraźnie niższe niż u pracownika z podobną pensją. Część przedsiębiorców uzupełnia to oszczędzaniem na własną rękę, bo różnica w przyszłym świadczeniu narasta z każdym rokiem prowadzenia firmy.</p>
+
+  <h2>Preferencyjny ZUS: niższa podstawa, bez Funduszu Pracy</h2>
+  <p>Preferencyjna podstawa {F.b2bBasePref} odpowiada {prefShare} płacy minimalnej ({F.minWage}). Emerytalna i rentowa spadają proporcjonalnie, a w zestawieniu ZUS na {F.year} r. nie ma od niej w ogóle Funduszu Pracy ani Solidarnościowego. Dlatego różnica między pełnym a preferencyjnym ZUS bez chorobowego to aż {$2(tot(fullNo) - tot(prefNo))} miesięcznie.</p>
+  <p>Preferencyjny ZUS nie zmienia składki zdrowotnej. To częste rozczarowanie: ktoś przechodzi na niższe składki i oczekuje, że cała danina do ZUS spadnie o trzy czwarte, a zdrowotna zostaje taka sama, bo liczy się ją od dochodu albo przychodu, nie od podstawy społecznej.</p>
+
+  <h2>Ulga na start: tylko składki społeczne</h2>
+  <p>W okresie ulgi na start nie płacisz emerytalnej, rentowej, wypadkowej ani chorobowej. Oznacza to także brak ochrony: bez składki chorobowej nie ma zasiłku chorobowego, więc tydzień choroby to tydzień bez przychodu. Zdrowotną płacisz od pierwszego miesiąca. Na ryczałcie przy niewielkim przychodzie to {$2(startHealthRyc)} miesięcznie, na skali i liniowym co najmniej {F.healthMin}.</p>
+  <p>W tym okresie niższe są też odliczenia od podatku, bo nie ma czego odliczać. Przy przychodzie {$(10000)} miesięcznie na podatku liniowym netto wynosi {$(nets[2].net)} na uldze na start, {$(nets[1].net)} na preferencyjnym i {$(nets[0].net)} na pełnym ZUS. Skok między ulgą na start a pełnym ZUS jest mniejszy niż kwota składek, bo część wraca w niższym podatku.</p>
+
+  <h2>Mały ZUS plus: podstawa pośrodku</h2>
+  <p>Mały ZUS plus to wariant dla osób z niższym dochodem, w którym podstawa składek społecznych zależy od dochodu z poprzedniego roku. Według ZUS nie może ona być niższa niż {F.b2bBasePref} i wyższa niż {F.b2bBaseFull}. Nie podajemy wzoru na podstawę, bo zasady jej ustalania i warunki skorzystania z ulgi trzeba sprawdzić w przepisach i na stronie ZUS. Nasz kalkulator B2B obsługuje pełny ZUS, preferencyjny i ulgę na start, ale nie Mały ZUS plus.</p>
+
+  <h2>Dobrowolne chorobowe: kiedy się opłaca</h2>
+  <p>Składka chorobowa {F.chorobowa} kosztuje {$2(full.chorobowa)} miesięcznie przy pełnym ZUS i {$2(pref.chorobowa)} przy preferencyjnym. Zasiłek liczy się od podstawy pomniejszonej o {F.sickReduction} i wynosi {F.sickRate}. Przy pełnej podstawie miesiąc zwolnienia daje około {$(sick.benefit)} zasiłku, przy preferencyjnej około {$(sickPref.benefit)}. Podstawa wymiaru dobrowolnego chorobowego nie może przekroczyć {F.money(P.b2b.sickness_base_max, 2)} miesięcznie.</p>
+  <p>Rachunek jest prosty: roczny koszt składki przy pełnym ZUS to {$(full.chorobowa * 12)}, czyli mniej niż połowa zasiłku za jeden miesiąc choroby. Dla osoby, która nie ma oszczędności na kilka tygodni bez przychodu, składka jest tanim zabezpieczeniem.</p>
+
+  <h2>Wypadkowa {F.wypadkowa}: dlaczego akurat ta stawka</h2>
+  <p>Ustawa przewiduje składkę wypadkową od {F.wypadkowaMin} do {F.wypadkowaMax} podstawy. ZUS w swoich wyliczeniach na {F.year} r. przyjmuje {F.wypadkowa} i zaznacza, że jeśli obowiązuje Cię inna stopa, kwota będzie inna. Przy pełnej podstawie rozpiętość wynosi od {$2(wypMin)} do {$2(wypMax)} miesięcznie, więc dla większości jednoosobowych firm to niewielka pozycja. Warto jednak sprawdzić własną stopę, zanim przepiszesz kwotę z tabeli do przelewu, bo pomyłka o kilka groszy na składce tworzy niedopłatę.</p>
+
+  <h2>Pełny obraz: ZUS i zdrowotna razem</h2>
+  <p>Składki społeczne to tylko część miesięcznego rachunku. Przy przychodzie {$(15000)} miesięcznie, bez kosztów i na pełnym ZUS bez chorobowego, łączne obciążenie wygląda tak: na skali {$(at15[0].social)} społecznych i {$(at15[0].health)} zdrowotnej, na podatku liniowym {$(at15[1].social)} i {$(at15[1].health)}, na ryczałcie {$(at15[2].social)} i {$(at15[2].health)}. Społeczne są wszędzie identyczne, a cała różnica siedzi w zdrowotnej, która na skali wynosi {F.health} dochodu, na liniowym {F.healthLiniowy}, a na ryczałcie jest kwotą stałą zależną od rocznego przychodu.</p>
+  <p>Dlatego wybór formy opodatkowania i wybór wariantu ZUS to dwie osobne decyzje. Pierwsza zmienia zdrowotną i podatek, druga składki społeczne. Kalkulator B2B pozwala ustawić obie naraz i od razu zobaczyć netto. Zmieniając wariant ZUS przy tej samej formie opodatkowania, zobaczysz też, jak niższe składki społeczne podnoszą jednocześnie podatek i zdrowotną.</p>
+
+  <h2>Najczęstsze błędy przy ZUS w firmie</h2>
+  <p>Mylenie ulgi na start z całkowitym zwolnieniem z ZUS i pominięcie zdrowotnej. Liczenie Funduszu Pracy od preferencyjnej podstawy. Przekonanie, że wyższy przychód podnosi składki społeczne na pełnym ZUS. Dalej: porównywanie oferty B2B z etatem bez doliczenia {F.b2bZusFullNoSick} składek i zdrowotnej. Pełne porównanie obu form, z urlopem i chorobowym, znajdziesz w poradniku <a href={route('compare', lang)}>B2B czy umowa o pracę</a>.</p>
+  <div data-chrome><MiniSim client:load kind="health" lang={lang} href={route('health', lang)} /></div>
+</GuideLayout>

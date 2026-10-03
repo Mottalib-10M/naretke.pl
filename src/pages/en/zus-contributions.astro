@@ -1,0 +1,91 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, uopYear, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const Z = P.zus;
+const G = 8000;
+const u = uop({ gross: G });
+const erRate = pct(Z.emerytalna_employer + Z.rentowa_employer + Z.wypadkowa_basic + Z.fp + Z.fs + Z.fgsp, lang);
+const allRate = pct(Z.emerytalna_employee + Z.rentowa_employee + Z.chorobowa_employee + Z.emerytalna_employer + Z.rentowa_employer + Z.wypadkowa_basic + Z.fp + Z.fs + Z.fgsp, lang);
+const rateRows = [
+  ['Pension (emerytalna)', F.emerytalnaEe, F.emerytalnaEr, F.emerytalnaTotal, $2(u.emerytalna), $2(u.er.emerytalna)],
+  ['Disability (rentowa)', F.rentowaEe, F.rentowaEr, F.rentowaTotal, $2(u.rentowa), $2(u.er.rentowa)],
+  ['Sickness (chorobowa)', F.chorobowa, '0 %', F.chorobowa, $2(u.chorobowa), $2(0)],
+  ['Accident (wypadkowa)', '0 %', F.wypadkowa, F.wypadkowa, $2(0), $2(u.er.wypadkowa)],
+  ['Labour Fund + Solidarity Fund', '0 %', F.fpfs, F.fpfs, $2(0), $2(u.er.fp)],
+  ['FGŚP', '0 %', F.fgsp, F.fgsp, $2(0), $2(u.er.fgsp)],
+  ['Total', F.socialEe, erRate, allRate, $2(u.social), $2(u.er.total)],
+];
+const wypLow = uop({ gross: G, wypadkowaRate: Z.wypadkowa_min }).er.wypadkowa, wypHigh = uop({ gross: G, wypadkowaRate: Z.wypadkowa_max }).er.wypadkowa;
+const z = zlecenie({ gross: 4000 }), zs = zlecenie({ gross: 4000, sickness: true }), zst = zlecenie({ gross: 4000, student: true });
+const big = 30000, bigY = uopYear({ gross: big }), bigM = capMonth(big);
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const dec = bigY.months[11];
+const capMult = String(Math.round(Z.annual_cap / P.average_wage.forecast_2026));
+const Z4 = $(4000);
+const yr = [P.minimum_wage.monthly, G, 15000].map((g) => { const y = uopYear({ gross: g }); return { g, ee: y.total.social, er: y.total.erTotal, pit: y.total.pit }; });
+const faqs = [
+  { q: 'What percentage of gross pay goes to ZUS for an employee?', a: `On an employment contract, ${F.socialEe} of gross: ${F.emerytalnaEe} pension, ${F.rentowaEe} disability and ${F.chorobowa} sickness. At ${$(G)} gross that is ${$2(u.social)} a month. The ${F.health} health contribution is not one of the ZUS social contributions; it is calculated separately on gross minus those three. The employer pays roughly another ${erRate} of gross from its own pocket.` },
+  { q: `Do I still pay sickness contributions after passing the ${F.cap} cap?`, a: `Yes. The ${F.cap} annual cap covers only the pension and disability contributions. The ${F.chorobowa} sickness contribution is charged on full gross all year, and so is the health contribution. On ${$(big)} gross a month the cap is crossed in ${bigM ? MONTHS[bigM - 1] : 'no month this year'}, and by December the only ZUS social contribution left is sickness: ${$2(dec.chorobowa)}.` },
+  { q: 'What accident insurance rate does my employer pay?', a: `The Social Insurance System Act allows a rate between ${F.wypadkowaMin} and ${F.wypadkowaMax} of the contribution base, and the actual figure depends on the business. ZUS uses ${F.wypadkowa} in its worked examples. At ${$(G)} gross, the extremes mean ${$2(wypLow)} or ${$2(wypHigh)} a month. The employer pays it in full, so it never changes your take-home pay.` },
+  { q: 'Is sickness insurance compulsory on a mandate contract?', a: `No. A contractor who is compulsorily covered by pension and disability insurance can join sickness insurance voluntarily, on request (art. 11(2) of the Social Insurance System Act). On a ${Z4} gross contract it costs ${$2(zs.chorobowa)} a month and lowers take-home pay from ${$(z.net)} to ${$(zs.net)}. In return you become entitled to sickness benefit.` },
+  { q: 'Who pays the Labour Fund and the Solidarity Fund?', a: `Only the employer, from its own funds. The ${F.year} Budget Act sets the Labour Fund (Fundusz Pracy) at ${F.fp} and the Solidarity Fund (Fundusz Solidarnościowy) at ${F.fs} of the pension and disability base, ${F.fpfs} together. On top comes ${F.fgsp} for the wage guarantee fund, FGŚP. At ${$(G)} gross the funds cost the company ${$2(u.er.fp + u.er.fgsp)} a month.` },
+];
+---
+<GuideLayout lang={lang} id="zus" breadcrumbLabel={label('zus', lang)}
+  title={`ZUS Contributions ${F.year}: Employee and Employer Rates, Cap`}
+  h1={`ZUS contributions in ${F.year}: what the employee and employer pay`}
+  description={`ZUS contributions ${F.year}: employees pay ${F.socialEe} of gross, employers about ${erRate}. Rates, the ${F.cap} cap, mandate contracts, accident rate and funds.`}
+  intro={`On an employment contract, ZUS takes ${F.socialEe} of the employee's gross pay, and the employer adds roughly ${erRate} of its own.`}
+  resume={`In ${F.year}, an employee on an employment contract (umowa o pracę) pays ${F.socialEe} of gross pay in social contributions to ZUS, the Polish social insurance institution: pension ${F.emerytalnaEe}, disability ${F.rentowaEe} and sickness ${F.chorobowa}. The employer adds its half of the pension contribution (${F.emerytalnaEr}), disability ${F.rentowaEr}, accident insurance (${F.wypadkowaMin} to ${F.wypadkowaMax}, ${F.wypadkowa} in ZUS examples), ${F.fp} for the Labour Fund, ${F.fs} for the Solidarity Fund and ${F.fgsp} for FGŚP, about ${erRate} in total. On a salary of ${$(G)} gross that means ${$2(u.social)} deducted from pay and ${$2(u.er.total)} paid on top of gross. Pension and disability contributions stop once gross pay for the year passes ${F.cap}, which is ${capMult} times the forecast average wage. On a mandate contract (umowa zlecenie), pension and disability are compulsory, sickness is optional, and students under 26 pay none at all. The calculator below breaks down the contributions on your salary.`}
+  faqs={faqs}
+  related={[{ href: route('cap', lang), name: label('cap', lang), description: `When pension and disability stop: the ${F.cap} cap.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Full ZUS of ${F.b2bZusFull}, preferential rates and the start-up relief.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Full cost of a salary with every contribution.' }]}
+  sources={[src('zus_rates', lang), src('sus_act', lang), src('budget', lang), src('cap', lang)]}>
+  <div data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>The {F.year} rates and who pays which</h2>
+  <p>Contribution rates are set by article 22 of the Social Insurance System Act, and article 16 splits them between employee and employer. The pension contribution of {F.emerytalnaTotal} is shared equally. The disability contribution of {F.rentowaTotal} is split unevenly: {F.rentowaEe} for the employee, {F.rentowaEr} for the employer. Sickness ({F.chorobowa}) is paid entirely by the insured person and accident insurance entirely by the employer. The funds, meaning the Labour Fund, the Solidarity Fund and FGŚP, are purely a business cost; their {F.year} rates are fixed by articles 25 to 27 of the Budget Act.</p>
+  <p>The table shows rates and amounts on a salary of {$(G)} gross. Accident insurance uses the {F.wypadkowa} rate that ZUS applies in its examples.</p>
+  <ContentTable headers={['Contribution', 'Employee', 'Employer', 'Total', `Employee at ${$(G)}`, `Employer at ${$(G)}`]} align={['l', 'r', 'r', 'r', 'r', 'r']} rows={rateRows} highlightRow={rateRows.length - 1} />
+  <p>Every rate is a percentage of the same base, gross pay. On your payslip the employee contributions appear as deductions, while the employer's usually do not appear at all, because they do not reduce what you are paid. The <a href={route('employer', lang)}>employer cost calculator</a> adds them up.</p>
+
+  <h2>What each contribution pays for</h2>
+  <p>The pension contribution funds your future state pension and is the largest item on both sides. Disability insurance covers you if you become unable to work. Sickness insurance entitles you to sickness benefit at {F.sickRate} of the benefit base, and to maternity benefit. For the first {F.sickDays} days of illness in a year ({F.sickDays50} days once you are over 50), though, it is the employer that pays you, as sick pay, also at {F.sickRate}. The <a href={route('sick', lang)}>sick pay calculator</a> turns that into złoty.</p>
+  <p>Accident insurance funds benefits after an accident at work or an occupational disease. The Labour Fund pays among other things for unemployment benefits, and FGŚP covers wages when an employer becomes insolvent. For work in special conditions or of a special nature, the employer also pays into the Bridging Pension Fund (FEP); our calculators leave it out because it applies to a limited set of jobs.</p>
+
+  <h2>Accident insurance: {F.wypadkowaMin} to {F.wypadkowaMax}</h2>
+  <p>This is the only contribution without a single rate for everyone. The law allows a range from {F.wypadkowaMin} to {F.wypadkowaMax}, and each employer applies the rate set for its business. Our calculators assume {F.wypadkowa}, as ZUS does in its examples. At {$(G)} gross the accident contribution costs between {$2(wypLow)} and {$2(wypHigh)} a month depending on the rate. Your net pay is unaffected, since the company pays all of it.</p>
+
+  <h2>The {capMult}x cap: {F.cap} a year</h2>
+  <p>Pension and disability contributions are charged only on gross pay up to an annual cap. In {F.year} the cap is {F.cap}, which is {capMult} times the forecast average wage of {F.avgForecast}. In the month when cumulative gross passes the cap, contributions are charged only on the part below it, and in later months pension and disability disappear altogether. Both sides benefit: the employer stops paying its share too.</p>
+  <p>An example: on {$(big)} gross a month, the cap is crossed in {bigM ? MONTHS[bigM - 1] : 'no month this year'}. In January the employee pays {$2(bigY.months[0].social)} to ZUS; in December only the sickness contribution of {$2(dec.chorobowa)} remains. The cap does not cover sickness insurance, which keeps being deducted to the end of the year. The exact month and its effect on take-home pay are covered on our page about the <a href={route('cap', lang)}>annual contribution cap</a>.</p>
+
+  <h2>Mandate contracts: compulsory and optional contributions</h2>
+  <p>A contractor on umowa zlecenie pays pension and disability contributions at the same rates as an employee, and the client adds its own share. Sickness insurance is optional: article 11(2) of the Act lets the contractor join on request. On a {Z4} gross contract, social contributions without sickness come to {$2(z.social)} and with it {$2(zs.social)}. Take-home pay drops from {$(z.net)} to {$(zs.net)}. That is a modest price for benefit cover if the contract is your main income.</p>
+  <p>The exception is secondary-school pupils and university students under 26. Article 6(4) of the Act exempts them from compulsory pension and disability insurance on a mandate contract, so they keep {$(zst.net)} from the same {Z4}. The page on <a href={route('student', lang)}>students on zlecenie</a> covers this case in detail.</p>
+
+  <h2>Running a business: contributions on a base, not on income</h2>
+  <p>A sole trader pays pension, disability and accident contributions entirely on their own, plus sickness cover if they opt in. Contributions are not a percentage of revenue or profit but of a declared base, which in {F.year} cannot be lower than {F.b2bBaseFull}. That comes to {F.b2bZusFull} a month with sickness cover or {F.b2bZusFullNoSick} without. New businesses may pay on the preferential base of {F.b2bBasePref} for a period. The variants, the start-up relief and Mały ZUS plus are explained on the page about <a href={route('zusb2b', lang)}>ZUS for the self-employed</a>.</p>
+
+  <h2>ZUS over a year: three example salaries</h2>
+  <p>Monthly amounts are easy to shrug off; annual ones are not. On the minimum wage an employee pays {$(yr[0].ee)} in social contributions over the year, and the employer pays a further {$(yr[0].er)} on their behalf. On {$(yr[1].g)} gross the figures are {$(yr[1].ee)} and {$(yr[1].er)}, and on {$(yr[2].g)} gross {$(yr[2].ee)} and {$(yr[2].er)}. For comparison, income tax advances for the whole year on {$(yr[1].g)} gross come to {$(yr[1].pit)}, clearly less than the employee's contributions alone. At typical earnings it is ZUS, not income tax, that takes the biggest bite out of a Polish salary.</p>
+  <p>Contributions are charged on the month's full gross pay, so a bonus, an award or overtime pay raises them in that same month at the same rates. The exception is after the cap: a bonus then adds nothing to pension or disability contributions. The <a href={route('bonus', lang)}>bonus calculator</a> shows how much of a bonus you actually keep.</p>
+
+  <h2>Reading the ZUS lines on a payslip</h2>
+  <p>A Polish payslip (pasek wypłaty) usually lists three separate lines, pension, disability and sickness insurance, sometimes grouped as "employee ZUS contributions". Check two things. First, that they add up to {F.socialEe} of that month's gross, including any bonus or overtime. Second, that pension and disability really do disappear once you pass the cap.</p>
+  <p>The health contribution sits next to them, but it is a different levy: paid to the National Health Fund (NFZ) through ZUS, with its own base and a {F.health} rate. Our guide to the <a href={route('health', lang)}>health contribution</a> explains it.</p>
+
+  <h2>What a salary costs with every contribution</h2>
+  <p>The second calculator adds up the employer's contributions and fund payments on any salary, with a PPK option.</p>
+  <div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('employer', lang)} /></div>
+  <p>At {$(G)} gross the total cost is {$2(u.er.cost)}, and the employee receives {$(u.net)} net. The gap between the two is both sides' contributions, the health contribution and the income tax advance.</p>
+</GuideLayout>

@@ -1,0 +1,183 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import MiniSim from '../../components/calc/MiniSim';
+import ContentTable from '../../components/ContentTable.astro';
+import { route, AMOUNTS } from '../../i18n/routes';
+import { amountLabel } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, dzielo, b2b, grossForNet, capMonth, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct, displayDate } from '../../lib/format';
+import { webApplicationSchema, websiteSchema, organizationSchema, faqSchema } from '../../lib/seo';
+import { LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const share = (a: number, b: number) => pct(Math.round((a / b) * 100) / 100, lang);
+const LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const GEN = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+const inMonth = (m: number | null) => (m ? `w ${LOC[m - 1]}` : 'w tym roku wcale');
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+
+// Płaca minimalna : réponse directe du bloc citable.
+const minG = P.minimum_wage.monthly;
+const min = uop({ gross: minG });
+const minNoPit2 = uop({ gross: minG, pit2: false });
+
+// Exemples chiffrés : un mois type (styczeń), umowa o pracę, KUP 250 zł, PIT-2.
+const exGross = [minG, 6000, 8000, 10000, 15000, 25000];
+const exRows = exGross.map((g) => { const m = uop({ gross: g }); return [$(g), $(m.social), $(m.health), $(m.pit), $(m.net), $(m.er.cost)]; });
+
+// Le même brut sur les quatre contrats.
+const G8 = 8000;
+const c8 = { uop: uop({ gross: G8 }), zl: zlecenie({ gross: G8 }), zl2: zlecenie({ gross: G8, pit2: true }), dz: dzielo({ gross: G8 }), lin: b2b({ revenue: G8, form: 'liniowy' }), ry: b2b({ revenue: G8, form: 'ryczalt', ryczaltRate: P.b2b.ryczalt_rates[0].rate }), sk: b2b({ revenue: G8, form: 'skala' }) };
+
+// L'année mois par mois.
+const G15 = 15000, G25 = 25000;
+const y15 = uopYear({ gross: G15 }), y25 = uopYear({ gross: G25 });
+const sb15 = secondBracketMonth({ gross: G15 }), sb25 = secondBracketMonth({ gross: G25 }), cap25 = capMonth(G25);
+const jan25 = y25.months[0].net, low25 = Math.min(...y25.months.map((m) => m.net)), dec25 = y25.months[11].net;
+const dec15 = y15.months[11].net, jan15 = y15.months[0].net;
+
+// Autres valeurs citées.
+const net5k = 5000, gfn = grossForNet(net5k);
+const ppkA = uop({ gross: G8, ppk: true });
+const young = uop({ gross: 6000, under26: true }), notYoung = uop({ gross: 6000 });
+const raised = uop({ gross: G8, kup: 'raised' });
+const authors = uop({ gross: 12000, authorsShare: 0.5 }), noAuthors = uop({ gross: 12000 });
+const er8 = c8.uop.er;
+
+const paramRows = [
+  ['Płaca minimalna (miesięcznie)', F.minWage, 'Dz.U. 2025 poz. 1242'],
+  ['Minimalna stawka godzinowa', F.minHourly, 'Dz.U. 2025 poz. 1242'],
+  ['Składka emerytalna: pracownik / pracodawca', `${F.emerytalnaEe} / ${F.emerytalnaEr}`, 'ustawa o systemie ubezpieczeń społecznych'],
+  ['Składka rentowa: pracownik / pracodawca', `${F.rentowaEe} / ${F.rentowaEr}`, 'ustawa o systemie ubezpieczeń społecznych'],
+  ['Składka chorobowa (pracownik)', F.chorobowa, 'ustawa o systemie ubezpieczeń społecznych'],
+  ['Składka wypadkowa (pracodawca, stawka przyjęta)', `${F.wypadkowa} (zakres ${F.wypadkowaMin}–${F.wypadkowaMax})`, 'ZUS'],
+  ['Fundusz Pracy + Fundusz Solidarnościowy / FGŚP', `${F.fp} + ${F.fs} / ${F.fgsp}`, 'ustawa budżetowa na 2026 r.'],
+  ['Składka zdrowotna (etat, zlecenie)', F.health, 'ustawa o świadczeniach opieki zdrowotnej'],
+  ['Skala podatkowa PIT', `${F.pitLow} / ${F.pitHigh}`, 'ustawa o PIT, art. 27'],
+  ['Próg podatkowy (rocznie)', F.threshold, 'ustawa o PIT, art. 27'],
+  ['Kwota wolna / kwota zmniejszająca miesięcznie', `${F.freeAmount} / ${F.reducingMonth}`, 'ustawa o PIT, podatki.gov.pl'],
+  ['Koszty uzyskania przychodu (etat) miesięcznie', `${F.kup} lub ${F.kupRaised}`, 'ustawa o PIT, art. 22'],
+  ['Limit ulgi dla młodych (rocznie)', F.youthLimit, 'ustawa o PIT, art. 21'],
+  ['Limit 30-krotności (emerytalna i rentowe)', F.cap, 'M.P. 2025 poz. 1206'],
+  ['Prognozowane przeciętne wynagrodzenie', F.avgForecast, 'M.P. 2025 poz. 1206'],
+  ['PPK: pracownik / pracodawca (podstawowa)', `${F.ppkEe} / ${F.ppkEr}`, 'mojeppk.pl'],
+  ['ZUS przedsiębiorcy: pełny / preferencyjny (z chorobowym)', `${F.b2bZusFull} / ${F.b2bZusPref}`, 'ZUS'],
+  ['Minimalna składka zdrowotna B2B (skala, liniowy)', F.healthMin, 'ZUS'],
+  ['Podatek liniowy', F.liniowy, 'ustawa o PIT, art. 30c'],
+];
+
+const faqs = [
+  { q: 'Dlaczego netto w grudniu jest inne niż w styczniu?', a: `Przy wyższych pensjach płatnik liczy podatek narastająco. Gdy suma podstaw od stycznia przekroczy ${F.threshold}, nadwyżka jest opodatkowana stawką ${F.pitHigh}, więc netto spada. Przy ${$(G15)} brutto dzieje się to ${inMonth(sb15)} i grudniowe netto wynosi ${$(dec15)} zamiast ${$(jan15)}. Przy bardzo wysokich pensjach działa jeszcze limit ${F.cap}: po jego przekroczeniu znikają składki emerytalna i rentowe, a netto znów rośnie.` },
+  { q: 'Czy kalkulator uwzględnia PPK?', a: `Tak, po zaznaczeniu opcji „Uczestnik PPK”. Kalkulator potrąca wtedy Twoją wpłatę ${F.ppkEe} brutto i dolicza do podstawy podatku wpłatę pracodawcy ${F.ppkEr}, bo jest ona Twoim przychodem. Przy ${$(G8)} brutto netto spada o ${$(c8.uop.net - ppkA.net)}, a na Twoje konto PPK trafia co miesiąc ${$(ppkA.ppkEmployee + ppkA.ppkEmployer)}. Dopłat państwa kalkulator nie wlicza do pensji.` },
+  { q: 'Znam tylko kwotę netto z oferty pracy. Jak sprawdzić brutto?', a: `Użyj kalkulatora netto na brutto, który odwraca ten sam silnik. Na umowie o pracę, z PIT-2 i kosztami ${F.kup}, ${$(net5k)} na rękę wymaga w ${F.year} r. około ${$(gfn)} brutto. Wynik dotyczy miesiąca przed drugim progiem; przy pensjach rzędu kilkunastu tysięcy złotych netto pod koniec roku będzie niższe, więc pytaj pracodawcę zawsze o kwotę brutto.` },
+  { q: `Ile pracodawca wydaje naprawdę na pensję ${$(G8)} brutto?`, a: `${$(er8.cost)} miesięcznie. Do Twojego brutto pracodawca dokłada emerytalną ${F.emerytalnaEr}, rentową ${F.rentowaEr}, wypadkową (przyjęte ${F.wypadkowa}), Fundusz Pracy i Fundusz Solidarnościowy ${F.fpfs} oraz FGŚP ${F.fgsp}, razem ${$(er8.total)}. Ty dostajesz z tego ${$(c8.uop.net)}. Różnicę między kosztem a netto widać w kalkulatorze w wierszu „Koszt pracodawcy”.` },
+  { q: 'Dlaczego zlecenie i etat dają inne netto przy tej samej kwocie brutto?', a: `Bo każda umowa ma inne potrącenia. Na zleceniu nie płacisz obowiązkowo chorobowej ${F.chorobowa}, koszty uzyskania przychodu wynoszą ${F.kupContract} zamiast stałych ${F.kup}, a zleceniodawca nie pomniejsza zaliczki bez Twojego PIT-2. Przy ${$(G8)} brutto zlecenie bez PIT-2 daje ${$(c8.zl.net)}, z PIT-2 ${$(c8.zl2.net)}, a etat ${$(c8.uop.net)}.` },
+  { q: 'Pracuję na pół etatu. Czy kalkulator też zadziała?', a: `Tak. Silnik liczy od kwoty brutto zapisanej w umowie, niezależnie od wymiaru czasu pracy, więc wpisz po prostu swoje miesięczne brutto. Składki, koszty ${F.kup} i pomniejszenie ${F.reducingMonth} z PIT-2 są takie same jak na pełnym etacie. Przy bardzo niskim brutto zadziała ograniczenie składki zdrowotnej do wysokości zaliczki liczonej według zasad z 2021 r., które kalkulator stosuje automatycznie.` },
+  { q: 'Ile wynosi netto za cały rok przy stałej pensji?', a: `Kliknij „Pokaż rok miesiąc po miesiącu” pod wynikiem. Przy ${$(G15)} brutto miesięcznie roczne netto to ${$(y15.total.net)}, a nie dwunastokrotność styczniowego netto, bo od ${GEN[(sb15 ?? 12) - 1]} część dochodu wchodzi w drugi próg. Przy ${$(G25)} brutto roczne netto wynosi ${$(y25.total.net)}, z najniższą wypłatą ${$(low25)}.` },
+];
+
+const related = [
+  { href: route('nettobrutto', lang), name: 'Kalkulator netto na brutto', description: 'Ile brutto potrzebujesz, żeby dostać wybraną kwotę na rękę.' },
+  { href: route('compare', lang), name: 'B2B czy umowa o pracę', description: 'Ten sam budżet na fakturze i na etacie, z urlopem i ZUS.' },
+  { href: route('annual', lang), name: 'Wynagrodzenie roczne', description: 'Dwanaście wypłat z drugim progiem i limitem ZUS.' },
+];
+const sources = [src('pit_act', lang), src('sus_act', lang), src('zus_rates', lang), src('cap', lang), src('minimum', lang), src('health_act', lang)];
+const title = `Kalkulator wynagrodzeń ${F.year}: brutto netto dla 4 umów`;
+const description = `Kalkulator wynagrodzeń brutto netto ${F.year}: płaca minimalna ${F.minWage} daje ${F.minNet} na rękę. Umowa o pracę, zlecenie, dzieło i B2B, rok miesiąc po miesiącu.`;
+const path = route('home', lang);
+const jsonLd = [webApplicationSchema({ name: `Kalkulator wynagrodzeń ${F.year} brutto netto`, description, path, lang }), websiteSchema(lang), organizationSchema(lang), faqSchema(faqs, lang)];
+---
+<PageLayout title={title} description={description} lang={lang} jsonLd={jsonLd} faqs={faqs} related={related} sources={sources}>
+  <article>
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-navy-900 md:text-4xl">Kalkulator wynagrodzeń {F.year} brutto netto</h1>
+      <p class="mt-3 text-lg text-navy-600">Netto na umowie o pracę, zleceniu, dziele i B2B przy tej samej kwocie, z rozpisaniem całego roku miesiąc po miesiącu.</p>
+      <p class="mt-2 text-sm text-navy-500">Stawki ZUS i PIT {F.year} · aktualizacja {updated}</p>
+    </header>
+    <SalaryCalculator client:load lang={lang} methodHref={route('method', lang)} />
+
+    <p class="mt-8 text-navy-700">Przy płacy minimalnej {F.minWage} brutto na umowie o pracę dostajesz w {F.year} r. {F.minNet} na rękę, czyli około {share(min.net, minG)} kwoty brutto, pod warunkiem że złożyłeś pracodawcy PIT-2; bez tego oświadczenia netto spada do {$(minNoPit2.net)}. Z brutto najpierw schodzą składki społeczne pracownika, razem {F.socialEe}: emerytalna {F.emerytalnaEe}, rentowa {F.rentowaEe} i chorobowa {F.chorobowa}, co przy płacy minimalnej daje {$(min.social)}. Od tego, co zostaje, pobierana jest składka zdrowotna {F.health}, tutaj {$(min.health)}, której nie można już odliczyć od podatku. Na koniec płatnik liczy zaliczkę na PIT: {F.pitLow} od podstawy pomniejszonej o składki i koszty {F.kup}, minus {F.reducingMonth} kwoty zmniejszającej, co daje {$(min.pit)}. Ta sama kwota brutto na zleceniu, dziele albo fakturze B2B daje inne netto, bo każda umowa ma inne składki i koszty. Kalkulator powyżej liczy wszystkie cztery warianty naraz i pokazuje, jak netto zmienia się w kolejnych miesiącach roku.</p>
+
+    <div class="prose prose-slate max-w-none">
+      <h2>Jak liczymy wynagrodzenie netto</h2>
+      <p>Wynagrodzenie netto to kwota, która trafia na Twoje konto po odjęciu wszystkiego, co pracodawca musi potrącić i przekazać dalej: do ZUS, do NFZ za pośrednictwem ZUS i do urzędu skarbowego. Kolejność potrąceń nie jest dowolna, bo każda kolejna pozycja liczy się od tego, co zostało po poprzedniej. Kalkulator odtwarza ją dokładnie tak, jak robi to program kadrowo-płacowy.</p>
+      <ol>
+        <li><strong>Składki społeczne pracownika.</strong> Emerytalna {F.emerytalnaEe}, rentowa {F.rentowaEe} i chorobowa {F.chorobowa} liczone od brutto. Przy {$(G8)} brutto to razem {$(c8.uop.social)}. Emerytalna i rentowa przestają być pobierane, gdy suma brutto od stycznia przekroczy {F.cap}.</li>
+        <li><strong>Składka zdrowotna.</strong> {F.health} od brutto pomniejszonego o składki społeczne, czyli przy {$(G8)} brutto {$(c8.uop.health)}. Pracownik nie odlicza jej od podatku, więc w całości zmniejsza netto.</li>
+        <li><strong>Podstawa opodatkowania.</strong> Brutto minus składki społeczne minus koszty uzyskania przychodu: {F.kup} miesięcznie albo {F.kupRaised}, jeśli dojeżdżasz z innej miejscowości. Wynik zaokrągla się do pełnych złotych.</li>
+        <li><strong>Zaliczka na PIT.</strong> {F.pitLow} od podstawy, dopóki suma podstaw od początku roku nie przekroczy {F.threshold}; powyżej {F.pitHigh}. Od wyniku odejmuje się {F.reducingMonth}, jeśli złożyłeś PIT-2. Zaliczkę też zaokrągla się do złotego.</li>
+        <li><strong>PPK, jeśli uczestniczysz.</strong> Twoja wpłata {F.ppkEe} brutto schodzi z pensji po opodatkowaniu, a wpłata pracodawcy {F.ppkEr} powiększa podstawę podatku, choć nie trafia na Twoje konto bankowe.</li>
+      </ol>
+      <p>Netto to brutto minus suma tych pozycji. Przy {$(G8)} brutto na etacie wychodzi {$(c8.uop.net)}, a koszt pracodawcy rośnie do {$(er8.cost)}, bo po jego stronie dochodzą jeszcze składki, których nie widzisz na pasku wypłaty. Pełne wzory, zasady zaokrągleń i przypadki szczególne, na przykład ograniczenie składki zdrowotnej przy bardzo niskich pensjach, opisujemy w <a href={route('method', lang)}>metodologii kalkulatora</a>.</p>
+      <p>Dwie rzeczy najczęściej zaskakują osoby, które pierwszy raz liczą pensję samodzielnie. Pierwsza to kwota wolna od podatku: nie jest odliczana od dochodu, tylko zamienia się w stałe pomniejszenie podatku o {F.reducingMonth} miesięcznie, niezależnie od zarobków. Druga to składka zdrowotna, która przy {$(G8)} brutto wynosi więcej niż cała zaliczka na PIT i której nie da się już odpisać. Jeśli Twój pasek wypłaty różni się od wyniku, najpierw sprawdź właśnie te dwie pozycje oraz to, czy pracodawca stosuje koszty {F.kup} czy {F.kupRaised}.</p>
+
+      <h2>Dlaczego ten kalkulator liczy inaczej</h2>
+      <p>Większość kalkulatorów wynagrodzeń pokazuje jeden miesiąc i jedną umowę. To wystarcza przy płacy minimalnej, ale przy wyższych pensjach daje obraz, który nie zgadza się z rzeczywistymi wypłatami. Zbudowaliśmy narzędzie wokół trzech rzeczy, które według nas decydują o tym, ile naprawdę zarobisz.</p>
+      <h3>Cztery umowy przy tym samym brutto, obok siebie</h3>
+      <p>Pod wynikiem widzisz od razu, ile ta sama kwota dałaby na pozostałych umowach. Przy {$(G8)} etat daje {$(c8.uop.net)}, zlecenie bez PIT-2 {$(c8.zl.net)}, a umowa o dzieło {$(c8.dz.net)}, bo w modelu kalkulatora nie ma przy niej składek ZUS ani zdrowotnej. Takie zestawienie pozwala ocenić ofertę, zanim podpiszesz umowę, a nie po pierwszej wypłacie.</p>
+      <h3>B2B w trzech formach opodatkowania</h3>
+      <p>Faktura na {$(G8)} miesięcznie to zupełnie inna sytuacja niż etat za tę samą kwotę: płacisz sam pełny ZUS przedsiębiorcy {F.b2bZusFull} z dobrowolnym chorobowym albo {F.b2bZusFullNoSick} bez niego, a składka zdrowotna zależy od formy opodatkowania. Kalkulator liczy podatek liniowy {F.liniowy}, ryczałt według stawki dla Twojej branży i skalę podatkową. Przy tym przychodzie, bez kosztów firmy i bez chorobowego, wychodzi kolejno {$(c8.lin.net)}, {$(c8.ry.net)} i {$(c8.sk.net)} miesięcznie, czyli mniej niż na etacie. Szczegóły porównania z urlopem i ubezpieczeniem znajdziesz w zestawieniu <a href={route('compare', lang)}>B2B czy umowa o pracę</a>.</p>
+      <h3>Rok miesiąc po miesiącu: drugi próg i limit 30-krotności</h3>
+      <p>To element, którego zwykle brakuje. Przy {$(G25)} brutto miesięcznie pierwsza wypłata to {$(jan25)} netto. Od wypłaty z {GEN[(sb25 ?? 12) - 1]} narastająca podstawa przekracza {F.threshold} i część dochodu wpada w stawkę {F.pitHigh}, więc netto spada do {$(low25)}. {cap25 ? `Potem, ${inMonth(cap25)}, suma brutto przekracza limit ${F.cap}, emerytalna i rentowa przestają być pobierane i grudniowa wypłata rośnie do ${$(dec25)}.` : ''} Kalkulator pokazuje każdy z dwunastu miesięcy z osobna, z oznaczeniem miesiąca, w którym zadziałał limit, więc możesz zaplanować budżet bez niespodzianek jesienią. Więcej o samym limicie piszemy w poradniku o <a href={route('cap', lang)}>limicie 30-krotności składek ZUS</a>.</p>
+      <p>Każda stawka w silniku pochodzi z tekstu ustawy, rozporządzenia albo z oficjalnej strony ZUS i jest opisana w pliku parametrów z datą weryfikacji. Kwoty ZUS przedsiębiorcy wyliczone przez kalkulator zgadzają się co do grosza z kwotami opublikowanymi przez ZUS, co sprawdzamy testami automatycznymi. Jeśli pracujesz w Polsce, a wolisz czytać po angielsku, ta sama strona istnieje w <a href={route('home', 'en')} hreflang="en">wersji angielskiej</a>, z tymi samymi obliczeniami.</p>
+
+      <h2>Brutto, netto i koszt pracodawcy: trzy kwoty jednej pensji</h2>
+      <p>W rozmowie o pracę padają zwykle trzy różne liczby i warto wiedzieć, która jest która. Brutto to kwota zapisana w umowie i podstawa wszystkich obliczeń: od niej liczy się składki, podatek, dodatek za nadgodziny i wynagrodzenie chorobowe. Netto to przelew na konto, zależny nie tylko od brutto, ale też od Twoich decyzji: PIT-2, kosztów dojazdu, PPK. Koszt pracodawcy to brutto powiększone o składki płacone przez firmę; przy {$(G8)} brutto to {$(er8.cost)}, czyli kwota, którą dział finansowy widzi w budżecie.</p>
+      <p>Z tego powodu oferta „{$(c8.uop.net)} na rękę” i oferta „{$(G8)} brutto” mogą oznaczać dokładnie to samo, a mogą też różnić się o kilkaset złotych, jeśli pracodawca liczył netto bez PIT-2 albo z PPK. Przy porównywaniu ofert z różnych firm sprowadzaj je zawsze do brutto na tej samej umowie. Przy ofercie B2B porównuj z kolei koszt pracodawcy z kwotą faktury, bo to te dwie liczby obciążają budżet firmy w ten sam sposób; dopiero potem patrz, ile każda z nich zostawia Tobie.</p>
+
+      <h2>Wynagrodzenie netto na różnych umowach</h2>
+      <p>Wybór umowy zmienia netto bardziej niż negocjacja kilkuset złotych brutto. Poniżej krótko, czym różnią się cztery warianty dostępne w kalkulatorze; każdy ma osobną stronę z dokładniejszym opisem.</p>
+      <h3>Umowa o pracę</h3>
+      <p>Pełne składki społeczne, składka zdrowotna, stałe koszty {F.kup} lub {F.kupRaised} i pomniejszenie {F.reducingMonth} z PIT-2. W zamian dostajesz płatny urlop, wynagrodzenie chorobowe i ochronę z Kodeksu pracy. Za pełny etat pensja nie może być niższa niż {F.minWage}. Pracodawca dokłada od siebie około {share(er8.total, G8)} brutto.</p>
+      <h3>Umowa zlecenie</h3>
+      <p>Emerytalna i rentowa są obowiązkowe, chorobowa dobrowolna, a koszty uzyskania przychodu wynoszą {F.kupContract} podstawy po składkach. Uczeń lub student do 26 lat nie płaci składek ZUS, a w kalkulatorze także składki zdrowotnej, więc dostaje całe brutto. Przy umowie do {F.smallContract} zawartej z osobą, która nie jest pracownikiem płatnika, podatek pobiera się ryczałtem {F.pitLow} od przychodu. Wszystkie warianty policzysz w <a href={route('zlecenie', lang)}>kalkulatorze umowy zlecenie</a>.</p>
+      <h3>Umowa o dzieło</h3>
+      <p>Kalkulator nie nalicza przy niej składek, a podatek liczy od przychodu pomniejszonego o koszty {F.kupContract} albo {F.kupAuthors} przy przeniesieniu praw autorskich. Dlatego przy tej samej kwocie daje najwyższe netto, ale nie buduje emerytury ani prawa do zasiłku chorobowego. Szczegóły i przykłady pokazuje <a href={route('dzielo', lang)}>kalkulator umowy o dzieło</a>.</p>
+      <h3>B2B (jednoosobowa działalność)</h3>
+      <p>Przychód z faktury bez VAT, minus ZUS przedsiębiorcy, Fundusz Pracy, składka zdrowotna i podatek według wybranej formy. Kalkulator liczy średnią miesięczną z całego roku i obsługuje pełny ZUS, preferencyjny ZUS {F.b2bZusPref} oraz ulgę na start, przy której nie płacisz składek społecznych, a zostaje składka zdrowotna. Koszty firmy wpisujesz osobno. Pełną symulację prowadzi <a href={route('b2b', lang)}>kalkulator B2B</a>.</p>
+
+      <h2>Stawki i parametry {F.year}</h2>
+      <p>Wszystkie wartości poniżej pochodzą z pliku parametrów, z którego korzysta silnik obliczeń; tabela generuje się z tego samego pliku, więc nie może rozjechać się z wynikiem kalkulatora. Stawki zweryfikowaliśmy {updated}.</p>
+    </div>
+    <ContentTable headers={['Parametr', `Wartość ${F.year}`, 'Podstawa']} align={['l', 'r', 'l']} rows={paramRows} />
+
+    <div class="prose prose-slate mt-8 max-w-none">
+      <h2>Przykładowe wynagrodzenia netto {F.year}</h2>
+      <p>Tabela pokazuje typowy miesiąc na umowie o pracę: koszty {F.kup}, złożony PIT-2, bez PPK i bez ulgi dla młodych. To styczeń, czyli miesiąc przed ewentualnym drugim progiem i przed limitem składek; przy najwyższych kwotach netto w drugiej połowie roku będzie niższe.</p>
+    </div>
+    <ContentTable headers={['Brutto', 'ZUS pracownika', 'Zdrowotna', 'Zaliczka PIT', 'Netto', 'Koszt pracodawcy']} align={['r', 'r', 'r', 'r', 'r', 'r']} rows={exRows} highlightRow={0} />
+
+    <div class="prose prose-slate mt-8 max-w-none">
+      <p>Udział netto w brutto maleje wraz z pensją, ale wolniej, niż wiele osób zakłada. Przy płacy minimalnej zostaje {share(min.net, minG)} brutto, przy {$(10000)} jeszcze {share(uop({ gross: 10000 }).net, 10000)}, bo składki są proporcjonalne, a pomniejszenie {F.reducingMonth} działa jednakowo na każdym poziomie. Stawka {F.pitHigh} zmienia proporcje dopiero wtedy, gdy roczna podstawa przekroczy próg.</p>
+      <div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('compare', lang)} /></div>
+
+      <h2>Jak porównać wynik z paskiem wypłaty</h2>
+      <p>Pasek wypłaty, czyli odcinek z listy płac, który dostajesz od działu kadr, zawiera te same pozycje co kalkulator, tylko pod innymi nazwami i często w innej kolejności. Żeby porównać oba wyniki, idź od góry do dołu i sprawdzaj kwoty po kolei, zamiast patrzeć od razu na kwotę do wypłaty.</p>
+      <p>Najpierw znajdź wynagrodzenie zasadnicze i wszystkie dodatki: premię, nadgodziny, dodatek stażowy, ekwiwalent. Kalkulator potrzebuje sumy tych składników jako kwoty brutto. Jeśli w danym miesiącu dostałeś premię, wpisz brutto razem z nią albo użyj <a href={route('bonus', lang)}>kalkulatora premii netto</a>, który pokazuje, ile zostaje z samej premii. Potem porównaj trzy składki społeczne; przy tym samym brutto powinny zgadzać się co do grosza, chyba że w danym miesiącu działał już limit rocznej podstawy.</p>
+      <p>Kolejna pozycja to składka zdrowotna. Na pasku bywa opisana jako „ubezpieczenie zdrowotne” z dopiskiem stawki {F.health}. Jeśli jest wyraźnie niższa niż w kalkulatorze, a pensja jest bardzo niska, to efekt ograniczenia składki do wysokości zaliczki liczonej po staremu; kalkulator też je stosuje. Na końcu porównaj zaliczkę na podatek: różnica dokładnie {F.reducingMonth} oznacza, że pracodawca nie stosuje Twojego PIT-2, a różnica kilkunastu złotych zwykle wynika z innych kosztów uzyskania przychodu albo z wpłaty pracodawcy do PPK doliczonej do podstawy.</p>
+      <p>Osobną sprawą są potrącenia, których kalkulator nie zna: składka związkowa, ubezpieczenie grupowe, karta sportowa, spłata pożyczki z zakładowego funduszu czy zajęcie komornicze. Nie zmieniają one podatku, ale zmniejszają kwotę przelewu. Jeśli po ich odjęciu wynik nadal się nie zgadza, poproś dział kadr o rozpisanie konkretnej pozycji; w większości firm to kwestia jednego maila.</p>
+
+      <h2>Popularne obliczenia: ile netto z konkretnej kwoty</h2>
+      <p>Każda z tych stron rozpisuje jedną kwotę brutto na wszystkie umowy i miesiące, z typowymi pytaniami dla tego poziomu zarobków.</p>
+      <ul>
+        {AMOUNTS.map((a) => <li><a href={route(`amount-${a}`, lang)}>{amountLabel(a, lang)} – ile to netto</a>: na etacie {$(uop({ gross: a }).net)} w styczniu</li>)}
+      </ul>
+
+      <h2>Jak legalnie zwiększyć wynagrodzenie netto</h2>
+      <p>Nie ma sposobu, by uniknąć składek na etacie, ale kilka decyzji realnie zmienia to, co trafia na konto. Każdą możesz sprawdzić w kalkulatorze, przełączając odpowiednią opcję.</p>
+      <ol>
+        <li><strong>Złóż PIT-2.</strong> Bez niego płacisz co miesiąc {F.reducingMonth} podatku więcej i odzyskujesz pieniądze dopiero w zeznaniu rocznym. Formularz składa się raz; zasady opisuje poradnik o <a href={route('pit2', lang)}>oświadczeniu PIT-2</a>.</li>
+        <li><strong>Sprawdź koszty {F.kupRaised}.</strong> Jeśli dojeżdżasz do pracy z innej miejscowości, podwyższone koszty zmniejszają podstawę o {$(P.pit.kup_employee_raised_month - P.pit.kup_employee_month)} miesięcznie; przy {$(G8)} to {$(raised.net - c8.uop.net)} netto więcej. Opis znajdziesz w poradniku o <a href={route('kup', lang)}>kosztach uzyskania przychodu</a>.</li>
+        <li><strong>Wykorzystaj ulgę dla młodych.</strong> Do 26. urodzin przychód do {F.youthLimit} rocznie jest zwolniony z PIT. Przy {$(6000)} brutto daje to {$(young.net)} zamiast {$(notYoung.net)}; składki płacisz bez zmian. Warunki opisuje strona o <a href={route('youth', lang)}>uldze dla młodych</a>.</li>
+        <li><strong>Policz PPK jako inwestycję, nie koszt.</strong> Netto spada o {$(c8.uop.net - ppkA.net)} przy {$(G8)}, ale na Twoje konto trafia {$(ppkA.ppkEmployee + ppkA.ppkEmployer)} miesięcznie plus dopłaty państwa. Rachunek pokazuje <a href={route('ppk', lang)}>kalkulator PPK</a>.</li>
+        <li><strong>Zapytaj o koszty autorskie.</strong> Programiści, graficy i tłumacze, którzy tworzą utwory, mogą mieć część pensji rozliczaną z kosztami {F.kupAuthors}. Przy {$(12000)} brutto i połowie pensji jako prawa autorskie netto rośnie z {$(noAuthors.net)} do {$(authors.net)}. Zasady i limit {F.kupAuthorsLimit} opisuje poradnik o <a href={route('authors', lang)}>kosztach autorskich</a>.</li>
+        <li><strong>Porównaj umowy przed podpisaniem.</strong> Ta sama kwota na zleceniu, dziele i B2B daje inne netto i inne zabezpieczenie. Zanim zgodzisz się na zmianę formy współpracy, sprawdź w kalkulatorze wszystkie warianty i to, co tracisz poza pieniędzmi.</li>
+      </ol>
+      <p>Pamiętaj, że kalkulator liczy pensję u jednego pracodawcy. Jeśli masz kilka źródeł dochodu, rozliczenie roczne może wyglądać inaczej niż suma miesięcznych wyników, a ostateczny podatek ustala dopiero zeznanie roczne.</p>
+    </div>
+  </article>
+</PageLayout>

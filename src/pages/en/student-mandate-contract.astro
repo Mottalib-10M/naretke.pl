@@ -1,0 +1,70 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const MH = P.minimum_wage.hourly;
+const rows = [1500, 2500, 3500, P.minimum_wage.monthly].map((g) => [$(g), $(zlecenie({ gross: g, student: true }).net), $(zlecenie({ gross: g, under26: true }).net), $(zlecenie({ gross: g }).net), $(uop({ gross: g, under26: true }).net)]);
+const g = 3000;
+const s = zlecenie({ gross: g, student: true }), u = zlecenie({ gross: g, under26: true }), o = zlecenie({ gross: g }), e = uop({ gross: g, under26: true });
+const h80 = MH * 80;
+const sum = zlecenie({ gross: 4000, student: true }), job = uop({ gross: 3000, under26: true });
+const small = 150, smallTax = $(Math.round(small * P.pit.rate_low));
+const faqs = [
+  { q: 'I am 25 and study part-time at weekends. Will the client deduct ZUS?', a: `No. Article 6(4) of the Social Insurance System Act exempts mandate contractors who are students or secondary school pupils from compulsory pension and disability insurance until they turn 26. The provision does not distinguish full-time from part-time study. On a ${$(g)} gross mandate contract you receive ${$(s.net)}, the whole amount, provided the client is a business.` },
+  { q: 'I have graduated but I am only 24. What changes on my mandate contract?', a: `The contribution exemption ends because you are no longer a student, but the youth relief keeps working until your 26th birthday. The client now deducts the ${F.emerytalnaEe} pension and ${F.rentowaEe} disability contributions plus the ${F.health} health contribution, while income tax stays at zero. On ${$(g)} gross, net pay falls from ${$(s.net)} to ${$(u.net)}. The exact day student status ends is set by higher-education rules.` },
+  { q: 'I study and do a mandate contract for the company that also employs me. Am I exempt from ZUS?', a: `No. Article 8(2a) of the Act treats as an employee anyone who signs a mandate contract with their own employer, or who works for that employer under a mandate contract signed with someone else. The mandate pay is then added to your salary and carries contributions like wages, with no student exemption. Up to age 26 you still pay no income tax within the ${F.youthLimit} limit.` },
+  { q: 'Can a student on a mandate contract be paid below the minimum hourly rate?', a: `No. The ${F.minHourly} gross minimum hourly rate applies to mandate contracts regardless of age or student status. A student who works 80 hours should receive at least ${$(h80)} gross, and with no contributions or tax that is also what reaches the bank account. A lower rate written into the contract does not remove the right to the full minimum for hours actually worked.` },
+  { q: `My contract is for ${$(small)}. As a student, is that tax-free too?`, a: `No. A contract of up to ${F.smallContract} with someone who is not the payer's employee is taxed at a flat ${F.pitLow} of the whole amount, and the youth relief does not cover flat-rate tax. On ${$(small)} the client withholds ${smallTax}. As a student you still pay no contributions, so you receive ${$(small - Math.round(small * P.pit.rate_low))}.` },
+];
+---
+<GuideLayout lang={lang} id="student" breadcrumbLabel={label('student', lang)} title={`Student Mandate Contract ${F.year}: No ZUS or PIT Under 26`} h1={`Students on a mandate contract in ${F.year}: net equals gross`}
+  description={`Student mandate contract in ${F.year}: under 26 you pay no ZUS, health contribution or tax, so ${$(g)} gross is ${$(s.net)} net. What changes at graduation or 26.`}
+  intro={`A student or secondary school pupil under 26 working on an umowa zlecenie (mandate contract) pays no ZUS, no health contribution and no income tax.`}
+  resume={`A student or secondary school pupil who has not turned 26 keeps the whole gross amount of a Polish mandate contract (umowa zlecenie). Article 6(4) of the Social Insurance System Act exempts them from compulsory pension and disability contributions, and since they are not covered by social insurance under that contract, no health contribution arises either. Income tax disappears thanks to the youth relief, which exempts mandate income up to ${F.youthLimit} a year. On a ${$(g)} gross contract a student gets ${$(s.net)}, a peer of the same age who has finished studying gets ${$(u.net)}, and someone past their 26th birthday gets ${$(o.net)}. The exemption ends when you lose student status or turn 26, whichever comes first, and it never applies to an employment contract or to a mandate contract with your own employer. The ${F.minHourly} minimum hourly rate protects students too. The mini calculator compares a student's take-home pay with other contractors'.`}
+  faqs={faqs}
+  related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'The full mandate contract calculator, with a student option.' }, { href: route('youth', lang), name: label('youth', lang), description: `Zero PIT on up to ${F.youthLimit} before your 26th birthday.` }, { href: route('hourly', lang), name: label('hourly', lang), description: `Hourly pay and the ${F.minHourly} minimum.` }]}
+  sources={[src('sus_act', lang), src('youth', lang), src('health_act', lang), src('minimum', lang)]}>
+  <div data-chrome><MiniSim client:load kind="student" lang={lang} href={route('zlecenie', lang)} /></div>
+
+  <h2>Three separate exemptions that stack</h2>
+  <p>Net pay equal to gross is the result of three different rules meeting in one person. The first is article 6(4) of the Social Insurance System Act: mandate contractors who are secondary school pupils or students are not compulsorily covered by pension and disability insurance until they turn 26. The second follows from it. Voluntary sickness insurance is open only to people compulsorily covered by pension and disability insurance, and the healthcare act makes health insurance compulsory for mandate contractors who meet the conditions for social insurance. A student does not, so no health contribution arises under that contract.</p>
+  <p>The third rule is about tax. The youth relief exempts mandate contract income received before your 26th birthday, up to {F.youthLimit} a year. It needs no application, provided the client runs a business (or manages a building with rented units, or is an estate continuing a business). A mandate from a private individual, say tutoring a neighbour's child under a written contract, is not covered.</p>
+  <p>On the payslip or the bill (rachunek) for the contract, every deduction line should therefore read zero: social contributions, health contribution and tax advance. If you see amounts there, the client probably does not know you are a student or has out-of-date details about your age.</p>
+
+  <h2>What a student takes home compared with other contractors</h2>
+  <ContentTable headers={['Gross', 'Student under 26', 'Non-student under 26', 'After 26th birthday', 'Student on employment contract']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>The "after 26th birthday" column assumes no voluntary sickness contribution and no PIT-2 statement, the most common set-up on a mandate contract. The last column shows a student on an employment contract (umowa o pracę): no tax thanks to the youth relief, but full ZUS and health contributions, because the student exemption applies only to mandate contractors. On {$(g)} gross a student employee takes home {$(e.net)}, a student on a mandate contract {$(s.net)}.</p>
+  <p>Between a student and a same-age peer who has finished studying, the only difference is contributions: on {$(g)} gross, {$(u.social)} in social contributions and {$(u.health)} in health contribution. Neither pays income tax.</p>
+
+  <h2>Graduation and your 26th birthday are two different cut-offs</h2>
+  <p>The contribution exemption needs two conditions at once: pupil or student status, and being under 26. Losing either one ends it. A 23-year-old graduate loses the contribution exemption while keeping the tax relief. A fifth-year student who turns 26 before defending a thesis loses it on the birthday, though still enrolled.</p>
+  <p>The tax relief has just one condition, age. It applies up to and including your 26th birthday and does not care whether you study. So after graduation the client starts deducting contributions but still withholds no tax.</p>
+  <p>Exactly when student status ends is decided by higher-education rules, not by tax or social insurance law, and we do not give a specific date here. If you finish your studies during a running contract, tell the client straight away: the client registers you for insurance, and whether it deducts contributions depends on that information.</p>
+
+  <h2>A job instead, or a mandate with your own employer</h2>
+  <p>On an employment contract, being a student changes nothing about contributions. Employees are compulsorily insured for pension and disability with no student exception. A student employee pays {F.emerytalnaEe} pension, {F.rentowaEe} disability, {F.chorobowa} sickness and {F.health} health contribution; only the youth relief keeps income tax away.</p>
+  <p>The trap is a mandate contract with the company where you also have a job. Article 8(2a) treats you as an employee in that case, even when the mandate was signed by another firm but the work is done for your employer. The mandate pay is then subject to contributions along with your salary, and the student exemption does not apply.</p>
+  <p>Several mandate contracts with different companies are fine: you stay exempt from contributions on each. The {F.youthLimit} tax relief limit, however, is shared across all your contracts in the year.</p>
+
+  <div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('hourly', lang)} /></div>
+
+  <h2>The hourly minimum and very small contracts</h2>
+  <p>The {F.minHourly} gross minimum hourly rate applies to every mandate contractor, students included. For 80 hours in a month that is at least {$(h80)} gross, and for a student the same amount net. What counts is time actually worked, so keep your own record of hours, especially on shift work in restaurants or shops.</p>
+  <p>The exception to net equals gross is a contract worth up to {F.smallContract} with someone who is not the payer's employee. Such amounts are taxed at a flat {F.pitLow} of the whole fee, and the youth relief does not cover flat-rate tax. On a {$(small)} contract a student receives {$(small - Math.round(small * P.pit.rate_low))}. The mini calculator and table on this page assume contracts above that threshold.</p>
+
+  <h2>Example: a summer mandate, then a part-time job</h2>
+  <p>A 21-year-old student works July and August on a mandate contract for a restaurant chain at {$(4000)} gross a month. Each month {$(sum.net)} reaches the account: no contributions, no tax. In September the same student takes a part-time employment contract at {$(3000)} gross. Tax stays at zero thanks to the youth relief, but the employer now deducts contributions and health, leaving {$(job.net)}.</p>
+  <p>Over the year this student's income stays far below {F.youthLimit}, so the tax relief never runs out. The switch in September changes only the contributions, and with them the start of a real pension record and sickness cover. If the restaurant chain had been the employer from September too, any further mandate there would have been treated as salary under article 8(2a).</p>
+
+  <h2>What a student on a mandate contract goes without</h2>
+  <p>No contributions has a price. Nothing from such a contract goes into your ZUS pension account, and without sickness insurance there is no sickness benefit if you fall ill. The contract does not give you health insurance either, so you need cover from another source. For most students that is a sensible trade, but if you work this way for a long time, it is worth costing it out.</p>
+  <p>For contractors of any age, the <a href={route('zlecenie', lang)}>mandate contract calculator</a> does the full calculation, and the guide to the <a href={route('youth', lang)}>youth tax relief</a> covers the tax side in detail.</p>
+</GuideLayout>

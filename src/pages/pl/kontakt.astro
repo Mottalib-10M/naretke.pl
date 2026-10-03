@@ -1,0 +1,48 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import LegalIdentity from '../../components/LegalIdentity.astro';
+import { AUTHOR_NAME, CONTACT_EMAIL, REVIEW_CYCLE_MONTHS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { contactPageSchema, breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const title = `Zgłoś błąd w wyliczeniu netto ${F.year} lub napisz do nas`;
+const description = `Adres e-mail redakcji, dane potrzebne do sprawdzenia wyliczenia netto (link z kalkulatora, brutto, umowa, opcje), czas odpowiedzi i czego nie robimy w ${F.year} r.`;
+const path = route('contact', lang);
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[contactPageSchema({ name: title, description, path, lang }), breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('contact', lang), path }])]}
+  breadcrumbs={[{ label: label('contact', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Kontakt z redakcją</h1>
+    <p class="lead">Czytamy każdą wiadomość. Piszesz na jeden adres: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Można pisać po polsku albo po angielsku.</p>
+
+    <h2>Wynik nie zgadza się z paskiem wypłaty</h2>
+    <p>To najcenniejsze zgłoszenia, jakie dostajemy. Żeby odtworzyć Twój przypadek, potrzebujemy:</p>
+    <ol>
+      <li><strong>link z paska adresu</strong> skopiowany po wpisaniu danych do kalkulatora: kalkulator zapisuje w adresie wszystkie pola, więc nie trzeba ich przepisywać. Jeśli go nie masz, podaj kwotę brutto, rodzaj umowy oraz zaznaczone opcje (PIT-2, ulga dla młodych, podwyższone koszty dla dojeżdżających, PPK, status studenta);</li>
+      <li>kwotę, której się spodziewałeś, i skąd ją masz: pasek wypłaty, PIT-11, rachunek do umowy zlecenia, wyliczenie księgowej;</li>
+      <li>rok, którego dotyczy wyliczenie.</li>
+    </ol>
+    <p>Nie przysyłaj skanów dokumentów z numerem PESEL ani danymi pracodawcy. Do sprawdzenia wystarczą same kwoty.</p>
+    <p>Różnica kilku groszy zwykle wynika z zaokrągleń, które płatnik stosuje po swojemu. Wszystko, co wykracza poza zaokrąglenie, traktujemy jako możliwy błąd: sprawdzamy przepis, a jeśli racja jest po Twojej stronie, poprawiamy silnik, dopisujemy Twój przypadek do testów i odnotowujemy zmianę zgodnie z <a href={route('editorial', lang)}>polityką redakcyjną</a>. Co kalkulator uwzględnia, a czego świadomie nie, opisuje <a href={route('method', lang)}>metodologia</a>.</p>
+
+    <h2>Media i analizy</h2>
+    <p>Dziennikarzom przygotowujemy zestawienia z naszego silnika, na przykład netto dla kilkunastu poziomów płacy na czterech umowach albo wpływ limitu {F.cap} na pensje w danym roku. Napisz, dla jakiej redakcji, na jaki temat i na kiedy.</p>
+
+    <h2>Kalkulator na Twojej stronie</h2>
+    <p>Działy kadr, biura rachunkowe i portale pracy mogą bezpłatnie osadzić kalkulator w ramce iframe. Kod i warunki są na stronie <a href={route('widget', lang)}>widgetu</a>.</p>
+
+    <h2>Czego nie robimy</h2>
+    <p>Nie udzielamy indywidualnych porad podatkowych ani prawnych, nie sprawdzamy umów i nie rozliczamy zeznań. Pytania o Twoją konkretną sytuację podatkową kieruj do urzędu skarbowego, Krajowej Informacji Skarbowej albo doradcy podatkowego, a pytania o składki do ZUS. Nie możemy też interweniować u pracodawcy ani w urzędzie.</p>
+
+    <h2>Kiedy odpowiemy</h2>
+    <p>Staramy się odpowiadać w ciągu pięciu dni roboczych, a zgłoszenia błędów w obliczeniach rozpatrujemy w pierwszej kolejności. Niezależnie od zgłoszeń cały zestaw parametrów przeglądamy co najmniej raz na {REVIEW_CYCLE_MONTHS} miesięcy.</p>
+
+    <h2>Wydawca</h2>
+    <LegalIdentity lang={lang} />
+    <p>Odpowiedzialny za treść: {AUTHOR_NAME}. Pełne dane i warunki korzystania znajdziesz w <a href={route('terms', lang)}>regulaminie z notą prawną</a>.</p>
+  </div>
+</PageLayout>

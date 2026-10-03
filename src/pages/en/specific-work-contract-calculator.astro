@@ -1,0 +1,48 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { dzielo } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const rows = [500, 1000, 2000, 3000, 5000, 8000, 10000].map((g) => { const a = dzielo({ gross: g }), b = dzielo({ gross: g, authors: true }); return [$(g), $(a.pit), $(a.net), $(b.pit), $(b.net)]; });
+const d3 = dzielo({ gross: 3000 }), d3a = dzielo({ gross: 3000, authors: true });
+const small = 150, d150 = dzielo({ gross: small });
+const d10 = dzielo({ gross: 10000 });
+const faqs = [
+  { q: `How much tax is due on a ${$(3000)} specific-work contract?`, a: `With ${F.kupContract} costs the tax base is ${$(d3.taxBase)} and the ${F.pitLow} advance is ${$(d3.pit)}, so you take home ${$(d3.net)}. If the work is a protected work and falls within the creative activities in Article 22(9b) of the PIT Act, costs are ${F.kupAuthors}: the advance drops to ${$(d3a.pit)} and take-home rises to ${$(d3a.net)}.` },
+  { q: `Is tax due on a specific-work contract worth only ${$(small)}?`, a: `Yes. When the amount in a contract with someone who is not the payer's employee does not exceed ${F.smallContract}, the payer withholds a flat ${F.pitLow} tax on the whole amount, with no deductible costs. On ${$(small)} that is ${$(d150.pit)} of tax and ${$(d150.net)} take-home.` },
+  { q: 'Is the advance withheld on a dzieło all the tax I will pay?', a: `Not necessarily. The client withholds an advance at ${F.pitLow}, but in your annual return the income from the contract is added to your other income taxed on the scale. If total annual income exceeds ${F.threshold}, the excess is taxed at ${F.pitHigh} and you pay the difference. On a low income it can go the other way, with part of the advances refunded.` },
+];
+---
+<GuideLayout lang={lang} id="dzielo" breadcrumbLabel={label('dzielo', lang)} title={`Specific-work contract ${F.year}: umowa o dzieło net and tax`} h1={`Specific-work contract calculator (umowa o dzieło) ${F.year}: what you take home`}
+  description={`Specific-work contract (umowa o dzieło) in ${F.year}: ${$(3000)} gross leaves ${$(d3.net)} with ${F.kupContract} costs and ${$(d3a.net)} with ${F.kupAuthors} creative costs. No ZUS modelled.`}
+  intro="Enter the amount of your specific-work contract and the calculator works out deductible costs, the tax advance and what is paid out to you."
+  resume={`A specific-work contract (umowa o dzieło) for ${$(3000)} gross leaves ${$(d3.net)} take-home in ${F.year} with standard ${F.kupContract} costs and no PIT-2. The calculator assumes a contract with a client who does not employ you and charges no ZUS or health contribution on it. It subtracts costs from the amount: ${F.kupContract} (Article 22(9)(4) of the PIT Act), or ${F.kupAuthors} when you transfer copyright in a work created in one of the creative activities listed in Article 22(9b). On the base, rounded to whole zloty, it withholds a ${F.pitLow} advance. With creative costs, the same amount leaves ${$(d3a.net)}. A contract up to ${F.smallContract} is taxed at a flat ${F.pitLow} on the whole amount, with no costs. The PIT-2 reduction can be switched on in the calculator. The result covers a single contract in one month: your annual tax is settled in your return together with your other income.`}
+  faqs={faqs}
+  related={[{ href: route('zlecdzielo', lang), name: label('zlecdzielo', lang), description: 'Dzieło or zlecenie for the same amount.' }, { href: route('authors', lang), name: label('authors', lang), description: `${F.kupAuthors} costs and the ${F.kupAuthorsLimit} annual cap.` }, { href: route('zlecenie', lang), name: 'Mandate contract calculator', description: 'Net pay on zlecenie with ZUS, health and sickness cover.' }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="dzielo" lockContract={true} defaultGross={3000} methodHref={route('method', lang)} />
+  </div>
+
+  <h2>Dzieło at different amounts: {F.kupContract} and {F.kupAuthors} costs</h2>
+  <p>The table shows the advance and net pay without PIT-2. Up to {F.smallContract} both columns would be identical, because the flat tax ignores costs.</p>
+  <ContentTable headers={['Gross', `Advance (${F.kupContract} costs)`, `Net (${F.kupContract} costs)`, `Advance (${F.kupAuthors} costs)`, `Net (${F.kupAuthors} costs)`]} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>With no contributions the arithmetic is simple: on {F.kupContract} costs, tax takes a fixed share of the amount and net pay grows in a straight line. At {$(10000)} the advance is {$(d10.pit)} and you keep {$(d10.net)}. There are no monthly thresholds, because the advance is always {F.pitLow}.</p>
+
+  <h2>How to read the result</h2>
+  <p>The calculator first takes deductible costs off the contract amount. At {$(3000)} with {F.kupContract} costs that is {$(d3.kup)}, so the tax base is {$(d3.taxBase)}. The {F.pitLow} advance on that base is {$(d3.pit)}. That is what the client sends to the tax office (urząd skarbowy), and the rest is paid to you. Your contract bill (rachunek) should show exactly these three figures.</p>
+  <p>The creative-costs switch changes {F.kupContract} into {F.kupAuthors}. It is not a matter of choice: the rate applies only when a protected work is created and the job falls within the activities listed in the Act. Creative costs from all contracts in a year share one {F.kupAuthorsLimit} cap; see our guide to <a href={route('authors', lang)}>creative work costs</a>. The PIT-2 switch lowers the advance by {F.reducingMonth} with one payer, as described in our <a href={route('pit2', lang)}>PIT-2 guide</a>.</p>
+
+  <h2>What the calculator leaves out</h2>
+  <p>The result does not apply to a specific-work contract signed with your own employer, nor to a situation in which you are really doing mandate work under another name: contribution rules may then differ from the calculator, and the contract is classified by its content, not its title. The calculator also does not add up several contracts or work out annual tax. If you also have a salary or mandate contracts in the year, total income is settled in your return, and on high earnings part of it may be taxed at {F.pitHigh}.</p>
+  <p>No contributions has a flip side, too. In this model a specific-work contract gives you no health, pension or sickness insurance. If it is your only income, work out what cover through another route would cost before you compare dzieło with a job or a mandate contract.</p>
+  <div data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecdzielo', lang)} /></div>
+</GuideLayout>

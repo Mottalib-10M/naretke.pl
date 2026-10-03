@@ -1,0 +1,87 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const T = P.pit;
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const scale = (b: number) => Math.max(0, Math.min(b, T.threshold) * T.rate_low + Math.max(0, b - T.threshold) * T.rate_high - T.tax_reducing_amount_year);
+const fixedPart = $(T.threshold * T.rate_low - T.tax_reducing_amount_year);
+const rows = [10000, 12000, 15000, 20000, 25000].map((g) => { const y = uopYear({ gross: g }); const m = secondBracketMonth({ gross: g }); return [$(g), $(y.total.taxBase), m ? MONTHS[m - 1] : 'not this year', $(y.total.pit), $(y.months[0].net), $(y.months[11].net)]; });
+let edge = 0; for (let g = 8000; g <= 20000; g += 10) { if (secondBracketMonth({ gross: g })) { edge = g; break; } }
+const y15 = uopYear({ gross: 15000 }); const m15 = secondBracketMonth({ gross: 15000 }) ?? 12;
+const before = y15.months[m15 - 2], cross = y15.months[m15 - 1], after = y15.months[Math.min(11, m15)];
+const two = uopYear({ gross: 8000 }), twoNo = uopYear({ gross: 8000, pit2: false });
+const twoIncome = 2 * (two.total.gross - two.total.social) - Math.min(2 * T.kup_employee_year, T.kup_multi_year);
+const twoBase = Math.round(twoIncome), twoTax = Math.round(scale(twoBase)), twoAdv = two.total.pit + twoNo.total.pit, twoDue = twoTax - twoAdv;
+const mg = (g: number, i: number) => uopYear({ gross: g + 100 }).months[i].net - uopYear({ gross: g }).months[i].net;
+const mJan = mg(15000, 0), mDec = mg(15000, 11);
+const bonusMonths = Array.from({ length: 12 }, (_, i) => (i === 5 ? 12000 + 30000 : 12000));
+const bY = uopYear({ gross: 12000, months: bonusMonths }); const bM = bY.months.find((m) => m.secondBracket)?.month ?? null;
+const m12 = secondBracketMonth({ gross: 12000 });
+const sol = 1200000, solTax = (sol - T.solidarity_threshold) * T.solidarity_rate;
+const m20 = secondBracketMonth({ gross: 20000 }) ?? 12;
+const faqs = [
+  { q: `Is the ${F.threshold} threshold based on gross salary or on income?`, a: `On income, meaning the taxable base. Employee ZUS contributions and work-related costs (${F.kupYear} a year on one job) come off gross first. That is why ${$(10000)} gross a month, ${$(120000)} a year, stays below the threshold: the taxable base is ${rows[0][1]}. The second bracket only starts at a higher gross salary.` },
+  { q: 'At what gross salary do I reach the second tax bracket?', a: `On one employment contract, with the same salary all year, standard costs and no reliefs, the annual base passes ${F.threshold} from about ${$(edge)} gross a month. At that level ${F.pitHigh} only touches the end of the December payslip. On ${$(15000)} gross the second bracket starts in ${MONTHS[m15 - 1]}, and on ${$(20000)} as early as ${MONTHS[m20 - 1]}. Bonuses bring the month forward.` },
+  { q: `Once I pass the threshold, is my whole salary taxed at ${F.pitHigh}?`, a: `No. ${F.pitHigh} applies only to income above ${F.threshold}. Annual tax is ${fixedPart} plus ${F.pitHigh} of the excess, so the first ${F.threshold} is still taxed at ${F.pitLow} less the tax-reducing amount. In the month you cross, your employer splits the base in two and uses the higher rate from that month to December.` },
+  { q: `I have two jobs and neither employer deducts ${F.pitHigh}. Is that a mistake?`, a: `No, that is how withholding works. Each payer counts the threshold only on what it pays you. Incomes are added together in the PIT-37 annual return. With two salaries of ${$(8000)} gross each, the combined base is about ${$(twoBase)}, and the return shows roughly ${$(twoDue)} of extra tax to pay if PIT-2 was filed with one employer.` },
+  { q: 'At what income does the solidarity levy apply?', a: `On income above ${F.solidarityThreshold} in a year, at ${F.solidarity} (article 30h of the PIT Act). It is a separate levy paid on top of tax on the scale. On income of ${$(sol)} it comes to ${$(solTax)}. Few people pay it, because it needs income averaging more than ${$(T.solidarity_threshold / 12)} a month.` },
+];
+---
+<GuideLayout lang={lang} id="brackets" breadcrumbLabel={label('brackets', lang)}
+  title={`Income Tax Brackets ${F.year} in Poland: ${F.pitLow} and ${F.pitHigh} Rates`}
+  h1={`Polish income tax brackets ${F.year}: when the second one starts`}
+  description={`Polish income tax brackets ${F.year}: ${F.pitLow} up to ${F.threshold} of income, ${F.pitHigh} above. The month you start paying more, two jobs, the ${F.solidarity} levy and a calculator.`}
+  intro={`The Polish tax scale has two brackets in ${F.year}: ${F.pitLow} on income up to ${F.threshold} a year and ${F.pitHigh} on the excess above it.`}
+  resume={`In ${F.year}, income up to ${F.threshold} a year is taxed at ${F.pitLow}, less the ${F.reducingYear} tax-reducing amount, and income above ${F.threshold} at ${F.pitHigh}; annual tax in the second bracket is ${fixedPart} plus ${F.pitHigh} of the excess (article 27 of the PIT Act). The threshold applies to income, not gross pay: ZUS contributions and work-related costs are deducted first. Your employer counts it cumulatively from January, on the payments it makes, and applies ${F.pitHigh} from the month the base passes the threshold. On a single job that happens from about ${$(edge)} gross a month; on ${$(15000)} gross the second bracket starts in ${MONTHS[m15 - 1]} and take-home pay drops from ${$(y15.months[0].net)} to ${$(y15.months[11].net)}. With several sources of income, the final tax is only settled in the PIT-37 annual return. Income above ${F.solidarityThreshold} also bears a ${F.solidarity} solidarity levy. The calculator shows the month you enter the second bracket.`}
+  faqs={faqs}
+  related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Net pay in every month, with the bracket and ZUS cap.' }, { href: route('allowance', lang), name: label('allowance', lang), description: `The ${F.freeAmount} allowance and ${F.reducingYear} of tax relief.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} with no brackets: who it suits.` }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('annual', lang)} /></div>
+
+  <h2>The {F.year} scale: two rates and one reducing amount</h2>
+  <p>Article 27(1) of the Personal Income Tax Act contains a two-row table. Up to {F.threshold} of taxable base, tax is {F.pitLow} minus the tax-reducing amount of {F.reducingYear}. Above {F.threshold}, tax is {fixedPart} plus {F.pitHigh} of the excess. That {fixedPart} is simply the tax on the first {F.threshold}, already reduced by the tax-reducing amount. The relief therefore stays with people in the second bracket too: the Polish scale does not phase it out.</p>
+  <p>The same scale covers pay from employment, mandate contracts (umowa zlecenie) and specific-work contracts (umowa o dzieło), and the profits of sole traders who have not opted for the flat tax or the lump-sum tax. Someone on the <a href={route('liniowy', lang)}>flat tax</a> pays {F.liniowy} on every złoty of profit, with no brackets and no reducing amount.</p>
+
+  <h2>The threshold is about income, not gross pay</h2>
+  <p>This is the most common misunderstanding. {F.threshold} does not mean a salary of {$(10000)} gross a month. Before anything counts towards the threshold, gross pay is reduced by the pension, disability and sickness contributions ({F.socialEe} together) and by work-related costs (koszty uzyskania przychodu): {F.kupYear} a year on one job, or {F.kupRaisedYear} with the higher costs for people who commute from another town. The health contribution does not reduce the base.</p>
+  <p>An example: {$(10000)} gross for twelve months is {$(120000)} gross, yet the taxable base is only {rows[0][1]}. That person stays in the first bracket all year. On one job with a steady salary, the second bracket only appears from about {$(edge)} gross a month, and only in December.</p>
+
+  <h2>The month you start paying {F.pitHigh}</h2>
+  <p>Your employer does not wait for the end of the year. Under article 32 of the Act it calculates advances cumulatively: it adds up the taxable base from January and, in the month the total passes {F.threshold}, applies {F.pitHigh} to the part above the threshold. In later months the whole base is taxed at the higher rate. The table shows that month for five salaries with {F.kup} costs, PIT-2 filed, no PPK and no reliefs.</p>
+  <ContentTable headers={['Monthly gross', 'Base for the year', 'Second bracket from', 'PIT for the year', 'Net in January', 'Net in December']} align={['r', 'r', 'l', 'r', 'r', 'r']} rows={rows} />
+  <p>On {$(25000)} gross the drop in December's take-home pay is smaller than the bracket alone would suggest, because in the same year the salary also passes the {F.cap} cap on pension and disability contributions. Their disappearance partly offsets the higher tax rate. The <a href={route('annual', lang)}>annual salary calculator</a> shows both effects month by month.</p>
+
+  <h2>The crossover month on {$(15000)} gross</h2>
+  <p>On {$(15000)} gross a month, the taxable base grows by about {$(cross.taxBase)} each month. In the month before the crossover ({MONTHS[m15 - 2]}), the cumulative base is {$(before.cumTaxBase)} and the advance {$(before.pit)}. In {MONTHS[m15 - 1]} the total passes {F.threshold}: part of the base is still taxed at {F.pitLow}, the rest at {F.pitHigh}, and the advance rises to {$(cross.pit)}. From the following month the whole base is taxed at the higher rate and the advance is {$(after.pit)}.</p>
+  <p>In take-home terms that is a fall from {$(before.net)} to {$(after.net)}. Many people read it as a pay cut, and payroll departments field questions about errors at this time of year. There is no error; in January the advance goes back to {F.pitLow}, because the threshold starts again from zero each tax year.</p>
+
+  <h2>Several incomes and the PIT-37 return</h2>
+  <p>Each payer sees only its own payments. If you have two jobs, a job plus a mandate contract, or changed jobs during the year, no single payer may reach the threshold even though your combined income does. The missing tax then shows up in your PIT-37 annual return, which adds up income from every source.</p>
+  <p>Take two employment contracts of {$(8000)} gross each, all year. Each employer withholds advances at {F.pitLow}. In the return the combined base is about {$(twoBase)}, and work-related costs from two jobs are capped at {F.kupMulti} a year. Tax on the scale comes to about {$(twoTax)}, while both employers withheld {$(twoAdv)} in advances, with PIT-2 filed at only one of them. That leaves roughly {$(twoDue)} to pay with the return. It is worth putting that amount aside during the year so the bill does not come as a surprise.</p>
+
+  <h2>What you keep from each {$(100)} raise</h2>
+  <p>The second bracket shows most clearly at the margin. On {$(15000)} gross, each extra {$(100)} of gross pay leaves {formatMoney(mJan, 2, lang)} take-home in January and only {formatMoney(mDec, 2, lang)} in December, once you are in the second bracket. The gap is not only {F.pitHigh} instead of {F.pitLow}: a raise also attracts ZUS and health contributions, which ignore the bracket. That is why a raise negotiated late in the year feels smaller than it is, and regains its full value in January.</p>
+
+  <h2>A bonus brings the second bracket forward</h2>
+  <p>The threshold is measured on the cumulative base, so a one-off payment moves the crossover month. On a steady {$(12000)} gross, the second bracket starts {m12 ? `in ${MONTHS[m12 - 1]}` : 'only next year'}. If the same person receives a {$(30000)} bonus in June, they cross the threshold in {bM ? MONTHS[bM - 1] : 'no month this year'}, and tax for the year rises to {$(bY.total.pit)}. Splitting the bonus into instalments within the same year does not help, because what counts is total pay in the year. The <a href={route('bonus', lang)}>bonus calculator</a> shows what is left of the bonus itself.</p>
+
+  <h2>The solidarity levy: {F.solidarity} above {F.solidarityThreshold}</h2>
+  <p>The highest incomes carry one more charge. Article 30h of the PIT Act imposes {F.solidarity} on income above {F.solidarityThreshold} in a year (danina solidarnościowa). It is not a third bracket of the scale but a separate levy on total qualifying income, paid alongside the tax on the scale. On income of {$(sol)} it comes to {$(solTax)}. The vast majority of employees never meet it, since it requires income averaging more than {$(T.solidarity_threshold / 12)} a month.</p>
+
+  <h2>Softening the second bracket</h2>
+  <p>On employment the room for manoeuvre is limited, but it exists. People under 26 benefit from the <a href={route('youth', lang)}>youth tax relief</a>, which exempts income up to {F.youthLimit} a year and pushes back the month they reach the second bracket. If part of your salary pays for the transfer of copyright, your employer can apply <a href={route('authors', lang)}>{F.kupAuthors} creative-work costs</a>, which lower the base, up to {F.kupAuthorsLimit} a year. Some people with income well above the threshold consider running a business on the flat tax; our <a href={route('compare', lang)}>B2B versus employment comparison</a> sets out the numbers.</p>
+
+  <h2>Your year, month by month</h2>
+  <p>The second calculator shows net pay for the whole year, the highest and lowest monthly net and the monthly average. The gap between them is largely the second bracket at work.</p>
+  <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('annual', lang)} /></div>
+  <p>It assumes a steady salary with one employer, PIT-2 and standard costs. With a bonus or a change of job during the year, run the full calculator instead.</p>
+</GuideLayout>

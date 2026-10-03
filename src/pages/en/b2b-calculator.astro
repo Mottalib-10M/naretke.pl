@@ -1,0 +1,49 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const r12 = P.b2b.ryczalt_rates[0].rate;
+const rows = [10000, 15000, 20000, 30000].map((g) => [$(g), $(b2b({ revenue: g, form: 'liniowy' }).net), $(b2b({ revenue: g, form: 'ryczalt', ryczaltRate: r12 }).net), $(b2b({ revenue: g, form: 'skala' }).net)]);
+const l15 = b2b({ revenue: 15000, form: 'liniowy' }), r15 = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: r12 }), s15 = b2b({ revenue: 15000, form: 'skala' });
+const l15c = b2b({ revenue: 15000, costs: 2000, form: 'liniowy' });
+const janDiff = (P.b2b.health.minimum_monthly - P.b2b.health.minimum_monthly_january);
+const faqs = [
+  { q: `How much do I keep from a ${$(15000)} net invoice on B2B?`, a: `With full ZUS without sickness cover and no costs, you keep about ${$(l15.net)} on the flat tax, ${$(r15.net)} on the ${pct(r12, lang)} lump sum and ${$(s15.net)} on the tax scale. The differences come from the tax rate and the health contribution, because social contributions are identical under all three forms. It is a monthly average over the year, before spending on holidays and equipment.` },
+  { q: 'Does the B2B calculator include VAT?', a: `No. You enter net revenue, meaning the invoice amount without VAT. The calculator neither adds nor deducts VAT, because it does not affect income tax or contributions. If you agree a rate "gross including VAT", take the VAT off first and only then enter the amount in the revenue field.` },
+  { q: 'Why does my January on B2B differ from the calculator?', a: `The calculator applies the minimum health contribution from February, ${F.healthMin}, to all twelve months. For January ${F.year} the minimum was lower: ${F.healthMinJan}. If you pay the minimum health contribution, January therefore comes out ${formatMoney(janDiff, 2, lang)} better than the calculator's average. On the lump sum this difference does not arise.` },
+  { q: 'How should I enter business costs in the B2B calculator?', a: `Enter average monthly net costs, for example a lease, an office or equipment spread over twelve months. On the tax scale and the flat tax they reduce income, tax and health: with ${$(15000)} of revenue and ${$(2000)} of costs, the flat tax leaves ${$(l15c.net)} after paying those costs, against ${$(l15.net)} without them. On the lump sum, costs do not change the tax, so the calculator ignores them.` },
+];
+---
+<GuideLayout lang={lang} id="b2b" breadcrumbLabel={label('b2b', lang)} title={`B2B ${F.year} in Poland: take-home on scale, flat tax or ryczałt`} h1={`B2B calculator ${F.year}: what you keep from an invoice in Poland`}
+  description={`B2B calculator for Poland, ${F.year}: a ${$(15000)} net invoice leaves ${$(l15.net)} on the flat tax, ${$(r15.net)} on the ${pct(r12, lang)} lump sum and ${$(s15.net)} on the scale.`}
+  intro="Enter your monthly invoiced revenue without VAT and any costs, then pick a tax form and a ZUS option."
+  resume={`On a B2B contract in ${F.year}, a ${$(15000)} net invoice leaves about ${$(l15.net)} a month on the ${F.liniowy} flat tax (podatek liniowy), ${$(r15.net)} on the ${pct(r12, lang)} lump sum (ryczałt) and ${$(s15.net)} on the tax scale (skala), with full ZUS without sickness cover and no costs. From revenue come social contributions of ${F.b2bZusFullNoSick} a month (including ${F.wypadkowa} accident insurance and the Labour Fund), a health contribution that depends on the tax form, and income tax. The calculator works out an average over the whole year, so it reflects the ${F.pitHigh} second bracket above ${F.threshold} of annual income on the scale, the ${F.liniowyLimit} cap on deducting health on the flat tax, and the health bands on the lump sum. It applies the February minimum health contribution, ${F.healthMin}, to the whole year. It ignores VAT: you enter the net invoice amount. You can choose full ZUS, preferential ZUS or start-up relief, add voluntary sickness cover and enter average monthly business costs.`}
+  faqs={faqs}
+  related={[{ href: route('compare', lang), name: label('compare', lang), description: 'Which B2B rate matches an employment salary.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `When the ${F.liniowy} flat tax beats the scale.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Lump-sum rates and the three health bands.' }]}
+  sources={[src('zus_b2b', lang), src('pit_act', lang), src('ryczalt_act', lang), src('health_deduction', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="b2b" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
+  </div>
+
+  <h2>Three tax forms at four revenue levels</h2>
+  <p>Monthly take-home, full ZUS without sickness cover, no costs, lump sum at the {pct(r12, lang)} rate for IT services.</p>
+  <ContentTable headers={['Invoiced revenue', 'Flat tax', `Lump sum ${pct(r12, lang)}`, 'Tax scale']} align={['r', 'r', 'r', 'r']} rows={rows} />
+  <p>At {$(10000)} the tax scale leaves the most, thanks to the tax-reducing amount and the {F.pitLow} rate. From {$(15000)} the {pct(r12, lang)} lump sum takes the lead and the scale drops to last place: at {$(30000)}, part of annual income already falls into the {F.pitHigh} band. If your business has a different lump-sum rate or high costs, the order can be entirely different, so check your own numbers in the calculator above.</p>
+
+  <h2>Assumptions worth knowing</h2>
+  <p>The result is a monthly average over the year: the calculator multiplies revenue and costs by twelve, works out annual tax and health, then divides by twelve. That way you see the effect of the second tax bracket and the health deduction cap, which a single month would hide. In practice, the advances in individual months can differ from the average.</p>
+  <p>Accident insurance is charged at {F.wypadkowa}, the rate ZUS uses in its {F.year} figures. If a different rate between {F.wypadkowaMin} and {F.wypadkowaMax} applies to you, the contribution will differ. The {F.healthMin} minimum health contribution applies in the calculator all year, although for January it was {F.healthMinJan}. We do not model Mały ZUS plus, several lump-sum rates at once, or the stepped rate in Article 12(1)(4) of the Lump-sum Tax Act.</p>
+
+  <h2>What B2B take-home does not show at first glance</h2>
+  <p>The calculator's net figure comes before holidays, illness and equipment. On B2B there is no paid leave, so a month off is a month without an invoice. A comparison with an employment salary that accounts for these differences is on the <a href={route('compare', lang)}>B2B versus employment contract</a> page. The contributions themselves under each option are covered in our guide to <a href={route('zusb2b', lang)}>ZUS for the self-employed</a>.</p>
+  <div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('compare', lang)} /></div>
+</GuideLayout>

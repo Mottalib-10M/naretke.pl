@@ -1,0 +1,49 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+// Tableau calculé par le moteur : dzieło sans PIT-2, koszty 20 % et 50 %.
+const rows = [500, 1000, 2000, 3000, 5000, 8000, 10000].map((g) => { const a = dzielo({ gross: g }), b = dzielo({ gross: g, authors: true }); return [$(g), $(a.pit), $(a.net), $(b.pit), $(b.net)]; });
+const d3 = dzielo({ gross: 3000 }), d3a = dzielo({ gross: 3000, authors: true });
+const small = 150, d150 = dzielo({ gross: small });
+const d10 = dzielo({ gross: 10000 });
+const faqs = [
+  { q: `Ile wynosi podatek od umowy o dzieło na ${$(3000)}?`, a: `Przy kosztach ${F.kupContract} podstawa opodatkowania to ${$(d3.taxBase)}, a zaliczka ${F.pitLow} wynosi ${$(d3.pit)}, więc na rękę zostaje ${$(d3.net)}. Jeśli dzieło jest utworem, a praca mieści się w działalności twórczej z art. 22 ust. 9b ustawy o PIT, koszty wynoszą ${F.kupAuthors}: zaliczka spada do ${$(d3a.pit)}, a netto rośnie do ${$(d3a.net)}.` },
+  { q: `Czy od umowy o dzieło na ${$(small)} płaci się podatek?`, a: `Tak. Gdy kwota w umowie z osobą, która nie jest pracownikiem płatnika, nie przekracza ${F.smallContract}, płatnik pobiera zryczałtowany podatek ${F.pitLow} od całej kwoty, bez kosztów uzyskania przychodu. Przy ${$(small)} to ${$(d150.pit)} podatku i ${$(d150.net)} na rękę.` },
+  { q: 'Czy zaliczka z dzieła to cały podatek, jaki zapłacę?', a: `Niekoniecznie. Zamawiający pobiera zaliczkę według stawki ${F.pitLow}, ale dochód z dzieła sumuje się w zeznaniu rocznym z innymi dochodami opodatkowanymi według skali. Jeśli łączny dochód w roku przekroczy ${F.threshold}, nadwyżka podlega stawce ${F.pitHigh} i trzeba dopłacić różnicę. Przy małych dochodach może być odwrotnie i część zaliczek wróci jako zwrot.` },
+];
+---
+<GuideLayout lang={lang} id="dzielo" breadcrumbLabel={label('dzielo', lang)} title={`Kalkulator umowa o dzieło ${F.year}: netto, koszty i podatek`} h1={`Kalkulator umowy o dzieło ${F.year}: ile zostaje na rękę`}
+  description={`Kalkulator umowa o dzieło ${F.year}: z ${$(3000)} brutto zostaje ${$(d3.net)} przy kosztach ${F.kupContract} i ${$(d3a.net)} przy kosztach autorskich ${F.kupAuthors}. Bez ZUS, z PIT-2 lub bez.`}
+  intro="Wpisz kwotę z umowy o dzieło, a kalkulator policzy koszty uzyskania przychodu, zaliczkę na podatek i kwotę do wypłaty."
+  resume={`Umowa o dzieło na ${$(3000)} brutto daje w ${F.year} r. ${$(d3.net)} na rękę przy zwykłych kosztach ${F.kupContract} i bez PIT-2. Kalkulator zakłada umowę z zamawiającym, u którego nie jesteś zatrudniony, i nie nalicza od niej składek ZUS ani zdrowotnej. Od przychodu odejmuje koszty: ${F.kupContract} (art. 22 ust. 9 pkt 4 ustawy o PIT) albo ${F.kupAuthors}, gdy przenosisz prawa autorskie do utworu w działalności twórczej z art. 22 ust. 9b. Od podstawy po zaokrągleniu do pełnych złotych pobiera zaliczkę ${F.pitLow}. Przy kosztach autorskich z tej samej kwoty zostaje ${$(d3a.net)}. Umowa do ${F.smallContract} jest opodatkowana ryczałtem ${F.pitLow} od całej kwoty, bez kosztów. Pomniejszenie zaliczki z PIT-2 można włączyć w kalkulatorze. Wynik dotyczy pojedynczej umowy i jednego miesiąca: roczny podatek ustala się w zeznaniu razem z innymi dochodami.`}
+  faqs={faqs}
+  related={[{ href: route('zlecdzielo', lang), name: label('zlecdzielo', lang), description: 'Dzieło czy zlecenie przy tej samej kwocie.' }, { href: route('authors', lang), name: label('authors', lang), description: `Koszty ${F.kupAuthors} i limit ${F.kupAuthorsLimit} w roku.` }, { href: route('zlecenie', lang), name: 'Kalkulator umowy zlecenie', description: 'Netto ze zlecenia z ZUS, zdrowotną i chorobowym.' }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="dzielo" lockContract={true} defaultGross={3000} methodHref={route('method', lang)} />
+  </div>
+
+  <h2>Dzieło przy różnych kwotach: koszty {F.kupContract} i {F.kupAuthors}</h2>
+  <p>Tabela pokazuje zaliczkę i netto bez PIT-2. Przy kwotach do {F.smallContract} obie kolumny byłyby identyczne, bo ryczałt nie uwzględnia kosztów.</p>
+  <ContentTable headers={['Brutto', `Zaliczka (koszty ${F.kupContract})`, `Netto (koszty ${F.kupContract})`, `Zaliczka (koszty ${F.kupAuthors})`, `Netto (koszty ${F.kupAuthors})`]} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Bez składek rachunek jest prosty: przy kosztach {F.kupContract} podatek pochłania stałą część kwoty, a netto rośnie liniowo. Przy {$(10000)} zaliczka to {$(d10.pit)}, a zostaje {$(d10.net)}. Żadnych progów miesięcznych tu nie ma, bo zaliczka zawsze wynosi {F.pitLow}.</p>
+
+  <h2>Jak czytać wynik</h2>
+  <p>Kalkulator najpierw odejmuje od kwoty umowy koszty uzyskania przychodu. Przy {$(3000)} i kosztach {F.kupContract} to {$(d3.kup)}, więc podstawa opodatkowania wynosi {$(d3.taxBase)}. Zaliczka {F.pitLow} od tej podstawy to {$(d3.pit)}. Tyle zamawiający przekazuje do urzędu skarbowego, a resztę wypłaca Tobie. Na rachunku do umowy powinieneś zobaczyć dokładnie te trzy liczby. Jeśli zamawiający potrącił coś więcej, na przykład składki, zapytaj, na jakiej podstawie, bo kalkulator zakłada umowę bez nich.</p>
+  <p>Przełącznik kosztów autorskich zmienia {F.kupContract} na {F.kupAuthors}. Nie zależy to od Twojej woli: stosuje się je tylko wtedy, gdy powstaje utwór, a praca należy do działalności wymienionej w ustawie. Koszty autorskie z wszystkich umów w roku mają wspólny limit {F.kupAuthorsLimit}; więcej w poradniku o <a href={route('authors', lang)}>kosztach autorskich</a>. Przełącznik PIT-2 obniża zaliczkę o {F.reducingMonth} u jednego płatnika, co opisuje poradnik o <a href={route('pit2', lang)}>PIT-2</a>.</p>
+
+  <h2>Czego kalkulator nie uwzględnia</h2>
+  <p>Wynik nie dotyczy umowy o dzieło zawartej z własnym pracodawcą ani sytuacji, w której w rzeczywistości wykonujesz pracę na zlecenie pod inną nazwą: wtedy zasady składkowe mogą być inne niż w kalkulatorze, a o kwalifikacji umowy decyduje jej treść, nie tytuł. Kalkulator nie sumuje też kilku umów ani nie liczy podatku rocznego. Jeżeli w roku masz także pensję lub zlecenia, łączny dochód rozlicza się w zeznaniu i przy wysokich zarobkach część może podlegać stawce {F.pitHigh}.</p>
+  <p>Brak składek ma też drugą stronę. Umowa o dzieło w tym modelu nie daje Ci ubezpieczenia zdrowotnego, emerytalnego ani chorobowego. Jeśli to Twoje jedyne źródło dochodu, policz, ile kosztowałoby ubezpieczenie z innego tytułu, zanim porównasz dzieło z etatem lub zleceniem.</p>
+  <div data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecdzielo', lang)} /></div>
+</GuideLayout>

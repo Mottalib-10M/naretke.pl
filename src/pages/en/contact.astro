@@ -1,0 +1,48 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import LegalIdentity from '../../components/LegalIdentity.astro';
+import { AUTHOR_NAME, CONTACT_EMAIL, REVIEW_CYCLE_MONTHS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { contactPageSchema, breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const title = `Report a ${F.year} net pay calculation error or write to us`;
+const description = `Our email address, what we need to check a Polish net pay result (share link, gross pay, contract, options), how fast we reply and what we cannot do in ${F.year}.`;
+const path = route('contact', lang);
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[contactPageSchema({ name: title, description, path, lang }), breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('contact', lang), path }])]}
+  breadcrumbs={[{ label: label('contact', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Get in touch</h1>
+    <p class="lead">We read every message. There is one address: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. English or Polish, whichever you prefer.</p>
+
+    <h2>The result does not match your payslip</h2>
+    <p>These are the most useful reports we receive. To reproduce your case we need:</p>
+    <ol>
+      <li>the <strong>link from your address bar</strong>, copied after filling in the calculator: it stores every input in the address, so nothing has to be retyped. Without it, send the gross amount, the contract type and the options you ticked (PIT-2 form, youth relief, higher commuter costs, PPK pension plan, student status);</li>
+      <li>the figure you expected and where it comes from: your payslip (pasek wypłaty), your PIT-11 annual statement, the bill for a mandate contract, or an accountant's calculation;</li>
+      <li>the year the calculation refers to.</li>
+    </ol>
+    <p>Please do not send scans showing your PESEL number or your employer's details. The amounts alone are enough for us to check.</p>
+    <p>A gap of a few groszy usually comes from rounding, which each payroll department applies its own way. Anything beyond rounding is treated as a possible defect: we check the provision, and if you are right we fix the engine, add your case to the test suite and log the change as our <a href={route('editorial', lang)}>editorial policy</a> requires. What the calculator covers, and what it deliberately leaves out, is listed in the <a href={route('method', lang)}>methodology</a>.</p>
+
+    <h2>Press and research</h2>
+    <p>For journalists we can produce tables straight from the engine, such as net pay at a dozen salary levels across the four contract types, or how the {F.cap} contribution cap affects pay over a year. Tell us the outlet, the topic and your deadline.</p>
+
+    <h2>Putting the calculator on your site</h2>
+    <p>HR teams, relocation services, accounting firms and job boards can embed the calculator free of charge in an iframe. The snippet and the conditions are on the <a href={route('widget', lang)}>widget page</a>.</p>
+
+    <h2>What we cannot help with</h2>
+    <p>We give no individual tax or legal advice, we do not review contracts and we do not file returns. Questions about your own tax position belong with your tax office (urząd skarbowy), the National Tax Information service (Krajowa Informacja Skarbowa) or a tax adviser; questions about contributions belong with ZUS. We cannot step in with your employer or with any authority.</p>
+
+    <h2>When to expect a reply</h2>
+    <p>We aim to answer within five working days, and calculation errors go to the front of the queue. Independently of any report, the full set of parameters is reviewed at least every {REVIEW_CYCLE_MONTHS} months.</p>
+
+    <h2>Publisher</h2>
+    <LegalIdentity lang={lang} />
+    <p>Responsible for content: {AUTHOR_NAME}. Full details and the conditions of use are in our <a href={route('terms', lang)}>terms and legal notice</a>.</p>
+  </div>
+</PageLayout>

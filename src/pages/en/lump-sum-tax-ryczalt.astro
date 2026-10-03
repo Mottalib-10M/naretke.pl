@@ -1,0 +1,96 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const RR = P.b2b.ryczalt_rates;
+const rate = (r: number) => RR.find((x) => x.rate === r)?.rate ?? r;
+// Rates from Article 12(1)(3) and (4) of the Lump-sum Tax Act that are not in params-2026.json
+// (params-pl-2026.md §5, Journal of Laws 2025 item 843): 10 %, then 8.5 % up to PLN 100,000 and 12.5 % above.
+const ART12 = { realEstate: 0.1, stepLow: 0.085, stepHigh: 0.125, stepLimit: 100000 };
+const H = P.b2b.health;
+const net15 = (r: number) => $(b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: r }).net);
+const rows = [
+  [pct(rate(0.17), lang), 'liberal professions (wolne zawody)', net15(0.17)],
+  [pct(rate(0.15), lang), 'some services: financial, legal and accounting outside the liberal professions, management consulting, advertising, employment services', net15(0.15)],
+  [pct(rate(0.14), lang), 'healthcare (PKWiU 86), architecture and engineering (71), specialised design (74.1)', net15(0.14)],
+  [pct(rate(0.12), lang), 'IT services named in the Act, including PKWiU 62.01.1, 62.02, 62.03.1, 58.29', net15(0.12)],
+  [pct(ART12.realEstate, lang), 'buying and selling property on your own account', net15(ART12.realEstate)],
+  [`${pct(ART12.stepLow, lang)} / ${pct(ART12.stepHigh, lang)}`, `some services, including accommodation (PKWiU 55) and scientific research (72): ${pct(ART12.stepLow, lang)} up to ${$(ART12.stepLimit)} of revenue, ${pct(ART12.stepHigh, lang)} above`, 'stepped rate, not modelled'],
+  [pct(rate(0.085), lang), 'other services, education', net15(0.085)],
+  [pct(rate(0.055), lang), 'manufacturing, construction, some transport', net15(0.055)],
+  [pct(rate(0.03), lang), 'retail, food service without alcohol sales', net15(0.03)],
+];
+const bands = H.ryczalt_bands.map((b, i) => [i === 0 ? `up to ${F.ryczaltLimit1}` : i === 1 ? `${F.ryczaltLimit1} to ${F.ryczaltLimit2}` : `above ${F.ryczaltLimit2}`, $2(b.monthly), $(b.monthly * 12), $(b.monthly * 12 * H.ryczalt_deductible_share)]);
+const x = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: 0.12 });
+const cliff1 = b2b({ revenue: 5000, form: 'ryczalt' }).net - b2b({ revenue: 5001, form: 'ryczalt' }).net;
+const cliff2 = b2b({ revenue: 25000, form: 'ryczalt' }).net - b2b({ revenue: 25001, form: 'ryczalt' }).net;
+let cStar = 0; while (cStar < 15000 && b2b({ revenue: 15000, costs: cStar, form: 'liniowy' }).net <= b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: 0.12 }).net - cStar) cStar += 250;
+const lin2 = b2b({ revenue: 15000, costs: 2000, form: 'liniowy' }).net, ryc2 = x.net - 2000;
+const sk6 = b2b({ revenue: 6000, form: 'skala' }).net, ry6 = b2b({ revenue: 6000, form: 'ryczalt', ryczaltRate: 0.12 }).net, ry6b = b2b({ revenue: 6000, form: 'ryczalt', ryczaltRate: 0.085 }).net;
+const stepOver = 150000 - ART12.stepLimit;
+// Ryczałt 12 % à 10 000 zł selon le niveau de ZUS ; 17 % et 12 % face au liniowy sans coûts.
+const zs = (['start', 'preferential', 'full'] as const).map((z) => b2b({ revenue: 10000, form: 'ryczalt', ryczaltRate: 0.12, zus: z }));
+const r17 = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: 0.17 }).net, l15 = b2b({ revenue: 15000, form: 'liniowy' }).net;
+const r20 = b2b({ revenue: 20000, form: 'ryczalt', ryczaltRate: 0.12 }).net, l20 = b2b({ revenue: 20000, form: 'liniowy' }).net;
+const r30 = b2b({ revenue: 30000, form: 'ryczalt', ryczaltRate: 0.12 }).net, l30 = b2b({ revenue: 30000, form: 'liniowy' }).net;
+const stepTax = ART12.stepLimit * ART12.stepLow + stepOver * ART12.stepHigh;
+const faqs = [
+  { q: 'Can I deduct a laptop, a car lease or a coworking desk on the lump-sum tax?', a: `No. Ryczałt is charged on revenue, and the only deductions are social contributions and ${pct(H.ryczalt_deductible_share, lang)} of the health contribution you paid. Business spending only lightens your wallet. With ${$(15000)} of monthly revenue at ${pct(rate(0.12), lang)}, the ${F.liniowy} flat tax starts leaving you more once costs pass roughly ${$(cStar)} a month.` },
+  { q: `What happens to my health contribution when annual revenue goes over ${F.ryczaltLimit1}?`, a: `You move into the second band: the contribution rises from ${F.ryczaltBand1} to ${F.ryczaltBand2} a month, or ${$((H.ryczalt_bands[1].monthly - H.ryczalt_bands[0].monthly) * 12)} more over a year. Half of it is deductible from revenue, but you still feel it: with monthly revenue just above ${$(5000)} you keep about ${$(cliff1)} a month less than just below it.` },
+  { q: 'Which lump-sum rate applies to a software developer in 2026?', a: `IT services listed in Article 12(1)(2b) of the Lump-sum Tax Act, including PKWiU 62.01.1, 62.02, 62.03.1 and 58.29, are taxed at ${pct(rate(0.12), lang)}. The service code decides, not the job title, so check it before choosing ryczałt. With ${$(15000)} of monthly revenue and full ZUS, you keep about ${net15(0.12)} a month.` },
+  { q: `How does the ${pct(ART12.stepLow, lang)} rate up to ${$(ART12.stepLimit)} and ${pct(ART12.stepHigh, lang)} above it work?`, a: `The Act charges ${pct(ART12.stepLow, lang)} on revenue up to ${$(ART12.stepLimit)} in the year and ${pct(ART12.stepHigh, lang)} on the excess. With annual revenue of ${$(150000)}, before deducting contributions, that is ${$(stepTax)} of tax: ${$(ART12.stepLimit * ART12.stepLow)} on the first ${$(ART12.stepLimit)} and ${$(stepOver * ART12.stepHigh)} on the rest. The mini-calculator does not model this rate because it changes during the year.` },
+  { q: 'Is the lump-sum tax worth it on a small revenue?', a: `Often not. Ryczałt has no tax-free allowance, while the tax scale does. With ${$(6000)} of monthly revenue, no costs and full ZUS, the tax scale leaves ${$(sk6)}, the ${pct(rate(0.12), lang)} lump sum ${$(ry6)} and the ${pct(rate(0.085), lang)} lump sum ${$(ry6b)}. The lump sum only pulls ahead at higher revenue with low costs.` },
+];
+---
+<GuideLayout lang={lang} id="ryczalt" breadcrumbLabel={label('ryczalt', lang)} title={`Lump-sum tax (ryczałt) ${F.year}: rates from ${pct(rate(0.03), lang)} to ${pct(rate(0.17), lang)}`} h1={`Lump-sum tax in Poland (ryczałt ewidencjonowany) in ${F.year}: rates, health contribution, examples`}
+  description={`Polish lump-sum tax (ryczałt) in ${F.year}: ${pct(rate(0.03), lang)} to ${pct(rate(0.17), lang)} of revenue, health ${F.ryczaltBand1}, ${F.ryczaltBand2} or ${F.ryczaltBand3} a month. What stays from ${$(15000)} a month.`}
+  intro="On the lump-sum tax you pay a percentage of revenue, with no deduction for costs, at a rate set by the type of business you run."
+  resume={`The registered lump-sum tax (ryczałt ewidencjonowany) in ${F.year} is a tax on revenue, not on profit. Article 12 of the Lump-sum Income Tax Act sets ${pct(rate(0.17), lang)} for liberal professions, ${pct(rate(0.15), lang)} for some advisory and financial services, ${pct(rate(0.14), lang)} for services such as healthcare and engineering, ${pct(rate(0.12), lang)} for listed IT services, ${pct(ART12.realEstate, lang)} for property trading, ${pct(ART12.stepLow, lang)} rising to ${pct(ART12.stepHigh, lang)} above ${$(ART12.stepLimit)} for some services, ${pct(rate(0.085), lang)} for other services, ${pct(rate(0.055), lang)} for manufacturing and construction and ${pct(rate(0.03), lang)} for retail. You cannot deduct costs. From revenue you subtract only social contributions and ${pct(H.ryczalt_deductible_share, lang)} of the health contribution paid. The health contribution has three bands of annual revenue: ${F.ryczaltBand1} a month up to ${F.ryczaltLimit1}, ${F.ryczaltBand2} up to ${F.ryczaltLimit2} and ${F.ryczaltBand3} above. A developer at ${pct(rate(0.12), lang)} with ${$(15000)} of monthly revenue keeps about ${net15(0.12)} on full ZUS.`}
+  faqs={faqs}
+  related={[{ href: route('b2b', lang), name: 'B2B calculator', description: 'Lump sum, flat tax and tax scale side by side for your revenue.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} on profit: when costs tip the balance.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Social contributions from ${F.b2bZusPref} to ${F.b2bZusFull} a month.` }]}
+  sources={[src('ryczalt_act', lang), src('zus_b2b', lang), src('health_deduction', lang)]}>
+  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('b2b', lang)} /></div>
+
+  <h2>Lump-sum rates by type of business</h2>
+  <p>The last column shows monthly take-home on {$(15000)} of revenue, with full ZUS without sickness cover and no costs. The descriptions are shortened: the rate is decided by the wording of Article 12(1) and the PKWiU classification of your service.</p>
+  <ContentTable headers={['Rate', 'Typical activities', `Net from ${$(15000)} revenue`]} align={['r', 'l', 'r']} rows={rows} />
+  <p>The gap between the extremes is huge. A shop selling goods at {pct(rate(0.03), lang)} pays several times less tax on the same revenue than a doctor or architect at {pct(rate(0.14), lang)}. But retail usually carries heavy purchasing costs that ryczałt ignores, so a low rate is no promise of a high income.</p>
+
+  <h2>How one month's tax is worked out</h2>
+  <p>Take {$(15000)} of revenue at {pct(rate(0.12), lang)}. You subtract social contributions ({$2(x.social)}) and half of the health contribution ({$2(x.healthDeducted)}). That leaves a base of about {$(x.taxBase)}, on which the lump-sum tax is {$(x.tax)}. Once tax, social contributions, the Labour Fund ({$2(x.fp)}) and the full health contribution ({$2(x.health)}) are paid, {$(x.net)} stays in your account.</p>
+  <p>Notice what is missing: costs. A phone bill, a new monitor or office rent does not change your tax by a single zloty. Ryczałt rewards people who earn a lot while spending little, typically developers, translators and consultants who work from home.</p>
+
+  <h2>The health contribution in three bands</h2>
+  <ContentTable headers={['Annual revenue', 'Monthly contribution', 'Per year', `Deducted from revenue (${pct(H.ryczalt_deductible_share, lang)})`]} align={['l', 'r', 'r', 'r']} rows={bands} />
+  <p>On the tax scale and the flat tax, the health contribution rises smoothly with income. On ryczałt it is a fixed sum within each of the three bands, so crossing a threshold works like a step. With monthly revenue just above {$(5000)} (over {F.ryczaltLimit1} a year), take-home falls by about {$(cliff1)} a month compared with just below. At {$(25000)} a month, the {F.ryczaltLimit2} annual threshold, the step is already about {$(cliff2)}.</p>
+  <p>If you hover around a threshold, there is a practical lesson: an extra job that nudges annual revenue just over the line can be worth less than the invoice suggests. Work out the whole year, not a single month.</p>
+
+  <h2>Lump sum versus flat tax when you have costs</h2>
+  <p>Because ryczałt ignores costs, its advantage melts as spending grows. With {$(15000)} of revenue at {pct(rate(0.12), lang)} and {$(2000)} of monthly costs, you keep {$(ryc2)} on the lump sum after paying those costs, against {$(lin2)} on the flat tax. The break-even point lies around {$(cStar)} of monthly costs: above it, the flat tax leaves more. The other side of the comparison is covered in our guide to the <a href={route('liniowy', lang)}>Polish flat tax</a>.</p>
+  <p>That arithmetic shifts with every rate. At {pct(rate(0.085), lang)}, the lump sum tolerates much higher costs; at {pct(rate(0.17), lang)}, it loses to the flat tax sooner. Before choosing a tax form, run all three options through the <a href={route('b2b', lang)}>B2B calculator</a> with your real figures.</p>
+
+  <h2>A high rate eats the advantage</h2>
+  <p>Ryczałt has a reputation for low tax, yet at {pct(rate(0.17), lang)} and {$(15000)} of monthly revenue you keep {$(r17)}, while the flat tax with no costs leaves {$(l15)}. A liberal profession on the lump sum therefore only comes out ahead when there would be heavy costs to deduct on the flat tax, and intellectual services rarely need as much spending as trade does.</p>
+  <p>At {pct(rate(0.12), lang)} the picture changes. On {$(20000)} of revenue, the lump sum leaves {$(r20)} against {$(l20)} on the flat tax; on {$(30000)}, {$(r30)} against {$(l30)}. For a developer working from home, the lump sum's lead widens as revenue grows, held back only by the third health band above {F.ryczaltLimit2}.</p>
+
+  <h2>Your first business year on the lump sum</h2>
+  <p>At the start of a business, your ZUS option moves the result more than you might expect. With {$(10000)} of revenue at {pct(rate(0.12), lang)}, you keep {$(zs[0].net)} on start-up relief, {$(zs[1].net)} on preferential ZUS and {$(zs[2].net)} on full ZUS. On start-up relief there are no social contributions to deduct, so the lump-sum tax is higher: {$(zs[0].tax)} against {$(zs[2].tax)} a month on full ZUS. Take-home is still clearly better, because the saving on contributions outweighs the extra tax.</p>
+  <p>On ryczałt the health contribution does not depend on your ZUS option, only on annual revenue, so at that level it stays at {F.ryczaltBand2} a month throughout the first year. People who budget for tax alone tend to forget exactly this line. Start-up relief and preferential contributions are explained in our guide to <a href={route('zusb2b', lang)}>ZUS for the self-employed</a>.</p>
+
+  <h2>What you can and cannot deduct</h2>
+  <p>You subtract pension, disability, accident and, if you pay it, sickness contributions from revenue. On top of that comes {pct(H.ryczalt_deductible_share, lang)} of the health contribution paid, worth {$(H.ryczalt_bands[0].monthly * 12 * H.ryczalt_deductible_share)} of deductions a year in the first band and {$(H.ryczalt_bands[1].monthly * 12 * H.ryczalt_deductible_share)} in the second. There are no business costs, no depreciation and no tax-free allowance on ryczałt.</p>
+  <p>Nobody hands you a payslip on ryczałt, so keeping the numbers right is your job. You record every item of revenue in the revenue register, and each month's tax follows the same pattern: revenue minus social contributions minus half the health contribution, multiplied by your rate.</p>
+
+  <h2>Common traps</h2>
+  <p>Applying {pct(rate(0.12), lang)} to every "IT" service although the Act lists specific codes. Forgetting the health contribution step at {F.ryczaltLimit1} and {F.ryczaltLimit2}. Choosing ryczałt despite high costs because "the rate is low". And calculating the health contribution as a percentage of revenue, as on the tax scale: on ryczałt it is a fixed amount set by the band.</p>
+  <div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('compare', lang)} /></div>
+</GuideLayout>

@@ -1,0 +1,50 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import SalaryCalculator from '../../components/calc/SalaryCalculator';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { b2b, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const r12 = P.b2b.ryczalt_rates[0].rate;
+// Tableau calculé par le moteur : trois régimes, pełny ZUS bez chorobowego, sans coûts.
+const rows = [10000, 15000, 20000, 30000].map((g) => [$(g), $(b2b({ revenue: g, form: 'liniowy' }).net), $(b2b({ revenue: g, form: 'ryczalt', ryczaltRate: r12 }).net), $(b2b({ revenue: g, form: 'skala' }).net)]);
+const l15 = b2b({ revenue: 15000, form: 'liniowy' }), r15 = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: r12 }), s15 = b2b({ revenue: 15000, form: 'skala' });
+const l15c = b2b({ revenue: 15000, costs: 2000, form: 'liniowy' });
+const janDiff = (P.b2b.health.minimum_monthly - P.b2b.health.minimum_monthly_january);
+const faqs = [
+  { q: `Ile na rękę z ${$(15000)} netto na fakturze na B2B?`, a: `Przy pełnym ZUS bez chorobowego i bez kosztów zostaje około ${$(l15.net)} na podatku liniowym, ${$(r15.net)} na ryczałcie ${pct(r12, lang)} i ${$(s15.net)} na skali. Różnice wynikają ze stawki podatku i składki zdrowotnej, bo składki społeczne są we wszystkich trzech formach takie same. To średnia miesięczna z całego roku, przed wydatkami na urlop i sprzęt.` },
+  { q: 'Czy kalkulator B2B uwzględnia VAT?', a: `Nie. Wpisujesz przychód netto, czyli kwotę z faktury bez VAT. Kalkulator nie dolicza ani nie odlicza VAT, bo nie wpływa on na podatek dochodowy ani na składki. Jeśli umawiasz się na stawkę „brutto z VAT”, najpierw odejmij podatek od towarów i usług, a dopiero potem wpisz kwotę do pola przychodu.` },
+  { q: 'Dlaczego mój styczeń na B2B wychodzi inaczej niż w kalkulatorze?', a: `Kalkulator stosuje minimalną składkę zdrowotną od lutego, ${F.healthMin}, do wszystkich dwunastu miesięcy. Za styczeń ${F.year} r. minimum było niższe: ${F.healthMinJan}. Jeśli płacisz zdrowotną w minimalnej wysokości, styczeń wychodzi więc o ${formatMoney(janDiff, 2, lang)} korzystniej niż średnia z kalkulatora. Na ryczałcie ta różnica nie występuje.` },
+  { q: 'Jak wpisać koszty firmowe w kalkulatorze B2B?', a: `Wpisz średnie miesięczne koszty netto, na przykład leasing, biuro czy sprzęt podzielone na dwanaście miesięcy. Na skali i liniowym obniżają dochód, podatek i zdrowotną: przy ${$(15000)} przychodu i ${$(2000)} kosztów liniowy daje ${$(l15c.net)} po opłaceniu kosztów, wobec ${$(l15.net)} bez nich. Na ryczałcie koszty nie zmieniają podatku, więc kalkulator je pomija.` },
+];
+---
+<GuideLayout lang={lang} id="b2b" breadcrumbLabel={label('b2b', lang)} title={`Kalkulator B2B ${F.year}: skala, liniowy i ryczałt na rękę`} h1={`Kalkulator B2B ${F.year}: ile zostaje z faktury`}
+  description={`Kalkulator B2B ${F.year}: z ${$(15000)} netto na fakturze zostaje ${$(l15.net)} na liniowym, ${$(r15.net)} na ryczałcie ${pct(r12, lang)} i ${$(s15.net)} na skali. ZUS, zdrowotna, podatek.`}
+  intro="Wpisz miesięczny przychód z faktur bez VAT i ewentualne koszty, wybierz formę opodatkowania i wariant ZUS."
+  resume={`Na B2B z ${$(15000)} netto na fakturze zostaje w ${F.year} r. około ${$(l15.net)} miesięcznie na podatku liniowym ${F.liniowy}, ${$(r15.net)} na ryczałcie ${pct(r12, lang)} i ${$(s15.net)} na skali podatkowej, przy pełnym ZUS bez chorobowego i bez kosztów. Z przychodu odchodzą składki społeczne ${F.b2bZusFullNoSick} miesięcznie (z wypadkową ${F.wypadkowa} i Funduszem Pracy), składka zdrowotna zależna od formy opodatkowania i podatek. Kalkulator liczy średnią z całego roku, więc uwzględnia drugi próg skali ${F.pitHigh} powyżej ${F.threshold} dochodu rocznie, limit odliczenia zdrowotnej ${F.liniowyLimit} na liniowym i progi zdrowotnej na ryczałcie. Minimalną zdrowotną od lutego, ${F.healthMin}, stosuje do całego roku. Nie uwzględnia VAT: wpisujesz kwotę netto z faktury. Możesz wybrać pełny ZUS, preferencyjny ZUS albo ulgę na start, dodać dobrowolne chorobowe i średnie miesięczne koszty firmy.`}
+  faqs={faqs}
+  related={[{ href: route('compare', lang), name: label('compare', lang), description: 'Ile B2B odpowiada pensji na etacie.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `Kiedy ${F.liniowy} wygrywa ze skalą.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Stawki ryczałtu i zdrowotna w trzech progach.' }]}
+  sources={[src('zus_b2b', lang), src('pit_act', lang), src('ryczalt_act', lang), src('health_deduction', lang)]}>
+  <div data-outil>
+    <SalaryCalculator client:load lang={lang} contract="b2b" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
+  </div>
+
+  <h2>Trzy formy opodatkowania przy czterech przychodach</h2>
+  <p>Netto miesięcznie, pełny ZUS bez chorobowego, bez kosztów, ryczałt według stawki {pct(r12, lang)} dla usług IT.</p>
+  <ContentTable headers={['Przychód z faktur', 'Liniowy', `Ryczałt ${pct(r12, lang)}`, 'Skala']} align={['r', 'r', 'r', 'r']} rows={rows} />
+  <p>Przy {$(10000)} najwięcej zostawia skala, bo działa na niej kwota zmniejszająca podatek i stawka {F.pitLow}. Od {$(15000)} prowadzi ryczałt {pct(r12, lang)}, a skala spada na ostatnie miejsce: przy {$(30000)} część rocznego dochodu wpada już w {F.pitHigh}. Jeśli Twoja działalność ma inną stawkę ryczałtu albo wysokie koszty, kolejność może być zupełnie inna, dlatego te same liczby warto sprawdzić w kalkulatorze powyżej.</p>
+
+  <h2>Założenia, które warto znać</h2>
+  <p>Wynik to średnia miesięczna z całego roku: kalkulator mnoży przychód i koszty przez dwanaście, liczy roczny podatek i zdrowotną, a potem dzieli przez dwanaście. Dzięki temu widać skutek drugiego progu skali i limitu odliczenia zdrowotnej, których jeden miesiąc by nie pokazał. W rzeczywistości zaliczki w poszczególnych miesiącach mogą się różnić od średniej.</p>
+  <p>Składka wypadkowa jest liczona według stawki {F.wypadkowa}, przyjętej w wyliczeniach ZUS na {F.year} r. Jeśli obowiązuje Cię inna stopa z przedziału od {F.wypadkowaMin} do {F.wypadkowaMax}, składka będzie inna. Minimalna zdrowotna {F.healthMin} obowiązuje w kalkulatorze przez cały rok, choć za styczeń wynosiła {F.healthMinJan}. Nie modelujemy Małego ZUS plus, kilku stawek ryczałtu naraz ani stawki progresywnej z art. 12 ust. 1 pkt 4 ustawy o ryczałcie.</p>
+
+  <h2>Czego B2B nie pokazuje na pierwszy rzut oka</h2>
+  <p>Netto z kalkulatora to kwota przed urlopem, chorobą i sprzętem. Na B2B nie masz płatnego urlopu, więc miesiąc wolnego to miesiąc bez faktury. Porównanie z pensją na etacie, z uwzględnieniem tych różnic, znajdziesz na stronie <a href={route('compare', lang)}>B2B czy umowa o pracę</a>. Wysokość samych składek w każdym wariancie opisuje poradnik o <a href={route('zusb2b', lang)}>ZUS przedsiębiorcy</a>.</p>
+  <div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('compare', lang)} /></div>
+</GuideLayout>

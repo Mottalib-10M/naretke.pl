@@ -1,0 +1,71 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { zlecenie, dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const SMALL = P.pit.flat_small_contract_limit;
+// Netto obu umów przy tej samej kwocie brutto (moteur).
+const rows = [SMALL, 1000, 3000, 5000, 10000].map((g) => [$(g), $(zlecenie({ gross: g }).net), $(zlecenie({ gross: g, sickness: true }).net), $(dzielo({ gross: g }).net), $(dzielo({ gross: g, authors: true }).net)]);
+const G = 4000;
+const z = zlecenie({ gross: G }), zs = zlecenie({ gross: G, sickness: true }), zu = zlecenie({ gross: G, under26: true }), zst = zlecenie({ gross: G, student: true });
+const d = dzielo({ gross: G }), da = dzielo({ gross: G, authors: true });
+const zSmall = zlecenie({ gross: SMALL }), dSmall = dzielo({ gross: SMALL });
+const faqs = [
+  { q: 'Czym w praktyce różni się umowa o dzieło od zlecenia?', a: `Umowa o dzieło dotyczy konkretnego, sprawdzalnego rezultatu: strony internetowej, tłumaczenia, projektu, zdjęć z sesji. Zlecenie dotyczy starannego wykonywania czynności, bez gwarancji efektu: prowadzenia zajęć, obsługi klientów, sprzątania. Od tej różnicy zależą składki: zlecenie podlega ZUS i składce zdrowotnej, dzieło co do zasady nie. Przy ${$(G)} brutto na rękę zostaje ${$(z.net)} ze zlecenia i ${$(d.net)} z dzieła.` },
+  { q: 'Mam 23 lata i nie studiuję. Co mi się bardziej opłaca, zlecenie czy dzieło?', a: `Przy tej samej kwocie zwykle dzieło. Na zleceniu ulga dla młodych zwalnia Cię z podatku, ale składki ZUS i zdrowotna zostają: z ${$(G)} brutto dostaniesz ${$(zu.net)}. Na dziele ulga nie działa, płacisz zaliczkę ${F.pitLow}, ale bez składek zostaje ${$(d.net)}. Inaczej jest u studenta do 26 lat: na zleceniu nie płaci ani składek, ani podatku, więc dostaje pełne ${$(zst.net)}.` },
+  { q: 'Pracodawca proponuje mi umowę o dzieło obok etatu. Czy uniknę wtedy składek?', a: `Nie. Art. 8 ust. 2a ustawy o systemie ubezpieczeń społecznych traktuje jak pracownika osobę, która zawarła umowę o dzieło lub zlecenie z własnym pracodawcą albo w ramach takiej umowy pracuje na jego rzecz. Wynagrodzenie z umowy dolicza się wtedy do pensji i oskładkowuje jak pensję. Oszczędność składkowa dzieła istnieje tylko przy umowie z firmą, z którą nie łączy Cię stosunek pracy.` },
+  { q: 'Ile zleceniodawca płaci ponad kwotę umowy przy zleceniu i przy dziele?', a: `Przy dziele nic: koszt zamawiającego równa się kwocie brutto, ${$(d.employerCost)} przy umowie na ${$(G)}. Przy zleceniu firma dopłaca własną część składek emerytalnej ${F.emerytalnaEr}, rentowej ${F.rentowaEr} i wypadkowej, a zależnie od wysokości wynagrodzenia także składki na fundusze. Łączny koszt zlecenia na ${$(G)} to ${$(z.employerCost)}.` },
+  { q: `Umowa na ${F.smallContract}: czy liczą się wtedy koszty i składki?`, a: `Koszty nie, bo przy umowie do ${F.smallContract} z osobą, która nie jest pracownikiem płatnika, podatek wynosi ${F.pitLow} od całej kwoty. Składki zależą od rodzaju umowy: zlecenie podlega ZUS i składce zdrowotnej także przy tak małej kwocie, dzieło nie. Na rękę zostaje ${$(zSmall.net)} ze zlecenia i ${$(dSmall.net)} z dzieła na ${$(SMALL)}.` },
+];
+---
+<GuideLayout lang={lang} id="zlecdzielo" breadcrumbLabel={label('zlecdzielo', lang)} title={`Umowa zlecenie czy o dzieło ${F.year}: ZUS, podatek i netto`} h1={`Umowa zlecenie czy umowa o dzieło w ${F.year} r.?`}
+  description={`Umowa zlecenie czy o dzieło w ${F.year} r.: przy ${$(G)} brutto zostaje ${$(z.net)} ze zlecenia i ${$(d.net)} z dzieła. Składki ZUS, koszty ${F.kupContract} i ${F.kupAuthors} oraz ulgi.`}
+  intro={`Zlecenie i dzieło to dwie umowy cywilnoprawne, które przy tej samej kwocie dają wyraźnie różne netto, bo tylko zlecenie podlega składkom ZUS i zdrowotnej.`}
+  resume={`Przy tej samej kwocie brutto umowa o dzieło daje więcej na rękę niż zlecenie, bo co do zasady nie podlega składkom ZUS ani składce zdrowotnej. Przy ${$(G)} brutto ze zlecenia zostaje ${$(z.net)}, a z dzieła ${$(d.net)}; jeśli dzieło jest utworem z przeniesieniem praw autorskich, koszty ${F.kupAuthors} podnoszą netto do ${$(da.net)}. Na obu umowach koszty uzyskania przychodu wynoszą ${F.kupContract}, a na zleceniu liczy się je po odjęciu składek. Wybór nie jest jednak kwestią netto, tylko treści pracy: dzieło dotyczy konkretnego rezultatu, zlecenie starannego wykonywania czynności. Dzieło zawarte z własnym pracodawcą jest oskładkowane jak pensja. Osoby przed 26. urodzinami mają ulgę dla młodych tylko na zleceniu, a student na zleceniu nie płaci ani składek, ani podatku. Przy umowach do ${F.smallContract} obie umowy są opodatkowane ryczałtem ${F.pitLow}. Mini-kalkulator porównuje obie umowy przy Twojej kwocie.`}
+  faqs={faqs}
+  related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Netto ze zlecenia, ze składką chorobową lub bez.' }, { href: route('dzielo', lang), name: label('dzielo', lang), description: `Netto z dzieła, z kosztami ${F.kupContract} albo ${F.kupAuthors}.` }, { href: route('authors', lang), name: label('authors', lang), description: `Kiedy przysługuje ${F.kupAuthors} kosztów.` }]}
+  sources={[src('sus_act', lang), src('pit_act', lang), src('health_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecenie', lang)} /></div>
+
+  <h2>Rezultat czy staranność: różnica prawna</h2>
+  <p>Obie umowy reguluje kodeks cywilny, nie kodeks pracy, więc żadna nie daje urlopu ani okresu wypowiedzenia znanego z etatu. Różnią się przedmiotem. Umowa o dzieło zobowiązuje do wykonania konkretnego rezultatu, który da się odebrać i ocenić: tłumaczenia, logo, programu, remontu łazienki, reportażu. Wykonawca odpowiada za efekt, a wynagrodzenie należy się za dzieło, nie za godziny.</p>
+  <p>Zlecenie zobowiązuje do starannego wykonywania czynności. Zleceniobiorca prowadzi zajęcia, obsługuje stoisko, opiekuje się klientami, roznosi ulotki; odpowiada za staranność, a nie za to, czy klient był zadowolony. Ponieważ liczy się czas i działanie, zlecenie podlega minimalnej stawce godzinowej {F.minHourly} brutto.</p>
+  <p>O charakterze umowy przesądza jej treść i sposób wykonywania, a nie tytuł na pierwszej stronie. Praca powtarzalna, wykonywana pod nadzorem i rozliczana godzinowo nie stanie się dziełem tylko dlatego, że tak ją nazwano.</p>
+
+  <h2>Netto obu umów przy tej samej kwocie</h2>
+  <ContentTable headers={['Brutto', 'Zlecenie', 'Zlecenie z chorobową', `Dzieło (${F.kupContract})`, `Dzieło autorskie (${F.kupAuthors})`]} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>Tabela dotyczy osoby po 26. urodzinach, bez oświadczenia PIT-2 i bez innego tytułu do ubezpieczeń. Przy każdej kwocie powyżej {F.smallContract} dzieło wygrywa o mniej więcej jedną piątą brutto, a dzieło autorskie jeszcze wyraźniej. Przy {$(G)} różnica między zleceniem a zwykłym dziełem wynosi {$(d.net - z.net)} miesięcznie, czyli {$((d.net - z.net) * 12)} w skali roku przy umowie powtarzanej co miesiąc.</p>
+  <p>Wyższe netto dzieła nie jest darmowe: brak składek oznacza brak wpłat na konto emerytalne, brak prawa do zasiłku chorobowego i brak ubezpieczenia zdrowotnego z tego tytułu. Na zleceniu emerytalna i rentowa są obowiązkowe, chorobowa dobrowolna. Kolumna „zlecenie z chorobową” pokazuje, ile kosztuje dobrowolna składka {F.chorobowa}: przy {$(G)} to {$(z.net - zs.net)} miesięcznie.</p>
+
+  <h2>Składki ZUS i zdrowotna na każdej z umów</h2>
+  <p>Zleceniobiorcy są wymienieni w art. 6 ust. 1 pkt 4 ustawy o systemie ubezpieczeń społecznych, więc podlegają obowiązkowo ubezpieczeniom emerytalnemu i rentowym. Z {$(G)} brutto zleceniodawca potrąca {$(z.social)} składek społecznych i {$(z.health)} składki zdrowotnej {F.health}. Chorobowe jest dobrowolne, na wniosek zleceniobiorcy (art. 11 ust. 2).</p>
+  <p>Wykonawcy dzieła na tej liście nie ma. Dlatego umowa o dzieło zawarta z firmą, w której nie masz etatu, co do zasady nie rodzi składek społecznych, a skoro obowiązek ubezpieczenia zdrowotnego zleceniobiorców wiąże się z objęciem ubezpieczeniami społecznymi, nie powstaje też składka zdrowotna. Zamawiający wypłaca brutto pomniejszone tylko o zaliczkę na podatek.</p>
+  <p>Wyjątek jest jeden, ale ważny. Art. 8 ust. 2a traktuje jak pracownika osobę, która zawarła zlecenie albo umowę o dzieło z własnym pracodawcą, a także osobę, która w ramach takiej umowy pracuje na rzecz swojego pracodawcy, choć umowę podpisała z inną firmą. Wynagrodzenie z umowy dolicza się wtedy do pensji i oskładkowuje jak pensję.</p>
+
+  <h2>Koszty: {F.kupContract} na obu umowach, {F.kupAuthors} przy prawach autorskich</h2>
+  <p>Art. 22 ust. 9 pkt 4 ustawy o PIT daje obu umowom koszty uzyskania przychodu {F.kupContract}. Na zleceniu liczy się je od przychodu po odjęciu potrąconych składek społecznych: przy {$(G)} to {$(z.kup)}. Na dziele bez składek procent liczy się od całej kwoty, co daje {$(d.kup)}. Zaliczka wynosi {F.pitLow} od podstawy po kosztach, odpowiednio {$(z.pit)} i {$(d.pit)}.</p>
+  <p>Jeśli efektem umowy jest utwór w rozumieniu prawa autorskiego i przenosisz na zamawiającego prawa do niego, koszty rosną do {F.kupAuthors}, z rocznym limitem {F.kupAuthorsLimit}. Przy {$(G)} zaliczka na dziele autorskim spada do {$(da.pit)}, a netto rośnie do {$(da.net)}. Kto i kiedy może je stosować, opisuje poradnik o <a href={route('authors', lang)}>kosztach autorskich</a>.</p>
+  <p>Na obu umowach możesz złożyć zleceniodawcy lub zamawiającemu oświadczenie PIT-2, które obniża zaliczkę o {F.reducingMonth} miesięcznie; zasady opisuje poradnik o <a href={route('pit2', lang)}>PIT-2</a>.</p>
+
+  <div data-chrome><MiniSim client:load kind="zlecenie" lang={lang} href={route('zlecenie', lang)} /></div>
+
+  <h2>Umowy do {F.smallContract}, osoby przed 26. rokiem życia, studenci</h2>
+  <p>Przy umowie do {F.smallContract} zawartej z osobą, która nie jest pracownikiem płatnika, podatek pobiera się ryczałtem {F.pitLow} od całej kwoty, bez kosztów i bez PIT-2. Dzieło na {$(SMALL)} daje więc {$(dSmall.net)}. Zlecenie na tę samą kwotę nadal podlega składkom, więc zostaje {$(zSmall.net)}.</p>
+  <p>Wiek odwraca część rachunku. Ulga dla młodych obejmuje przychody ze zlecenia, ale nie z dzieła. Osoba przed 26. urodzinami, która nie studiuje, dostaje ze zlecenia na {$(G)} kwotę {$(zu.net)}, bo nie płaci podatku, ale płaci składki. Z dzieła na tę samą kwotę dostanie {$(d.net)}: zapłaci podatek, ale bez składek wychodzi to korzystniej.</p>
+  <p>Najkorzystniejszy przypadek to student lub uczeń przed 26. urodzinami na zleceniu: bez składek i bez podatku dostaje pełne {$(zst.net)}. Dla niego zlecenie jest lepsze od dzieła, a szczegóły opisuje poradnik <a href={route('student', lang)}>umowa zlecenie dla studenta</a>.</p>
+
+  <h2>Rachunek do umowy: co powinno się na nim znaleźć</h2>
+  <p>Przy obu umowach wypłata następuje zwykle na podstawie rachunku, a nie paska wypłaty. Na rachunku do zlecenia na {$(G)} brutto powinny się znaleźć: składka emerytalna {$(z.emerytalna)}, rentowa {$(z.rentowa)}, składka zdrowotna {$(z.health)}, koszty uzyskania przychodu {$(z.kup)}, podstawa opodatkowania {$(z.taxBase)}, zaliczka na podatek {$(z.pit)} i kwota do wypłaty {$(z.net)}.</p>
+  <p>Rachunek do dzieła na tę samą kwotę jest krótszy: koszty {$(d.kup)}, podstawa {$(d.taxBase)}, zaliczka {$(d.pit)} i do wypłaty {$(d.net)}. Jeśli na rachunku do dzieła widzisz składki ZUS, sprawdź, czy zamawiający nie jest jednocześnie Twoim pracodawcą. Jeśli na rachunku do zlecenia brakuje składek, a nie jesteś studentem przed 26. urodzinami, zapytaj o podstawę: brak składek może oznaczać, że zleceniodawca przyjął inny tytuł do ubezpieczeń, i warto wiedzieć, jaki.</p>
+
+  <h2>Jak wybrać, zanim podpiszesz</h2>
+  <p>Zacznij od pytania, co faktycznie masz zrobić. Jeśli umowa opisuje gotowy produkt z terminem odbioru, dzieło jest naturalne. Jeśli opisuje dyżury, godziny i bieżące zadania, to zlecenie, niezależnie od tego, która forma daje więcej netto. Potem sprawdź, czy zamawiający nie jest Twoim pracodawcą, bo wtedy oszczędność składkowa znika.</p>
+  <p>Na koniec policz rok, nie miesiąc. Netto dzieła jest wyższe, ale zlecenie buduje staż ubezpieczeniowy i daje dostęp do zasiłku chorobowego, jeśli opłacasz dobrowolną składkę. Dokładne kwoty dla swojej umowy policzysz w kalkulatorach <a href={route('zlecenie', lang)}>umowy zlecenia</a> i <a href={route('dzielo', lang)}>umowy o dzieło</a>.</p>
+</GuideLayout>

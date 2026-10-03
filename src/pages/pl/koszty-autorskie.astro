@@ -1,0 +1,84 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, zlecenie, dzielo, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const W = ['w styczniu', 'w lutym', 'w marcu', 'w kwietniu', 'w maju', 'w czerwcu', 'w lipcu', 'w sierpniu', 'we wrześniu', 'w październiku', 'w listopadzie', 'w grudniu'];
+// Mois où le plafond annuel des koszty autorskie commence à jouer (la déduction du mois baisse).
+const limitMonth = (g: number, s: number) => { const y = uopYear({ gross: g, authorsShare: s }); const i = y.months.findIndex((m) => m.kup < y.months[0].kup - 0.5); return i < 0 ? null : i; };
+// Exemple principal : 12 000 zł brutto, moitié de la pensja pour des droits d'auteur.
+const a12 = uopYear({ gross: 12000, authorsShare: 0.5 }), b12 = uopYear({ gross: 12000 });
+const save12 = b12.total.pit - a12.total.pit;
+const m1 = a12.months[0];
+const socialHalf = m1.social * 0.5;
+const kupAuth = (6000 - socialHalf) * P.pit.kup_authors_rate;
+// Tableau : effet sur l'année, 80 % de la pensja pour des droits d'auteur.
+const rows = [8000, 12000, 20000, 30000].map((g) => { const a = uopYear({ gross: g, authorsShare: 0.8 }), b = uopYear({ gross: g }); const lm = limitMonth(g, 0.8); return [$(g), $(b.months[0].net), $(a.months[0].net), $(b.total.pit - a.total.pit), lm === null ? 'nie' : W[lm]]; });
+// Brut mensuel (pas de 500 zł) à partir duquel une pensja 100 % autorska épuise le plafond dans l'année.
+let gBind = 10000; while (uopYear({ gross: gBind, authorsShare: 1 }).total.kup < P.pit.kup_authors_limit - 1) gBind += 500;
+const lm30 = limitMonth(30000, 0.8);
+const sb0 = secondBracketMonth({ gross: 20000 }), sb8 = secondBracketMonth({ gross: 20000, authorsShare: 0.8 });
+const z6 = zlecenie({ gross: 6000 }), z6a = zlecenie({ gross: 6000, authorsShare: 1 });
+const d6 = dzielo({ gross: 6000 }), d6a = dzielo({ gross: 6000, authors: true });
+const a30 = uopYear({ gross: 30000, authorsShare: 0.8 });
+// Part des droits d'auteur : 25, 50, 80 et 100 % d'une pensja de 12 000 zł.
+const shares = [0.25, 0.5, 0.8, 1].map((s) => ({ s, save: b12.total.pit - uopYear({ gross: 12000, authorsShare: s }).total.pit }));
+const faqs = [
+  { q: 'Czy koszty autorskie 50 % obniżają moje składki ZUS i zdrowotną?', a: `Nie. Składki emerytalna, rentowa i chorobowa liczą się od całego brutto, a zdrowotna ${F.health} od brutto po odjęciu składek społecznych. Koszty autorskie zmniejszają wyłącznie podstawę opodatkowania. Przy pensji ${$(12000)} brutto, z której połowa wynagradza prawa autorskie, składki pozostają identyczne, a różnica w netto (${$(m1.net - b12.months[0].net)} w styczniu) bierze się tylko z niższej zaliczki na PIT.` },
+  { q: 'Limit 120 000 zł dotyczy przychodu czy kosztów?', a: `Kosztów. Art. 22 ust. 9a ogranicza łączne koszty z ust. 9 pkt 1–3 do górnej granicy pierwszego progu skali, czyli ${F.kupAuthorsLimit} w roku. Ponieważ koszty to połowa przychodu po składkach, limit wyczerpuje się dopiero przy przychodzie autorskim mniej więcej dwa razy wyższym. Przy pensji w całości autorskiej dzieje się to w ciągu roku od około ${$(gBind)} brutto miesięcznie.` },
+  { q: 'Co się dzieje z wypłatą, gdy w trakcie roku wyczerpię limit kosztów autorskich?', a: `Od miesiąca, w którym suma kosztów dojdzie do ${F.kupAuthorsLimit}, płatnik nie ma już czego odliczyć od części autorskiej i liczy zaliczkę od pełnej kwoty. Netto spada skokowo. Przy ${$(30000)} brutto i 80 % pensji za prawa autorskie limit zaczyna działać ${lm30 === null ? 'dopiero po zakończeniu roku' : W[lm30]}, a grudniowe netto wynosi ${$(a30.months[11].net)} wobec ${$(a30.months[0].net)} w styczniu (część spadku to także drugi próg podatkowy).` },
+  { q: 'Mam dwie umowy z przeniesieniem praw autorskich. Czy każdy płatnik ma osobny limit?', a: `Nie. Ustawa mówi o łącznych kosztach w roku podatkowym, więc ${F.kupAuthorsLimit} to jeden limit na podatnika, bez względu na liczbę umów. Każdy płatnik widzi jednak tylko własne wypłaty i może odliczać koszty 50 % aż do limitu. Nadwyżkę kosztów ponad ${F.kupAuthorsLimit} trzeba wtedy skorygować w zeznaniu rocznym, co zwykle oznacza dopłatę podatku.` },
+  { q: 'Czy koszty 50 % mogę stosować na zleceniu i umowie o dzieło?', a: `Tak, jeśli praca należy do działalności wymienionej w art. 22 ust. 9b ustawy o PIT i powstaje utwór. Koszty liczy się wtedy w wysokości ${F.kupAuthors} zamiast ${F.kupContract}. Przy umowie o dzieło na ${$(6000)} daje to ${$(d6a.net)} na rękę zamiast ${$(d6.net)}, a przy zleceniu na tę samą kwotę ${$(z6a.net)} zamiast ${$(z6.net)}.` },
+];
+---
+<GuideLayout lang={lang} id="authors" breadcrumbLabel={label('authors', lang)} title={`Koszty autorskie 50 % ${F.year}: limit ${F.kupAuthorsLimit}, ile zyskasz`} h1={`Koszty autorskie 50 % w ${F.year} r.: jak działają i ile dają`}
+  description={`Koszty autorskie 50 % w ${F.year} r.: przy ${$(12000)} brutto i połowie pensji za prawa autorskie płacisz ${$(save12)} podatku mniej w roku. Limit ${F.kupAuthorsLimit} kosztów.`}
+  intro="Twórca, który przenosi prawa autorskie do swojej pracy, może rozliczać połowę wynagrodzenia za te prawa jako koszt uzyskania przychodu."
+  resume={`Koszty autorskie wynoszą w ${F.year} r. ${F.kupAuthors} przychodu z praw autorskich, liczone od kwoty po odjęciu składek społecznych potrąconych przez płatnika (art. 22 ust. 9 pkt 3 ustawy o PIT). W roku łączne koszty tego rodzaju nie mogą przekroczyć ${F.kupAuthorsLimit}, czyli górnej granicy pierwszego progu skali (art. 22 ust. 9a). Na umowie o pracę stosuje się je tylko do tej części pensji, która wynagradza przeniesienie praw do utworu, a pozostała część dostaje zwykłe koszty pracownicze ${F.kup} miesięcznie. Przy pensji ${$(12000)} brutto, z której połowa przypada na prawa autorskie, zaliczki na PIT spadają w roku o ${$(save12)}, a netto w styczniu rośnie z ${$(b12.months[0].net)} do ${$(m1.net)}. Składki ZUS i zdrowotna się nie zmieniają. Te same ${F.kupAuthors} można stosować na zleceniu i umowie o dzieło, ale wyłącznie przy działalności twórczej wskazanej w art. 22 ust. 9b. Kalkulator poniżej liczy zysk dla Twojej pensji i udziału praw autorskich.`}
+  faqs={faqs}
+  related={[{ href: route('kup', lang), name: label('kup', lang), description: `Zwykłe koszty pracownicze: ${F.kup} lub ${F.kupRaised} miesięcznie.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `Kiedy dochód przekracza ${F.threshold} i wchodzi stawka ${F.pitHigh}.` }, { href: route('dzielo', lang), name: 'Kalkulator umowy o dzieło', description: `Netto z dzieła z kosztami ${F.kupContract} lub ${F.kupAuthors}.` }]}
+  sources={[src('pit_act', lang), src('sus_act', lang), src('health_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Skąd bierze się zysk: przykład z pensją {$(12000)}</h2>
+  <p>Weźmy programistkę z pensją {$(12000)} brutto, której umowa wskazuje, że połowa wynagrodzenia przysługuje za przeniesienie praw do tworzonego kodu. Płatnik najpierw potrąca składki społeczne od całej kwoty: w styczniu to {formatMoney(m1.social, 2, lang)}. Na część autorską ({$(6000)}) przypada połowa tych składek, czyli {formatMoney(socialHalf, 2, lang)}. Koszty autorskie to {F.kupAuthors} różnicy, a więc około {$(kupAuth)} w miesiącu. Od drugiej połowy pensji odlicza się zwykłe {F.kup}.</p>
+  <p>Zamiast {F.kup} kosztów miesięcznie programistka ma ich zatem blisko {$(kupAuth + P.pit.kup_employee_month)}. Podstawa opodatkowania spada o tyle samo, a zaliczka o {F.pitLow} tej kwoty. W skali roku daje to {$(save12)} mniej podatku. Składki nie drgną ani o grosz, bo ZUS i zdrowotna nie zależą od kosztów uzyskania przychodu.</p>
+
+  <h2>Ile zostaje przy różnych pensjach</h2>
+  <p>Tabela pokazuje pensje, z których 80 % wynagradza prawa autorskie. Ostatnia kolumna mówi, w którym miesiącu limit {F.kupAuthorsLimit} zaczyna obcinać koszty.</p>
+  <ContentTable headers={['Brutto miesięcznie', 'Netto bez kosztów autorskich (styczeń)', 'Netto z kosztami autorskimi (styczeń)', 'Mniej podatku w roku', 'Limit kosztów zaczyna działać']} align={['r', 'r', 'r', 'r', 'l']} rows={rows} />
+  <p>Do mniej więcej {$(gBind)} brutto miesięcznie przy pensji w całości autorskiej limit w ogóle nie przeszkadza: koszty z dwunastu miesięcy zmieszczą się w {F.kupAuthorsLimit}. Powyżej tej kwoty koszty kończą się przed grudniem i ostatnie wypłaty roku są wyraźnie niższe. Kto zarabia tyle, powinien liczyć budżet na netto średnie z całego roku, a nie na styczniowe.</p>
+
+  <h2>Limit {F.kupAuthorsLimit} w praktyce</h2>
+  <p>Ograniczenie z art. 22 ust. 9a jest powiązane ze skalą podatkową: wynosi tyle, ile górna granica pierwszego przedziału, czyli {F.threshold}. Obejmuje łącznie koszty z art. 22 ust. 9 pkt 1–3, więc koszty autorskie z kilku źródeł sumują się w jednym limicie. Liczy się rok podatkowy, a nie umowa ani pracodawca.</p>
+  <p>Ponieważ limit dotyczy kosztów, a nie przychodu, przychód autorski może być mniej więcej dwukrotnie wyższy, zanim koszty się wyczerpią. To częsty błąd w rozmowach o podwyżce: ktoś słyszy o „limicie {F.kupAuthorsLimit}” i zakłada, że powyżej tej kwoty zarobków ulga znika. Tymczasem przy pensji {$(20000)} brutto i 80 % części autorskiej koszty starczają na cały rok.</p>
+  <p>Druga konsekwencja jest mniej oczywista. Niższa podstawa opodatkowania odsuwa moment wejścia w drugi próg. Przy {$(20000)} brutto bez kosztów autorskich stawka {F.pitHigh} pojawia się {sb0 === null ? 'dopiero po zakończeniu roku' : W[sb0 - 1]}, a z 80 % części autorskiej {sb8 === null ? 'wcale nie pojawia się w tym roku' : W[sb8 - 1]}. Dlatego oszczędność rośnie szybciej niż sama pensja, dopóki koszty się nie skończą.</p>
+
+  <h2>Kogo dotyczą koszty 50 %</h2>
+  <p>Przepis art. 22 ust. 9 pkt 3 zastrzega, że koszty {F.kupAuthors} stosuje się z uwzględnieniem ust. 9b. To w tym ustępie ustawa wymienia rodzaje działalności twórczej, przy których wolno je stosować. Jeśli Twoja praca się tam nie mieści, płatnik musi zastosować zwykłe koszty: pracownicze na etacie albo {F.kupContract} na zleceniu i dziele. Nie podajemy tu listy z pamięci, bo o zakwalifikowaniu decyduje brzmienie ustawy, a nie nazwa stanowiska. Przed podpisaniem umowy warto przeczytać ust. 9b w tekście jednolitym, do którego prowadzi lista źródeł pod artykułem.</p>
+  <p>Sam zawód nie wystarcza. Grafik, który obsługuje tylko zamówienia w systemie, nie tworzy nowego utworu, nawet jeśli w umowie stoi „projektant”. Zespół, który wpisuje do umów 100 % części autorskiej każdemu pracownikowi bez względu na zadania, ryzykuje, że przy kontroli koszty zostaną zakwestionowane, a płatnik będzie musiał wyrównać zaliczki.</p>
+
+  <h2>Udział praw autorskich: ćwierć, połowa czy prawie cała pensja?</h2>
+  <p>Zysk rośnie niemal proporcjonalnie do udziału części autorskiej, dopóki nie zbliżasz się do limitu. Przy {$(12000)} brutto oszczędność w roku wynosi: {shares.map((x) => `${pct(x.s, lang)} udziału: ${$(x.save)}`).join('; ')}. Kto w praktyce dzieli czas między tworzenie a spotkania, administrację czy wsparcie klienta, nie powinien wpisywać do umowy udziału, który nie odpowiada rzeczywistości, tylko dlatego, że daje wyższy wynik w kalkulatorze.</p>
+  <p>Rozsądny udział to taki, który da się obronić ewidencją: listą utworów, repozytorium, zgłoszeniami w systemie zadań albo opisem projektów z danego miesiąca. Im lepiej udokumentowana praca twórcza, tym mniejsze ryzyko, że koszty zostaną zakwestionowane po kilku latach, kiedy nikt już nie pamięta, co powstało w danym kwartale.</p>
+
+  <h2>Etat, zlecenie i dzieło: trzy różne mechaniki</h2>
+  <p>Na umowie o pracę koszty autorskie dzielą pensję na dwie części. Od części autorskiej odlicza się {F.kupAuthors} po składkach, od reszty zryczałtowane {F.kup} lub {F.kupRaised} dla dojeżdżających. Kalkulator na stronie głównej zakłada podział pół na pół, a mini-symulator powyżej pozwala wpisać dowolny udział.</p>
+  <p>Na zleceniu koszty {F.kupAuthors} zastępują zwykłe {F.kupContract}, też liczone od przychodu po składkach społecznych. Na {$(6000)} brutto daje to {$(z6a.net)} na rękę wobec {$(z6.net)} przy kosztach standardowych, czyli {$(z6a.net - z6.net)} różnicy miesięcznie.</p>
+  <p>Umowa o dzieło nie ma składek, więc koszty liczy się od pełnej kwoty. Przy {$(6000)} różnica wynosi {$(d6a.net - d6.net)}: {$(d6a.net)} zamiast {$(d6.net)}. Porównanie obu umów bez kosztów autorskich znajdziesz w poradniku <a href={route('zlecdzielo', lang)}>zlecenie czy dzieło</a>.</p>
+
+  <h2>Jak to wygląda na pasku wypłaty</h2>
+  <p>Na pasku z kosztami autorskimi zwykle widać dwie pozycje wynagrodzenia, na przykład „wynagrodzenie zasadnicze” i „wynagrodzenie z tytułu przeniesienia praw autorskich”, albo jedną kwotę z adnotacją o procencie. Pozycja „koszty uzyskania przychodu” jest wtedy wielokrotnie wyższa niż {F.kup}. Jeśli widzisz tam stałe {F.kup} mimo zapisu w umowie, płatnik nie stosuje kosztów autorskich i warto to wyjaśnić z działem kadr, zanim nadpłata urośnie.</p>
+  <p>Koszty autorskie przydają się też w drugą stronę. Gdy dział kadr proponuje zamianę części pensji na wynagrodzenie autorskie, brutto i składki pozostają te same, a rośnie tylko netto. Takie przesunięcie nic nie kosztuje pracodawcę, ale wymaga udokumentowania, że utwory faktycznie powstają.</p>
+
+  <h2>Najczęstsze błędy</h2>
+  <p>Pierwszy: liczenie {F.kupAuthors} od brutto zamiast od kwoty po składkach. Przy {$(12000)} i połowie części autorskiej taki błąd zawyża koszty o {$(socialHalf * P.pit.kup_authors_rate * 12)} w roku. Drugi: przekonanie, że koszty autorskie obniżają składkę zdrowotną. Trzeci: dwa źródła przychodu autorskiego bez sprawdzenia łącznego limitu, które kończy się dopłatą w zeznaniu za rok. Czwarty: stosowanie kosztów do pracy odtwórczej, której nie obejmuje art. 22 ust. 9b.</p>
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('home', lang)} /></div>
+</GuideLayout>

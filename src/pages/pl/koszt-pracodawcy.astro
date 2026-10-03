@@ -1,0 +1,75 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatDecimal, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+// Détail des charges employeur pour 8 000 zł brut, ligne par ligne (moteur).
+const G = 8000;
+const e = uop({ gross: G }).er, ePpk = uop({ gross: G, ppk: true }).er;
+const detail = [
+  ['Emerytalna (część pracodawcy)', F.emerytalnaEr, $2(e.emerytalna)],
+  ['Rentowa (część pracodawcy)', F.rentowaEr, $2(e.rentowa)],
+  ['Wypadkowa', F.wypadkowa, $2(e.wypadkowa)],
+  ['Fundusz Pracy + Fundusz Solidarnościowy', `${F.fp} + ${F.fs}`, $2(e.fp)],
+  ['FGŚP', F.fgsp, $2(e.fgsp)],
+  ['Razem bez PPK', pct(e.total / G, lang), $2(e.total)],
+  ['PPK pracodawcy (jeśli pracownik uczestniczy)', F.ppkEr, $2(ePpk.ppk)],
+];
+// Coût total pour plusieurs bruts (moteur).
+const GROSSES = [P.minimum_wage.monthly, 6000, 8000, 10000, 15000, 20000];
+const rows = GROSSES.map((g) => { const m = uop({ gross: g }), p = uop({ gross: g, ppk: true }); return [$(g), $(m.er.total), $(m.er.cost), $(p.er.cost), formatDecimal(m.er.cost / g, 3, lang)]; });
+const min = uop({ gross: P.minimum_wage.monthly });
+const c8 = uop({ gross: G });
+// Fourchette wypadkowa pour 8 000 zł.
+const wMin = uop({ gross: G, wypadkowaRate: P.zus.wypadkowa_min }).er.cost, wMax = uop({ gross: G, wypadkowaRate: P.zus.wypadkowa_max }).er.cost;
+// Plafond annuel : 30 000 zł brut par mois.
+const HI = 30000;
+const yHi = uopYear({ gross: HI }); const janHi = yHi.months[0].er.cost, decHi = yHi.months[11].er.cost;
+const capSaving = janHi * 12 - yHi.total.cost;
+const faqs = [
+  { q: 'O ile procent więcej niż pensja brutto płaci pracodawca na etacie?', a: `Bez PPK i przy składce wypadkowej ${F.wypadkowa} pracodawca dopłaca ${pct(c8.er.total / G, lang)} brutto: ${F.emerytalnaEr} emerytalnej, ${F.rentowaEr} rentowej, wypadkową, ${F.fpfs} na Fundusz Pracy i Solidarnościowy oraz ${F.fgsp} na FGŚP. Przy ${$(G)} brutto daje to ${$(c8.er.cost)} kosztu miesięcznie. Z PPK dochodzi ${F.ppkEr} wpłaty podstawowej, czyli razem ${$(uop({ gross: G, ppk: true }).er.cost)}.` },
+  { q: 'Dlaczego składka wypadkowa w mojej firmie jest inna niż w kalkulatorze?', a: `Bo stopa wypadkowa jest ustalana dla każdego płatnika osobno i według ustawy mieści się między ${F.wypadkowaMin} a ${F.wypadkowaMax} podstawy. Kalkulator przyjmuje ${F.wypadkowa}, tę samą stopę, której ZUS używa w swoich przykładach. Przy pensji ${$(G)} brutto całkowity koszt waha się przez to od ${$(wMin)} do ${$(wMax)}. Swoją stopę znajdziesz w dokumentach rozliczeniowych firmy z ZUS.` },
+  { q: 'Czy przy bardzo wysokiej pensji koszt pracodawcy spada pod koniec roku?', a: `Tak. Gdy suma wynagrodzeń w roku przekroczy limit ${F.cap}, pracodawca przestaje płacić swoją część emerytalnej i rentowej, a zostają wypadkowa, fundusze i ewentualne PPK. Przy ${$(HI)} brutto miesięcznie styczniowy koszt wynosi ${$(janHi)}, a grudniowy ${$(decHi)}. W całym roku firma płaci o ${$(capSaving)} mniej, niż wynikałoby z pomnożenia stycznia przez dwanaście.` },
+];
+---
+<GuideLayout lang={lang} id="employer" breadcrumbLabel={label('employer', lang)} title={`Koszt pracodawcy ${F.year}: ${$(c8.er.cost)} za pensję ${$(G)} brutto`} h1={`Koszt pracodawcy w ${F.year} r.: ile naprawdę kosztuje etat`}
+  description={`Koszt pracodawcy ${F.year}: pensja ${$(G)} brutto kosztuje firmę ${$(c8.er.cost)} miesięcznie, płaca minimalna ${$(min.er.cost)}. Składki ZUS, FP, FS, FGŚP i PPK. Pełny wykaz.`}
+  intro={`Pensja brutto z umowy to tylko część wydatku firmy: pracodawca dokłada do niej własne składki na ubezpieczenia społeczne i fundusze.`}
+  resume={`Zatrudnienie pracownika z pensją ${$(G)} brutto kosztuje pracodawcę w ${F.year} r. ${$(c8.er.cost)} miesięcznie, a na płacy minimalnej ${F.minWage} wychodzi ${$(min.er.cost)}. Na różnicę między brutto a kosztem składają się wyłącznie składki płacone przez firmę: emerytalna ${F.emerytalnaEr}, rentowa ${F.rentowaEr}, wypadkowa (domyślnie ${F.wypadkowa}, w zależności od firmy od ${F.wypadkowaMin} do ${F.wypadkowaMax}), Fundusz Pracy ${F.fp}, Fundusz Solidarnościowy ${F.fs} i Fundusz Gwarantowanych Świadczeń Pracowniczych ${F.fgsp}. Razem to ${pct(c8.er.total / G, lang)} brutto. Jeśli pracownik oszczędza w PPK, pracodawca dopłaca jeszcze ${F.ppkEr} wpłaty podstawowej i może dobrowolnie dodać do ${F.ppkErExtra}. Składki pracownika i jego podatek nie zwiększają kosztu firmy: są potrącane z kwoty brutto. Kalkulator pokazuje całkowity koszt dla dowolnej pensji, z PPK i bez, a tabela niżej rozpisuje każdą składkę.`}
+  faqs={faqs}
+  related={[{ href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'Jakie brutto daje określoną kwotę na rękę.' }, { href: route('zus', lang), name: label('zus', lang), description: 'Składki pracownika i pracodawcy, stopa po stopie.' }, { href: route('ppk', lang), name: label('ppk', lang), description: 'Wpłaty do PPK pracownika, firmy i państwa.' }]}
+  sources={[src('zus_rates', lang), src('budget', lang), src('ppk', lang), src('sus_act', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Składki pracodawcy przy pensji {$(G)} brutto</h2>
+  <p>Każda składka liczona jest od tej samej podstawy, czyli od wynagrodzenia brutto. Kwoty w trzeciej kolumnie to wynik dla jednego miesiąca, przed przekroczeniem rocznego limitu.</p>
+  <ContentTable headers={['Składka', 'Stopa', `Kwota przy ${$(G)}`]} align={['l', 'r', 'r']} rows={detail} highlightRow={5} />
+  <p>Fundusz Pracy i Fundusz Solidarnościowy wyglądają w ustawie budżetowej jak dwie osobne daniny, ale w deklaracji ZUS i na liście płac zwykle widnieją razem jako {F.fpfs}. FGŚP zabezpiecza wypłatę pensji, gdyby pracodawca stał się niewypłacalny. Emerytalna jest dzielona po równo z pracownikiem, rentowa nie: firma płaci {F.rentowaEr}, pracownik {F.rentowaEe}. Chorobową finansuje w całości pracownik, a wypadkową w całości pracodawca.</p>
+
+  <h2>Pełny koszt zatrudnienia dla sześciu pensji</h2>
+  <ContentTable headers={['Brutto', 'Składki pracodawcy', 'Koszt bez PPK', 'Koszt z PPK', 'Koszt / brutto']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} highlightRow={2} />
+  <p>Mnożnik w ostatniej kolumnie jest identyczny w każdym wierszu, bo wszystkie składki pracodawcy są procentem brutto i żadna nie ma progu ani kwoty stałej w ciągu pierwszych miesięcy roku. To odróżnia koszt pracodawcy od netto pracownika, w którym stałe odliczenia sprawiają, że przelicznik się zmienia. Firma, która planuje budżet płacowy, może więc bezpiecznie mnożyć sumę pensji przez ten współczynnik, o ile żadna pensja nie zbliża się do limitu {F.cap} rocznie.</p>
+
+  <h2>Kiedy koszt się zmienia w trakcie roku</h2>
+  <p>Wyjątkiem są wysokie pensje. Gdy suma brutto pracownika od stycznia przekroczy {F.cap}, pracodawca przestaje płacić swoją część emerytalnej i rentowej. Przy {$(HI)} brutto miesięcznie styczniowy koszt to {$(janHi)}, a grudniowy {$(decHi)}. Fundusze, wypadkowa i PPK płyną dalej od pełnej kwoty, bo ich nie obejmuje limit. Wpłata pracodawcy do PPK nie wchodzi z kolei do podstawy składek emerytalnej i rentowej, więc sama nie podnosi żadnej innej składki.</p>
+  <p>Druga zmienna to stopa wypadkowa. Ustawa pozwala na rozpiętość od {F.wypadkowaMin} do {F.wypadkowaMax}, a stopa jest przypisana konkretnemu płatnikowi. Przy {$(G)} brutto oznacza to koszt od {$(wMin)} do {$(wMax)}. Kalkulator przyjmuje {F.wypadkowa}, tak jak ZUS w swoich wyliczeniach przykładowych.</p>
+
+  <h2>Czego kalkulator nie dolicza</h2>
+  <p>Wynik obejmuje tylko obowiązkowe składki i PPK. Nie zawiera Funduszu Emerytur Pomostowych, który płaci się wyłącznie za pracę w szczególnych warunkach lub o szczególnym charakterze. Nie stosuje też żadnych zwolnień z FP i FS: zawsze dolicza je od pełnego brutto, więc jeśli w Twojej firmie któryś pracownik jest z nich zwolniony, rzeczywisty koszt będzie niższy. Poza zakresem są wydatki pozapłacowe: szkolenia, sprzęt, benefity, badania lekarskie, odpis na fundusz socjalny czy dodatkowe wynagrodzenie roczne w sferze budżetowej. Ich wysokość zależy od decyzji firmy, a nie od ustawy, dlatego nie da się ich policzyć jednym wzorem.</p>
+  <p>Kalkulator nie pokazuje też kosztu umowy zlecenia ani B2B. Przy zleceniu część składek zależy od tego, czy zleceniobiorca ma inny tytuł do ubezpieczeń, a przy B2B firma płaci tylko kwotę faktury. Te przypadki opisuje <a href={route('compare', lang)}>porównanie B2B i umowy o pracę</a>.</p>
+
+  <h2>Jak odczytać koszt na pasku wypłaty</h2>
+  <p>Pracownik zwykle nie widzi składek pracodawcy, bo pasek wypłaty zaczyna się od brutto i schodzi w dół do kwoty na rękę. Część firm drukuje jednak na dole paska sekcję „składki finansowane przez pracodawcę” albo „koszt pracodawcy”. Suma z tej sekcji dodana do brutto powinna dać wynik zbliżony do kalkulatora. Jeśli różnica przekracza kilka złotych, najczęściej wynika z innej stopy wypadkowej, z dodatkowej wpłaty do PPK albo z przekroczonego limitu rocznego. Jaki z tego budżetu trafi na konto pracownika, policzysz w <a href={route('home', lang)}>kalkulatorze wynagrodzeń</a>.</p>
+
+  <h2>Ile z tego trafia do PPK</h2>
+  <p>Wpisz pensję, aby zobaczyć, ile wpłaca pracodawca na konto PPK pracownika i o ile spada przy tym jego netto.</p>
+  <div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('ppk', lang)} /></div>
+</GuideLayout>

@@ -1,0 +1,138 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { t } from '../../i18n/ui';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, dzielo, b2b, b2bZusMonth, capMonth, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct, displayDate } from '../../lib/format';
+import { webPageSchema, breadcrumbSchema } from '../../lib/seo';
+import { LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const LOC = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+
+// Przykład krok po kroku : płaca minimalna.
+const minG = P.minimum_wage.monthly;
+const m = uop({ gross: minG });
+const m5 = uop({ gross: 5000 });
+const capRate = pct(P.health.cap_2021_rate, lang), capRed = $2(P.health.cap_2021_reducing_month);
+const zFull = b2bZusMonth('full', true), zPref = b2bZusMonth('preferential', true);
+const ry15 = b2b({ revenue: 15000, form: 'ryczalt', ryczaltRate: P.b2b.ryczalt_rates[0].rate });
+const d1 = dzielo({ gross: 1000 }), d1a = dzielo({ gross: 1000, authors: true });
+const cap25 = capMonth(25000), sb12 = secondBracketMonth({ gross: 12000 });
+const y25 = uopYear({ gross: 25000 });
+
+const S = (k: keyof typeof P.sources) => P.sources[k].label[lang];
+const paramRows = [
+  ['Płaca minimalna, stawka godzinowa', `${F.minWage}; ${F.minHourly}`, S('minimum')],
+  ['Limit rocznej podstawy (30-krotność), prognozowane przeciętne wynagrodzenie', `${F.cap}; ${F.avgForecast}`, S('cap')],
+  ['Stawki składek społecznych', `${F.emerytalnaTotal}, ${F.rentowaTotal}, ${F.chorobowa}, wypadkowa ${F.wypadkowa}`, S('zus_rates')],
+  ['Podział składek pracownik / pracodawca', `${F.emerytalnaEe} / ${F.emerytalnaEr}; ${F.rentowaEe} / ${F.rentowaEr}`, S('sus_act')],
+  ['Fundusz Pracy, Fundusz Solidarnościowy, FGŚP', `${F.fp}, ${F.fs}, ${F.fgsp}`, S('budget')],
+  ['Składka zdrowotna i ograniczenie „2021”', `${F.health}; ${capRate} − ${capRed}`, S('health_act')],
+  ['Skala, próg, kwota zmniejszająca, KUP, ryczałt do 200 zł', `${F.pitLow} / ${F.pitHigh}; ${F.threshold}; ${F.reducingYear}; ${F.kup} / ${F.kupRaised}; ${F.smallContract}`, S('pit_act')],
+  ['PIT-2: pomniejszenie miesięczne', F.reducingMonth, S('pit2')],
+  ['Ulga dla młodych', F.youthLimit, S('youth')],
+  ['PPK: stawki podstawowe', `${F.ppkEe} / ${F.ppkEr}`, S('ppk')],
+  ['PPK: wpłata pracodawcy jako przychód', F.ppkEr, S('ppk_tax')],
+  ['ZUS przedsiębiorcy, minimalna zdrowotna, progi ryczałtu', `${F.b2bZusFull}; ${F.healthMin}; ${F.ryczaltBand1} / ${F.ryczaltBand2} / ${F.ryczaltBand3}`, S('zus_b2b')],
+  ['Limit odliczenia zdrowotnej przy liniowym', F.liniowyLimit, S('health_deduction')],
+  ['Stawki ryczałtu ewidencjonowanego', P.b2b.ryczalt_rates.map((r) => pct(r.rate, lang)).join(', '), S('ryczalt_act')],
+  ['Przeciętne wynagrodzenie IV kw. 2025 (podstawa zdrowotnej na ryczałcie)', F.avgQ4, S('gus_q4')],
+  ['Wynagrodzenie chorobowe', `${F.sickRate}; odliczenie ${F.sickReduction}`, S('sickness')],
+  ['Dodatki za nadgodziny', `${F.ot50} / ${F.ot100}`, S('labour_code')],
+];
+const sourceKeys = Object.keys(P.sources) as Array<keyof typeof P.sources>;
+const sources = sourceKeys.map((k) => src(k, lang));
+
+const title = `Wynagrodzenie netto ${F.year}: metodologia i źródła kalkulatora`;
+const description = `Wzory kalkulatora wynagrodzeń ${F.year}: ZUS, składka zdrowotna, PIT, limit ${F.cap}, zaokrąglenia i 24 testy. Płaca minimalna ${F.minWage} daje ${F.minNet} netto.`;
+const path = route('method', lang);
+const h1 = `Metodologia kalkulatora wynagrodzeń ${F.year}`;
+const jsonLd = [webPageSchema({ name: h1, description, path, lang }), breadcrumbSchema([{ name: t(lang).breadcrumbHome, path: route('home', lang) }, { name: label('method', lang), path }])];
+---
+<PageLayout title={title} description={description} lang={lang} jsonLd={jsonLd} sources={sources} breadcrumbs={[{ label: label('method', lang) }]}
+  related={[{ href: route('home', lang), name: 'Kalkulator wynagrodzeń', description: 'Netto dla czterech umów, z rokiem miesiąc po miesiącu.' }, { href: route('faq', lang), name: 'Pytania o kalkulator', description: 'Dane, aktualizacje i różnice wobec paska wypłaty.' }, { href: route('annual', lang), name: 'Wynagrodzenie roczne', description: 'Dwanaście wypłat z drugim progiem i limitem ZUS.' }]}>
+  <article>
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-navy-900 md:text-4xl">{h1}</h1>
+      <p class="mt-3 text-lg text-navy-600">Wzory, kolejność obliczeń, zaokrąglenia, granice modelu i źródło każdej stawki.</p>
+    </header>
+    <p class="mb-6 text-navy-700">Silnik kalkulatora to zestaw czystych funkcji uruchamianych w Twojej przeglądarce: nie łączy się z żadnym serwerem i nie zawiera w kodzie ani jednej stawki wpisanej na sztywno. Wszystkie taryfy, progi i kwoty czyta z jednego pliku parametrów na {F.year} r., w którym przy każdej grupie wartości zapisane jest źródło urzędowe; ostatnia weryfikacja odbyła się {updated}. Tabele na stronach serwisu generują się z tego samego pliku, więc tekst, tabela i wynik kalkulatora nie mogą sobie przeczyć. Umowę o pracę liczymy miesiąc po miesiącu przez cały rok, tak jak robi to program płacowy, z narastającą podstawą podatku i narastającą sumą brutto do limitu {F.cap}. Zlecenie i dzieło liczymy dla pojedynczej wypłaty, a działalność B2B jako średnią miesięczną z rocznego rozliczenia. Poniżej opisujemy każdy wzór, przyjęte zaokrąglenia, sytuacje, których model nie obejmuje, oraz testy, którymi sprawdzamy wyniki.</p>
+
+    <div class="prose prose-slate max-w-none">
+      <h2>Zaokrąglenia i jednostki</h2>
+      <p>Składki społeczne, składkę zdrowotną i wpłaty PPK zaokrąglamy do pełnego grosza, osobno dla każdej składki. Podstawę opodatkowania i zaliczkę na podatek zaokrąglamy do pełnych złotych, tak jak na liście płac: końcówki poniżej 50 groszy pomija się, a od 50 groszy podwyższa do złotego. Na ekranie kwoty pokazujemy bez groszy, ale obliczenia prowadzimy na groszach, dlatego suma wierszy w rozbiciu może różnić się od netto o złotówkę.</p>
+
+      <h2>Umowa o pracę: obliczenie miesiąc po miesiącu</h2>
+      <p>Dla każdego z dwunastu miesięcy silnik wykonuje tę samą sekwencję, przenosząc z miesiąca na miesiąc trzy sumy narastające: brutto objęte limitem składek, przychód zwolniony ulgą dla młodych i podstawę opodatkowania.</p>
+      <ol>
+        <li><strong>Podstawa składek emerytalnej i rentowych</strong> = mniejsza z dwóch kwot: brutto miesiąca albo to, co zostało do limitu {F.cap} po odjęciu brutto z poprzednich miesięcy. Emerytalna = podstawa × {F.emerytalnaEe}, rentowa = podstawa × {F.rentowaEe}. Chorobowa = całe brutto × {F.chorobowa}, bo limit jej nie dotyczy.</li>
+        <li><strong>Składka zdrowotna</strong> = {F.health} × (brutto − składki społeczne), ale nie więcej niż zaliczka obliczona według przepisów obowiązujących 31 grudnia 2021 r.: {capRate} × zaokrąglona (brutto − składki − koszty) − {capRed}. To ograniczenie z art. 83 ust. 1, 2a i 2b ustawy o świadczeniach opieki zdrowotnej. Przy uldze dla młodych liczymy je tak, jakby przychód nie był zwolniony (ust. 2a). W praktyce działa tylko przy bardzo niskich pensjach.</li>
+        <li><strong>Przychód do opodatkowania</strong> = brutto + wpłata pracodawcy do PPK, która jest przychodem pracownika. Przy uldze dla młodych z przychodu odejmujemy część zwolnioną, aż suma zwolnień w roku osiągnie {F.youthLimit}; składki społeczne odliczamy wtedy proporcjonalnie do części opodatkowanej.</li>
+        <li><strong>Koszty uzyskania przychodu</strong> = {F.kup} miesięcznie albo {F.kupRaised} przy dojazdach, nie więcej niż przychód opodatkowany. Przy kosztach autorskich: {F.kupAuthors} od części brutto za prawa autorskie, po odjęciu przypadających na nią składek, łącznie nie więcej niż {F.kupAuthorsLimit} w roku.</li>
+        <li><strong>Podstawa opodatkowania</strong> = zaokrąglona do złotego (przychód opodatkowany − odliczane składki − koszty).</li>
+        <li><strong>Zaliczka na PIT</strong> = część podstawy mieszcząca się do {F.threshold} narastająco × {F.pitLow} + nadwyżka × {F.pitHigh} − {F.reducingMonth} przy złożonym PIT-2, zaokrąglona do złotego i nie mniejsza niż zero. Próg sprawdzamy na sumie podstaw u tego samego płatnika od stycznia, zgodnie z art. 32 ustawy o PIT.</li>
+        <li><strong>Netto</strong> = brutto − składki społeczne − składka zdrowotna − zaliczka − wpłata pracownika do PPK ({F.ppkEe} brutto, potrącana po opodatkowaniu).</li>
+        <li><strong>Koszt pracodawcy</strong> = brutto + emerytalna {F.emerytalnaEr} i rentowa {F.rentowaEr} od podstawy z kroku 1 + wypadkowa {F.wypadkowa} + Fundusz Pracy {F.fp} + Fundusz Solidarnościowy {F.fs} + FGŚP {F.fgsp} od całego brutto + wpłata pracodawcy do PPK.</li>
+      </ol>
+      <p>Przykład dla płacy minimalnej {F.minWage}: składki społeczne {$2(m.social)}, składka zdrowotna {$2(m.health)}, podstawa {$(m.taxBase)}, zaliczka {$(m.pit)} po odjęciu {F.reducingMonth}, netto {$2(m.net)}, czyli {F.minNet} po zaokrągleniu. Koszt pracodawcy wynosi {$2(m.er.cost)}.</p>
+      <p>Kalkulator netto na brutto odwraca ten sam silnik metodą bisekcji: szuka najmniejszej kwoty brutto, przy której netto pierwszego miesiąca osiąga zadaną wartość, z dokładnością do grosza. Nie ma więc osobnego wzoru odwrotnego, który mógłby rozjechać się z obliczeniem w przód.</p>
+
+      <h2>Umowa zlecenie</h2>
+      <p>Emerytalna {F.emerytalnaEe} i rentowa {F.rentowaEe} od brutto, chorobowa {F.chorobowa} tylko po zaznaczeniu dobrowolnego ubezpieczenia. Uczeń lub student do 26 lat nie płaci składek społecznych; kalkulator przyjmuje wtedy także zerową składkę zdrowotną z tytułu zlecenia. Składka zdrowotna to {F.health} od brutto po składkach, z tym samym ograniczeniem „2021” co na etacie, liczonym z kosztami {F.kupContract} ale bez odejmowania kwoty {capRed}.</p>
+      <p>Gdy kwota umowy nie przekracza {F.smallContract}, podatek wynosi {F.pitLow} od całego przychodu, bez kosztów i bez PIT-2, a składka zdrowotna nie jest ograniczana. Powyżej tej kwoty koszty to {F.kupContract} od brutto po składkach (albo {F.kupAuthors} dla części za prawa autorskie), podstawa zaokrąglona do złotego, zaliczka {F.pitLow} minus {F.reducingMonth}, jeśli złożyłeś zleceniodawcy PIT-2. Przy uldze dla młodych zaliczka wynosi zero. Po stronie zleceniodawcy doliczamy emerytalną {F.emerytalnaEr}, rentową {F.rentowaEr} i wypadkową {F.wypadkowa}, a Fundusz Pracy, Fundusz Solidarnościowy i FGŚP tylko wtedy, gdy wynagrodzenie z umowy osiąga co najmniej płacę minimalną.</p>
+
+      <h2>Umowa o dzieło</h2>
+      <p>Model nie nalicza składek społecznych ani zdrowotnej. Do {F.smallContract} podatek to {F.pitLow} od przychodu. Powyżej: koszty {F.kupContract} od przychodu, a {F.kupAuthors} przy przeniesieniu praw autorskich, podstawa zaokrąglona do złotego, zaliczka {F.pitLow} minus {F.reducingMonth} przy PIT-2. Przy dziele za {$(1000)} wychodzi {$(d1.pit)} podatku, a z kosztami autorskimi {$(d1a.pit)}.</p>
+
+      <h2>B2B: średnia miesięczna z roku</h2>
+      <p>Działalność liczymy w skali roku i dzielimy wynik przez dwanaście, bo składka zdrowotna, próg podatkowy i limity odliczeń są roczne. Składki społeczne przedsiębiorcy liczymy od podstawy {F.b2bBaseFull} (pełny ZUS) albo {F.b2bBasePref} (preferencyjny): emerytalna {F.emerytalnaTotal}, rentowa {F.rentowaTotal}, wypadkowa {F.wypadkowa}, chorobowa {F.chorobowa} tylko przy dobrowolnym ubezpieczeniu, a Fundusz Pracy z Funduszem Solidarnościowym {F.fpfs} tylko przy pełnym ZUS. Daje to {$2(zFull.emerytalna + zFull.rentowa + zFull.chorobowa + zFull.wypadkowa + zFull.fp)} miesięcznie przy pełnym ZUS z chorobowym i {$2(zPref.emerytalna + zPref.rentowa + zPref.chorobowa + zPref.wypadkowa)} przy preferencyjnym. Przy uldze na start składki społeczne wynoszą zero.</p>
+      <ul>
+        <li><strong>Skala podatkowa:</strong> zdrowotna {pct(P.b2b.health.skala_rate, lang)} od dochodu (przychód − koszty − Fundusz Pracy − składki społeczne), nie mniej niż {F.healthMin} miesięcznie; podatek {F.pitLow} do {F.threshold} rocznej podstawy i {F.pitHigh} powyżej, minus {F.reducingYear} kwoty zmniejszającej.</li>
+        <li><strong>Podatek liniowy:</strong> zdrowotna {F.healthLiniowy} od tego samego dochodu, nie mniej niż {F.healthMin}; zapłacona zdrowotna zmniejsza podstawę do {F.liniowyLimit} rocznie; podatek {F.liniowy}.</li>
+        <li><strong>Ryczałt:</strong> zdrowotna ryczałtowa według rocznego przychodu: {F.ryczaltBand1} do {F.ryczaltLimit1}, {F.ryczaltBand2} do {F.ryczaltLimit2}, {F.ryczaltBand3} powyżej; połowa zapłaconej zdrowotnej i składki społeczne zmniejszają przychód; podatek według stawki wybranej dla branży.</li>
+      </ul>
+      <p>Netto B2B = przychód − koszty − składki społeczne − Fundusz Pracy − zdrowotna − podatek. VAT pomijamy: wpisujesz przychód netto z faktury.</p>
+
+      <h2>Chorobowe i nadgodziny</h2>
+      <p>Podstawa wynagrodzenia chorobowego to miesięczne brutto pomniejszone o {F.sickReduction} składek społecznych pracownika; dzienna stawka = podstawa ÷ 30 × {F.sickRate}. Od świadczenia nie liczymy składek społecznych, a składkę zdrowotną liczymy od całej kwoty świadczenia. Przy nadgodzinach stawka godzinowa = brutto ÷ liczba godzin pracy w miesiącu, a dodatek wynosi {F.ot50} albo {F.ot100} tej stawki, zgodnie z art. 151¹ Kodeksu pracy.</p>
+
+      <h2>Czego kalkulator nie uwzględnia</h2>
+      <p>Wolimy powiedzieć wprost, gdzie model się kończy, niż udawać dokładność, której nie ma. Wynik może różnić się od rzeczywistości w tych sytuacjach:</p>
+      <ul>
+        <li>Kilku pracodawców albo kilka umów naraz: każdą umowę liczymy osobno, bez wspólnego limitu składek, wspólnego progu i podziału PIT-2 na części.</li>
+        <li>Dobrowolne składki, PPK z wpłatami dodatkowymi lub obniżoną wpłatą pracownika: przyjmujemy stawki podstawowe.</li>
+        <li>Składka wypadkowa jest ustawiona na {F.wypadkowa}, choć u Twojego pracodawcy może wynosić od {F.wypadkowaMin} do {F.wypadkowaMax}; zmienia to tylko koszt pracodawcy.</li>
+        <li>Zwolnienia z Funduszu Pracy i Funduszu Solidarnościowego dla osób 55+ i 60+ ani składka na Fundusz Emerytur Pomostowych nie są modelowane.</li>
+        <li>Ulga na powrót, ulga dla rodzin 4+ i ulga dla pracujących seniorów nie są dostępne; kalkulator zna tylko ulgę dla młodych.</li>
+        <li>Na zleceniu i dziele stosujemy stawkę {F.pitLow}; nie sprawdzamy drugiego progu ani łączenia z dochodami z etatu, co rozlicza się dopiero w zeznaniu rocznym.</li>
+        <li>B2B to średnia z roku: zdrowotną minimalną {F.healthMin} stosujemy do wszystkich dwunastu miesięcy, choć za styczeń wynosi {F.healthMinJan}; nie liczymy też miesięcznej zmienności dochodu, małego ZUS plus ani daniny solidarnościowej.</li>
+        <li>Potrąceń spoza prawa podatkowego, takich jak składki związkowe, ubezpieczenia grupowe czy zajęcia komornicze, nie znamy.</li>
+      </ul>
+
+      <h2>Jak sprawdzamy obliczenia</h2>
+      <p>Silnik ma 24 testy automatyczne (vitest), uruchamiane przed każdą publikacją. Każdy porównuje wynik z kwotą policzoną ręcznie albo opublikowaną przez instytucję. Kilka przykładów z pliku testów:</p>
+      <ul>
+        <li>Płaca minimalna {F.minWage}: składki {$2(m.social)}, zdrowotna {$2(m.health)}, podstawa {$(m.taxBase)}, zaliczka {$(m.pit)}, netto {F.minNet}.</li>
+        <li>{$(5000)} brutto: podstawa {$(m5.taxBase)}, zaliczka {$(m5.pit)}, bo {F.pitLow} z podstawy minus {F.reducingMonth} daje kwotę z groszami, zaokrągloną w górę do złotego.</li>
+        <li>Pełny ZUS przedsiębiorcy: {F.b2bZusFull} z chorobowym i {F.b2bZusFullNoSick} bez niego, co do grosza tyle samo, ile publikuje ZUS; preferencyjny: {F.b2bZusPref} i {F.b2bZusPrefNoSick}.</li>
+        <li>Ryczałt przy {$(15000)} przychodu miesięcznie: zdrowotna {$2(ry15.health)}, czyli stawka z przedziału do {F.ryczaltLimit2}.</li>
+        <li>{$(25000)} brutto: limit składek osiągnięty {cap25 ? `w ${LOC[cap25 - 1]}` : 'w ostatnim miesiącu'}, emerytalna w tym miesiącu liczona tylko od reszty do limitu; grudniowe netto {$(y25.months[11].net)}.</li>
+        <li>{$(12000)} brutto: drugi próg pojawia się dopiero {sb12 ? `w ${LOC[sb12 - 1]}` : 'w ostatnim miesiącu'}.</li>
+        <li>Umowa o dzieło na {$(1000)}: {$(d1.pit)} podatku, a z kosztami autorskimi {$(d1a.pit)}; umowa za {F.smallContract}: podatek ryczałtowy.</li>
+      </ul>
+      <p>Pozostałe testy sprawdzają PIT-2, koszty {F.kupRaised}, ulgę dla młodych do {F.youthLimit}, PPK, koszt pracodawcy, odwrócenie netto na brutto, studenta na zleceniu, minimalną zdrowotną przy liniowym, ulgę na start, wynagrodzenie chorobowe i dodatki za nadgodziny. Jeśli znajdziesz przypadek, w którym kalkulator myli się wobec Twojej listy płac, <a href={route('contact', lang)}>napisz do nas</a>: każdy potwierdzony błąd staje się nowym testem.</p>
+
+      <h2>Parametry i ich źródła</h2>
+      <p>Tabela generuje się z pliku parametrów. Pełne nazwy aktów z odnośnikami znajdziesz w sekcji źródeł na dole strony.</p>
+    </div>
+    <ContentTable headers={['Parametr', `Wartość ${F.year}`, 'Źródło']} align={['l', 'l', 'l']} rows={paramRows} />
+  </article>
+</PageLayout>

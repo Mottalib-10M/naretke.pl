@@ -1,0 +1,80 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, zlecenie, dzielo, secondBracketMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const MO = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+// Month in which the annual cap on creative costs starts to bite (the monthly deduction drops).
+const limitMonth = (g: number, s: number) => { const y = uopYear({ gross: g, authorsShare: s }); const i = y.months.findIndex((m) => m.kup < y.months[0].kup - 0.5); return i < 0 ? null : i; };
+const a12 = uopYear({ gross: 12000, authorsShare: 0.5 }), b12 = uopYear({ gross: 12000 });
+const save12 = b12.total.pit - a12.total.pit;
+const m1 = a12.months[0];
+const socialHalf = m1.social * 0.5;
+const kupAuth = (6000 - socialHalf) * P.pit.kup_authors_rate;
+const rows = [8000, 12000, 20000, 30000].map((g) => { const a = uopYear({ gross: g, authorsShare: 0.8 }), b = uopYear({ gross: g }); const lm = limitMonth(g, 0.8); return [$(g), $(b.months[0].net), $(a.months[0].net), $(b.total.pit - a.total.pit), lm === null ? 'never' : MO[lm]]; });
+let gBind = 10000; while (uopYear({ gross: gBind, authorsShare: 1 }).total.kup < P.pit.kup_authors_limit - 1) gBind += 500;
+const lm30 = limitMonth(30000, 0.8);
+const sb0 = secondBracketMonth({ gross: 20000 }), sb8 = secondBracketMonth({ gross: 20000, authorsShare: 0.8 });
+const z6 = zlecenie({ gross: 6000 }), z6a = zlecenie({ gross: 6000, authorsShare: 1 });
+const d6 = dzielo({ gross: 6000 }), d6a = dzielo({ gross: 6000, authors: true });
+const a30 = uopYear({ gross: 30000, authorsShare: 0.8 });
+const shares = [0.25, 0.5, 0.8, 1].map((s) => ({ s, save: b12.total.pit - uopYear({ gross: 12000, authorsShare: s }).total.pit }));
+const faqs = [
+  { q: 'Do 50 % creative costs reduce my ZUS and health contributions?', a: `No. Pension, disability and sickness contributions are charged on the full gross, and the ${F.health} health contribution on gross minus social contributions. Creative costs only shrink the income tax base. On ${$(12000)} gross with half the pay assigned to copyright, every contribution stays the same and the extra ${$(m1.net - b12.months[0].net)} you see in January comes entirely from a lower PIT advance.` },
+  { q: 'Is the PLN 120,000 limit on income or on costs?', a: `On costs. Article 22(9a) caps the combined costs under Article 22(9) points 1 to 3 at the upper limit of the first tax bracket, ${F.kupAuthorsLimit} a year. Because the costs are half of the copyright income after contributions, the cap only runs out once copyright income is roughly twice that figure. With pay that is entirely creative, that happens within the year from about ${$(gBind)} gross a month.` },
+  { q: 'What happens to my pay once I use up the creative-cost limit mid-year?', a: `From the month in which your costs reach ${F.kupAuthorsLimit}, the payer has nothing left to deduct from the copyright portion and calculates the advance on the full amount, so your take-home drops in one step. At ${$(30000)} gross with 80 % of pay for copyright, the cap starts to bite ${lm30 === null ? 'only after the year ends' : `in ${MO[lm30]}`}, and December net is ${$(a30.months[11].net)} against ${$(a30.months[0].net)} in January (part of the drop also comes from the higher tax bracket).` },
+  { q: 'I have two contracts that transfer copyright. Does each payer get its own limit?', a: `No. The Act speaks of combined costs in the tax year, so ${F.kupAuthorsLimit} is one limit per taxpayer however many contracts you sign. Each payer, though, only sees its own payroll and may keep applying 50 % costs up to the limit. Any costs above ${F.kupAuthorsLimit} then have to be corrected in your annual return, which usually means paying extra tax.` },
+  { q: 'Can I use 50 % costs on a mandate contract or a specific-work contract?', a: `Yes, provided the work falls within the creative activities listed in Article 22(9b) of the PIT Act and produces a protected work. Costs are then ${F.kupAuthors} instead of ${F.kupContract}. On a ${$(6000)} specific-work contract (umowa o dzieło) that means ${$(d6a.net)} take-home instead of ${$(d6.net)}; on a mandate contract (umowa zlecenie) of the same amount, ${$(z6a.net)} instead of ${$(z6.net)}.` },
+];
+---
+<GuideLayout lang={lang} id="authors" breadcrumbLabel={label('authors', lang)} title={`Creative work costs ${F.year}: the 50 % rule and its PLN cap`} h1={`Creative work costs in Poland (${F.year}): the 50 % deduction explained`}
+  description={`Polish 50 % creative costs in ${F.year}: on ${$(12000)} gross with half the pay for copyright you pay ${$(save12)} less tax a year. Cap ${F.kupAuthorsLimit}, and who qualifies.`}
+  intro="If you transfer copyright in what you create, Polish tax law lets half of the pay for those rights be treated as a cost of earning income."
+  resume={`In ${F.year}, creative work costs (koszty autorskie) equal ${F.kupAuthors} of copyright income, calculated on the amount left after the social contributions your payer withholds (Article 22(9)(3) of the PIT Act). Over a year, these costs cannot exceed ${F.kupAuthorsLimit} in total, which is the upper limit of the first tax bracket (Article 22(9a)). On an employment contract (umowa o pracę) they apply only to the part of salary that pays for the transfer of rights to a work; the rest keeps the ordinary employee costs of ${F.kup} a month. With ${$(12000)} gross and half of it assigned to copyright, your PIT advances fall by ${$(save12)} over the year and January take-home rises from ${$(b12.months[0].net)} to ${$(m1.net)}. ZUS and health contributions do not move. The same ${F.kupAuthors} costs work on mandate and specific-work contracts, but only for the creative activities named in Article 22(9b). The simulator below shows the gain for your salary and copyright share.`}
+  faqs={faqs}
+  related={[{ href: route('kup', lang), name: label('kup', lang), description: `Standard employee costs: ${F.kup} or ${F.kupRaised} a month.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `When income passes ${F.threshold} and the ${F.pitHigh} rate starts.` }, { href: route('dzielo', lang), name: 'Specific-work contract calculator', description: `Net pay on dzieło with ${F.kupContract} or ${F.kupAuthors} costs.` }]}
+  sources={[src('pit_act', lang), src('sus_act', lang), src('health_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Where the saving comes from: a {$(12000)} salary worked through</h2>
+  <p>Picture a software developer on {$(12000)} gross whose contract states that half of her pay is for transferring the rights to the code she writes. Her employer first takes social contributions from the whole amount: {formatMoney(m1.social, 2, lang)} in January. Half of that, {formatMoney(socialHalf, 2, lang)}, belongs to the copyright portion of {$(6000)}. Creative costs are {F.kupAuthors} of what remains, about {$(kupAuth)} a month. The other half of her salary still gets the flat {F.kup}.</p>
+  <p>So instead of {F.kup} of costs each month she now has close to {$(kupAuth + P.pit.kup_employee_month)}. Her tax base drops by the same amount and the advance by {F.pitLow} of it, which adds up to {$(save12)} less tax over the year. Not a single grosz of contributions changes, because neither ZUS nor the health contribution depends on deductible costs.</p>
+
+  <h2>What it is worth at different salaries</h2>
+  <p>The table assumes 80 % of the salary is paid for copyright. The last column shows the month in which the {F.kupAuthorsLimit} cap begins to trim the costs.</p>
+  <ContentTable headers={['Monthly gross', 'Net without creative costs (January)', 'Net with creative costs (January)', 'Less tax per year', 'Cap starts to bite']} align={['r', 'r', 'r', 'r', 'l']} rows={rows} />
+  <p>Up to roughly {$(gBind)} gross a month on fully creative pay, the cap never gets in the way: twelve months of costs fit inside {F.kupAuthorsLimit}. Above that, the costs run out before December and the last payslips of the year are noticeably smaller. If you earn at that level, budget on the average monthly net for the year rather than on January.</p>
+
+  <h2>How the {F.kupAuthorsLimit} cap behaves</h2>
+  <p>The ceiling in Article 22(9a) is tied to the tax scale: it equals the top of the first bracket, {F.threshold}. It covers the costs from Article 22(9) points 1 to 3 together, so creative costs from several sources share one limit. What counts is the tax year, not the contract or the employer.</p>
+  <p>Because the limit applies to costs and not to income, copyright income can be about twice as high before the costs are exhausted. This trips people up in pay negotiations: someone hears about the "{F.kupAuthorsLimit} limit" and assumes the relief vanishes once salary goes above it. In fact, on {$(20000)} gross with an 80 % copyright share, the costs last the whole year.</p>
+  <p>A second effect is easier to miss. A lower tax base pushes back the month in which you enter the higher bracket. On {$(20000)} gross without creative costs, the {F.pitHigh} rate appears {sb0 === null ? 'only after the year ends' : `in ${MO[sb0 - 1]}`}; with an 80 % copyright share it {sb8 === null ? 'does not appear at all this year' : `appears in ${MO[sb8 - 1]}`}. That is why the saving grows faster than the salary itself until the costs run out.</p>
+
+  <h2>Who can use the 50 % rate</h2>
+  <p>Article 22(9)(3) applies the {F.kupAuthors} costs subject to paragraph 9b, and it is in that paragraph that the Act lists the kinds of creative activity which qualify. If your work is not covered there, the payer has to use ordinary costs: the employee flat rate on a job, or {F.kupContract} on mandate and specific-work contracts. We deliberately do not reproduce a list from memory, because eligibility depends on the wording of the statute rather than on a job title. Read paragraph 9b in the consolidated text linked in the sources below before you sign.</p>
+  <p>A job title alone is not enough. A graphic designer who only processes routine orders in a template is not creating a new work, even if the contract says "designer". An employer that writes a 100 % copyright share into every employee's contract regardless of what they actually do takes the risk that an audit rejects the costs and the payer has to make up the advances.</p>
+
+  <h2>A quarter, half or nearly all of your pay?</h2>
+  <p>The saving grows almost in line with the copyright share until you get close to the cap. On {$(12000)} gross, the annual saving is: {shares.map((x) => `${pct(x.s, lang)} share: ${$(x.save)}`).join('; ')}. If your working week is split between creating things and meetings, admin or client support, do not write a share into the contract that does not match reality just because it gives a nicer figure in the calculator.</p>
+  <p>A sensible share is one you can back up with records: a list of works, a code repository, tickets in a task tracker or a description of the month's projects. The better documented the creative work, the smaller the risk that the costs are challenged years later, when nobody remembers what was produced in a given quarter.</p>
+
+  <h2>Employment, mandate and specific work: three mechanics</h2>
+  <p>On an employment contract, creative costs split the salary in two. The copyright part gets {F.kupAuthors} after contributions; the rest gets the flat {F.kup}, or {F.kupRaised} if you commute from another town. The main calculator assumes a 50/50 split, while the mini-simulator above lets you type any share.</p>
+  <p>On a mandate contract, the {F.kupAuthors} costs replace the usual {F.kupContract}, also calculated on income after social contributions. At {$(6000)} gross you take home {$(z6a.net)} rather than {$(z6.net)}, a gap of {$(z6a.net - z6.net)} a month.</p>
+  <p>A specific-work contract carries no contributions, so the costs are calculated on the full amount. At {$(6000)} the difference is {$(d6a.net - d6.net)}: {$(d6a.net)} instead of {$(d6.net)}. For a comparison of the two contracts without creative costs, see <a href={route('zlecdzielo', lang)}>mandate versus specific-work contract</a>.</p>
+
+  <h2>Reading it on your payslip</h2>
+  <p>On a payslip (pasek wypłaty) with creative costs you will usually see two pay lines, such as "base salary" and "pay for transfer of copyright", or a single amount with a note about the percentage. The "deductible costs" line (koszty uzyskania przychodu) is then many times higher than {F.kup}. If it still shows a flat {F.kup} although your contract mentions copyright, the payer is not applying the 50 % rate, and it is worth raising with HR before the overpayment builds up.</p>
+  <p>The mechanism also works in the other direction. When HR suggests reassigning part of your salary as copyright pay, gross pay and contributions stay exactly the same and only net pay rises. The switch costs the employer nothing, but it does need records showing that works are actually being created.</p>
+
+  <h2>Mistakes we see most often</h2>
+  <p>First: taking {F.kupAuthors} of gross instead of the amount after contributions. At {$(12000)} with a half copyright share, that error overstates costs by {$(socialHalf * P.pit.kup_authors_rate * 12)} a year. Second: believing creative costs lower the health contribution. Third: two sources of copyright income without checking the combined limit, which ends in extra tax in the annual return. Fourth: applying the rate to routine work that Article 22(9b) does not cover.</p>
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('home', lang)} /></div>
+</GuideLayout>

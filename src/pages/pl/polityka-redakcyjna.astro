@@ -1,0 +1,59 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { AUTHOR_NAME, CONTACT_EMAIL, REVIEW_CYCLE_MONTHS, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const checked = displayDate(F.retrieved, LANG_TAGS[lang]);
+const title = `Polityka redakcyjna: skąd bierzemy stawki ZUS i PIT na ${F.year}`;
+const description = `Skąd pochodzą stawki ZUS i PIT na ${F.year} r., kto za nie odpowiada, jak często je sprawdzamy (co najmniej co ${REVIEW_CYCLE_MONTHS} miesięcy), jak testujemy silnik i poprawiamy błędy.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('editorial', lang), path: route('editorial', lang) }])]}
+  breadcrumbs={[{ label: label('editorial', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Polityka redakcyjna i zasady korekt</h1>
+    <p class="lead">Kalkulator wynagrodzeń mówi ludziom, ile pieniędzy dostaną na rękę. Pomyłka o sto złotych potrafi zepsuć negocjacje albo budżet domowy, dlatego opisujemy tu, skąd biorą się nasze liczby, kto za nie odpowiada i co robimy, gdy któraś okaże się błędna.</p>
+
+    <h2>Kto odpowiada za treść</h2>
+    <p>Za teksty, dane i silnik obliczeniowy odpowiada {AUTHOR_NAME}. Nie ma tu anonimowych autorów ani treści zamawianych u podwykonawców bez weryfikacji. Pytania redakcyjne: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
+
+    <h2>Wyłącznie źródła urzędowe</h2>
+    <p>Nie przepisujemy stawek z innych kalkulatorów, artykułów prasowych ani forów. Każdy parametr pochodzi z publikacji urzędowej:</p>
+    <ul>
+      <li><strong>Dziennik Ustaw</strong>: ustawa o systemie ubezpieczeń społecznych, ustawa o PIT, ustawa o zryczałtowanym podatku, ustawa o PPK, Kodeks pracy, ustawa budżetowa (stawki Funduszu Pracy, Funduszu Solidarnościowego i FGŚP) oraz rozporządzenie o płacy minimalnej ({F.minWage}). Teksty czytamy w wersjach jednolitych, przez oficjalne API Sejmu zasilające ISAP;</li>
+      <li><strong>Monitor Polski</strong>: prognozowane przeciętne wynagrodzenie, z którego wynika roczny limit składek {F.cap}, oraz przeciętne wynagrodzenie ogłaszane przez GUS;</li>
+      <li><strong>ZUS</strong>: stopy procentowe składek, kwoty składek przedsiębiorców (pełny ZUS {F.b2bZusFull} z chorobową) i progi składki zdrowotnej;</li>
+      <li><strong>podatki.gov.pl</strong>: wyjaśnienia Ministerstwa Finansów, między innymi do PIT-2, ulgi dla młodych i odliczania składki zdrowotnej.</li>
+    </ul>
+    <p>Wszystkie stawki są zapisane w jednym pliku danych z adresem źródła i datą odczytu. Ostatnia pełna weryfikacja: {checked}. Zasada redakcyjna brzmi: żadnej stawki ani kwoty wpisanej ręcznie. Liczby w tekstach są pobierane z tego pliku albo wyliczane przez silnik w chwili budowania strony, więc tekst i kalkulator nie mogą się rozjechać.</p>
+
+    <h2>Czego nie piszemy</h2>
+    <p>Jeśli czegoś nie potwierdziliśmy w przepisie albo na stronie urzędu, nie podajemy tego jako faktu. Dotyczy to zwłaszcza zapowiadanych reform, terminów i stawek „z pamięci”. Gdy przepis bywa różnie interpretowany, piszemy, jakie założenie przyjmuje kalkulator, zamiast udawać, że sprawa jest prosta. Założenia są zebrane w <a href={route('method', lang)}>metodologii</a>.</p>
+
+    <h2>Testy przed każdą publikacją</h2>
+    <p>Silnik obliczeniowy ma zestaw automatycznych testów na przypadkach kontrolnych: płaca minimalna, przekroczenie progu {F.threshold}, limit trzydziestokrotności, umowy zlecenie studenta, składki przedsiębiorcy, ryczałt i podatek liniowy na B2B. Testy uruchamiają się przy każdym wdrożeniu. Jeśli którykolwiek nie przejdzie, nowa wersja nie trafia na serwer i w sieci zostaje poprzednia.</p>
+
+    <h2>Rytm aktualizacji</h2>
+    <p>Pełny przegląd wszystkich parametrów robimy co najmniej raz na {REVIEW_CYCLE_MONTHS} miesięcy. Poza tym aktualizujemy dane przy każdej zmianie prawa, która wpływa na wynagrodzenie: nowym rozporządzeniu o płacy minimalnej, obwieszczeniu o prognozowanym przeciętnym wynagrodzeniu, ustawie budżetowej, nowelizacji ustawy o PIT lub o składkach. Data aktualizacji widoczna na każdej stronie zmienia się tylko wtedy, gdy rzeczywiście sprawdziliśmy albo zmieniliśmy dane.</p>
+
+    <h2>Jak poprawiamy błędy</h2>
+    <p>Każde zgłoszenie porównujemy ze źródłem. Gdy błąd się potwierdzi:</p>
+    <ol>
+      <li>poprawiamy dane albo kod i dopisujemy przypadek do testów, żeby ten sam błąd nie wrócił;</li>
+      <li>strona, której dotyczył błąd, dostaje nową datę aktualizacji;</li>
+      <li>jeśli pomyłka istotnie zmieniała wynik, informujemy o korekcie na stronie, zamiast podmieniać liczby po cichu.</li>
+    </ol>
+    <p>Nie usuwamy stron, żeby ukryć pomyłkę. Jak zgłosić błąd, opisuje strona <a href={route('contact', lang)}>kontaktu</a>.</p>
+
+    <h2>Niezależność</h2>
+    <p>Serwis jest bezpłatny. Obecnie nie wyświetla reklam. Jeśli się pojawią, nie będą umieszczane nad kalkulatorem i nie będą miały wpływu na obliczenia ani na treść poradników. Nie przekazujemy kontaktów do biur rachunkowych, banków ani ubezpieczycieli i nie przyjmujemy opłat za wzmianki. Nie jesteśmy powiązani z ZUS ani z Ministerstwem Finansów.</p>
+
+    <h2>Granice kalkulatora</h2>
+    <p>Wynik to szacunek dla typowej sytuacji. Nie zastępuje rozliczenia przez płatnika, decyzji urzędu ani porady doradcy podatkowego. Więcej o serwisie na stronie <a href={route('about', lang)}>o nas</a>.</p>
+  </div>
+</PageLayout>

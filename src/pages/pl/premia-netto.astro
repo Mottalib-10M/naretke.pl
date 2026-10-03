@@ -1,0 +1,62 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+// Prime nette en janvier : uop({ gross: g + b }) − uop({ gross: g }).
+const janBonus = (g: number, b: number) => uop({ gross: g + b }).net - uop({ gross: g }).net;
+// Prime nette en décembre : 11 mois à g puis g + b, comparé à 12 mois à g.
+const decBonus = (g: number, b: number) => uopYear({ gross: g, months: [...Array(11).fill(g), g + b] }).months[11].net - uopYear({ gross: g }).months[11].net;
+const BONUSES = [2000, 5000, 10000];
+const GS = [6000, 10000, 15000];
+const rowsJan = GS.map((g) => [$(g), ...BONUSES.map((b) => $(janBonus(g, b)))]);
+const B = 10000;
+const GD = [8000, 12000, 15000, 25000];
+const rowsDec = GD.map((g) => { const j = janBonus(g, B), d = decBonus(g, B); return [$(g), $(j), $(d), $(j - d), pct((B - d) / B, lang)]; });
+const j5 = janBonus(8000, 5000);
+const j15 = janBonus(15000, B), d15 = decBonus(15000, B);
+const d12 = decBonus(12000, B), j12 = janBonus(12000, B);
+const d25 = decBonus(25000, B), d15share = pct((B - d15) / B, lang);
+const faqs = [
+  { q: 'Czy premia jest opodatkowana wyżej niż zwykła pensja?', a: `Nie ma osobnej stawki dla premii. Pracodawca dolicza ją do pensji z miesiąca wypłaty i pobiera te same składki ZUS, składkę zdrowotną ${F.health} i zaliczkę ${F.pitLow}. Wrażenie wyższego podatku bierze się z końca roku: jeśli premia wpada po przekroczeniu ${F.threshold} podstawy, jest opodatkowana stawką ${F.pitHigh}. Na początku roku z premii ${$(5000)} brutto zostaje ${$(j5)}.` },
+  { q: `Dostanę ${$(B)} premii w grudniu przy pensji ${$(15000)}. Ile z niej zostanie?`, a: `Około ${$(d15)} na rękę, czyli potrącenia zabiorą ${d15share} premii. Przy pensji ${$(15000)} brutto skumulowana podstawa opodatkowania przekracza ${F.threshold} jesienią, więc cała grudniowa premia jest opodatkowana stawką ${F.pitHigh}, a nie ${F.pitLow}. Ta sama premia wypłacona w styczniu dałaby ${$(j15)}.` },
+  { q: 'Czy opłaca się poprosić o przesunięcie premii z grudnia na styczeń?', a: `Przy pensjach, które jesienią przekraczają próg ${F.threshold}, tak. Przy ${$(12000)} brutto premia ${$(B)} wypłacona w grudniu daje ${$(d12)} netto, a w styczniu następnego roku ${$(j12)}, bo licznik progu zaczyna się od zera. O terminie wypłaty decyduje jednak pracodawca i regulamin premiowania, a premia przesunięta na styczeń zwiększa podstawę w nowym roku.` },
+];
+---
+<GuideLayout lang={lang} id="bonus" breadcrumbLabel={label('bonus', lang)} title={`Premia netto ${F.year}: ile zostaje na rękę z ${$(5000)} premii`} h1={`Premia netto ${F.year}: ile zostanie z premii po podatku i składkach`}
+  description={`Premia netto ${F.year}: z ${$(5000)} premii brutto zostaje ${$(j5)} na rękę w styczniu, ale w grudniu, po progu ${F.threshold}, mniej. Policz premię dla swojej pensji.`}
+  intro={`Kalkulator dolicza premię do miesięcznej pensji i pokazuje, ile z niej trafi na konto po składkach i zaliczce na podatek.`}
+  resume={`Z premii ${$(5000)} brutto wypłaconej na początku ${F.year} r. zostaje na rękę ${$(j5)}, a z ${$(10000)} brutto ${$(janBonus(8000, 10000))}. Premia nie ma własnej stawki podatku: pracodawca dolicza ją do pensji z miesiąca wypłaty i pobiera od całości składki emerytalną, rentową i chorobową (${F.socialEe}), składkę zdrowotną ${F.health} i zaliczkę na PIT. Dopóki skumulowana podstawa opodatkowania od stycznia nie przekracza ${F.threshold}, premia jest opodatkowana stawką ${F.pitLow} i daje to samo netto niezależnie od wysokości pensji. Różnica pojawia się pod koniec roku. Przy pensji ${$(15000)} brutto premia ${$(B)} wypłacona w grudniu wpada już w drugi próg i zostaje z niej ${$(d15)} zamiast ${$(j15)}. Kalkulator liczy premię w miesiącu przed drugim progiem; tabele niżej pokazują netto trzech premii przy różnych pensjach oraz stratę na premii grudniowej.`}
+  faqs={faqs}
+  related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Netto każdego miesiąca i moment wejścia w drugi próg.' }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh}: zasady progu ${F.threshold}.` }, { href: route('overtime', lang), name: label('overtime', lang), description: 'Dodatki za nadgodziny liczone jak premia, razem z pensją.' }]}
+  sources={[src('pit_act', lang), src('zus_rates', lang), src('cap', lang)]}>
+  <div data-outil><div data-chrome><MiniSim client:load kind="bonus" lang={lang} href={route('home', lang)} /></div></div>
+
+  <h2>Trzy premie przy trzech pensjach</h2>
+  <p>Kwoty netto dotyczą premii wypłaconej w styczniu razem z pensją, z PIT-2 i kosztami {F.kup}.</p>
+  <ContentTable headers={['Pensja brutto', `Premia ${$(2000)}`, `Premia ${$(5000)}`, `Premia ${$(10000)}`]} align={['r', 'r', 'r', 'r']} rows={rowsJan} />
+  <p>Wiersze są praktycznie identyczne. Stałe odliczenia (koszty {F.kup} i kwota zmniejszająca {F.reducingMonth}) są już wykorzystane przez samą pensję, więc każda złotówka premii przechodzi przez te same procentowe potrącenia. Na początku roku premia jest więc warta tyle samo dla osoby zarabiającej {$(6000)}, co dla zarabiającej {$(15000)}.</p>
+
+  <h2>Premia w grudniu: kiedy drugi próg zabiera więcej</h2>
+  <p>Druga tabela porównuje premię {$(B)} brutto wypłaconą w styczniu z tą samą premią w grudniu, po jedenastu miesiącach stałej pensji.</p>
+  <ContentTable headers={['Pensja brutto', 'Premia netto w styczniu', 'Premia netto w grudniu', 'Strata w grudniu', 'Potrącenia z premii grudniowej']} align={['r', 'r', 'r', 'r', 'r']} rows={rowsDec} highlightRow={2} />
+  <p>Przy {$(8000)} brutto miesiąc wypłaty nie ma znaczenia, bo do końca roku podstawa nie zbliża się do {F.threshold}. Przy {$(12000)} próg wypełnia już sama grudniowa pensja, więc premia w całości trafia do drugiego progu, tak samo jak przy {$(15000)}: obie tracą w grudniu tyle samo, bo cała premia jest opodatkowana stawką {F.pitHigh}. Przy {$(25000)} działa dodatkowo limit {F.cap}: w grudniu suma brutto go przekracza, więc od części premii nie pobiera się już składek emerytalnej i rentowej, co częściowo równoważy wyższy podatek; zostaje {$(d25)}.</p>
+
+  <h2>Skąd biorą się potrącenia z premii</h2>
+  <p>Na pasku wypłaty premia pojawia się jako osobny składnik przychodu, ale potrącenia liczone są od sumy. Składki społeczne {F.socialEe} i składka zdrowotna {F.health} są proporcjonalne do kwoty. Zaliczka zależy od tego, w którym progu znajduje się skumulowana podstawa. Nie ma znaczenia nazwa świadczenia: premia uznaniowa, regulaminowa, kwartalna czy nagroda roczna rozliczają się tak samo, o ile są wypłacane przez pracodawcę w ramach umowy o pracę.</p>
+  <p>Premia zwiększa też skumulowaną podstawę na resztę roku. Duża wypłata wiosną może więc przyspieszyć moment wejścia w drugi próg i obniżyć netto z pensji w ostatnich miesiącach, nawet jeśli sama premia była opodatkowana stawką {F.pitLow}. Ten efekt widać w <a href={route('annual', lang)}>kalkulatorze wynagrodzenia rocznego</a>.</p>
+
+  <h2>Czego kalkulator premii nie uwzględnia</h2>
+  <p>Narzędzie przyjmuje premię wypłacaną w styczniu, przed drugim progiem i przed limitem składek. Nie liczy premii na zleceniu ani na B2B, gdzie dodatkowa kwota jest po prostu wyższym wynagrodzeniem z umowy albo wyższą fakturą. Nie uwzględnia PPK: jeśli w nim uczestniczysz, z premii pobierana jest także Twoja wpłata {F.ppkEe}, a wpłata pracodawcy zwiększa podatek. Pomija też ulgę dla młodych, przy której premia osoby poniżej 26 lat jest zwolniona z PIT do limitu {F.youthLimit} w roku. Netto z samej pensji, z tymi wariantami, policzysz w <a href={route('home', lang)}>kalkulatorze wynagrodzeń</a>.</p>
+
+  <h2>W którym miesiącu zaczyna się drugi próg</h2>
+  <p>Jeśli Twoja premia przypada pod koniec roku, sprawdź, od kiedy pensja jest opodatkowana stawką {F.pitHigh}.</p>
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('brackets', lang)} /></div>
+</GuideLayout>

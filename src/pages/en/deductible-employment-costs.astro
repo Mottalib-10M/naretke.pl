@@ -1,0 +1,78 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, uopYear, zlecenie, dzielo, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const T = P.pit;
+const rows = [P.minimum_wage.monthly, 7000, 10000, 15000].map((g) => {
+  const a = uop({ gross: g }), b = uop({ gross: g, kup: 'raised' });
+  const ya = uopYear({ gross: g }).total.net, yb = uopYear({ gross: g, kup: 'raised' }).total.net;
+  return [$(g), $(a.net), $(b.net), $(b.net - a.net), $(yb - ya)];
+});
+const step = $(T.kup_employee_raised_month - T.kup_employee_month);
+const gapLow = $((T.kup_employee_raised_month - T.kup_employee_month) * T.rate_low);
+const gapHigh = $((T.kup_employee_raised_month - T.kup_employee_month) * T.rate_high);
+const y15a = uopYear({ gross: 15000 }).total.net, y15b = uopYear({ gross: 15000, kup: 'raised' }).total.net;
+const excess = 2 * T.kup_employee_year - T.kup_multi_year, excessTax = excess * T.rate_low;
+const excessR = 2 * T.kup_employee_raised_year - T.kup_multi_raised_year, excessRTax = excessR * T.rate_low;
+const k7 = uop({ gross: 7000 });
+const z = zlecenie({ gross: 5000 }), dz = dzielo({ gross: 5000 });
+const quarter = uop({ gross: P.minimum_wage.monthly / 4 });
+const faqs = [
+  { q: `I live outside the city and commute in. How do I get ${F.kupRaised} of costs instead of ${F.kup}?`, a: `Give your employer a written statement that your permanent or temporary residence is outside the town or city where your workplace is, and that you receive no separation allowance (article 22(2)(3) of the PIT Act). Payroll then deducts ${F.kupRaised} a month instead of ${F.kup}, up to ${F.kupRaisedYear} a year. The law sets no minimum distance and does not ask how you travel; what counts is the locality.` },
+  { q: `I have two jobs on employment contracts. Will both employers deduct ${F.kup}?`, a: `Each one will, because neither sees the other contract. But the annual limit for several simultaneous employments is ${F.kupMulti} in total (${F.kupMultiRaised} if you commute). Two employers deduct ${$(2 * T.kup_employee_year)} over a year, ${$(excess)} too much, so your annual return will show roughly ${$(excessTax)} of extra tax in the first bracket. Asking one employer to stop applying monthly costs avoids that (article 32(6)).` },
+  { q: 'Do part-time employees get smaller deductible costs?', a: `No. The employee allowance is a fixed amount whatever your working hours: ${F.kup} a month on a quarter-time contract too. The only limit is that costs cannot push the taxable base below zero. On a quarter of the minimum wage, gross pay is ${$(quarter.gross)} and take-home pay is ${$(quarter.net)}, with costs absorbing much of the small taxable base.` },
+  { q: `What is the ${F.kupContract} on a mandate contract calculated from?`, a: `From the fee minus the social contributions the client withholds, not from the full gross amount (article 22(9)(4)). On a ${$(5000)} gross umowa zlecenie the social contributions are ${$(z.social)}, so deductible costs come to ${$(z.kup)}. A specific-work contract carries no contributions, so the same ${F.kupContract} applies to the whole fee: ${$(dz.kup)} on ${$(5000)}.` },
+  { q: 'Can I ask payroll not to apply employee costs?', a: `Yes. On a written request, your payer calculates the tax advances without the monthly ${F.kup} or ${F.kupRaised} (article 32(6) of the PIT Act). Your advances rise by ${$(T.kup_employee_month * T.rate_low)} a month in the first bracket, but you keep the statutory costs for your annual return. People do this mostly when they hold more than one job and want to avoid a bill at the end of the year.` },
+];
+---
+<GuideLayout lang={lang} id="kup" breadcrumbLabel={label('kup', lang)} title={`Deductible Employment Costs ${F.year}: ${F.kup}, ${F.kupRaised}, ${F.kupContract}`} h1={`Deductible employment costs in Poland, ${F.year}`}
+  description={`Polish deductible costs in ${F.year}: ${F.kup} a month on a job, ${F.kupRaised} if you commute, ${F.kupYear} and ${F.kupMulti} yearly limits, ${F.kupContract} of pay on mandate contracts.`}
+  intro={`Deductible costs (koszty uzyskania przychodu) are the amount your payer subtracts from your income before tax is worked out: a flat sum on a job, a percentage on civil-law contracts.`}
+  resume={`On a Polish employment contract, deductible costs are ${F.kup} a month in ${F.year}, capped at ${F.kupYear} a year. If you live outside the town where your workplace is and get no separation allowance, you qualify for the higher rate of ${F.kupRaised} a month, ${F.kupRaisedYear} a year. With several employment contracts at the same time the annual caps are ${F.kupMulti} or ${F.kupMultiRaised} in total. You do not have to prove any spending: the costs are a statutory flat allowance that lowers the base your income tax is charged on. Moving from ${F.kup} to ${F.kupRaised} saves ${gapLow} of tax a month in the first bracket and ${gapHigh} in the second. Mandate and specific-work contracts use ${F.kupContract} of the fee instead (on a mandate contract, after ZUS contributions), and creative work with a transfer of copyright uses ${F.kupAuthors}, with an annual limit of ${F.kupAuthorsLimit}. The mini calculator shows what the higher rate is worth to you.`}
+  faqs={faqs}
+  related={[{ href: route('authors', lang), name: label('authors', lang), description: `When ${F.kupAuthors} applies and how the ${F.kupAuthorsLimit} cap works.` }, { href: route('pit2', lang), name: 'PIT-2 form', description: `The other statement that cuts your tax by ${F.reducingMonth} a month.` }, { href: route('home', lang), name: 'Polish salary calculator', description: 'Net pay with standard or commuter costs.' }]}
+  sources={[src('pit_act', lang), src('pit2', lang)]}>
+  <div data-chrome><MiniSim client:load kind="kup" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>A flat allowance, not an expense claim</h2>
+  <p>If you come from a country where employees itemise work expenses, Poland will feel simpler. Nobody asks for fuel receipts or train tickets. Article 22(2) of the PIT Act sets four fixed amounts. One employment contract: {F.kup} a month and {F.kupYear} a year. Several at the same time: {F.kupMulti} a year in total. Commuting from another locality: {F.kupRaised} a month and {F.kupRaisedYear} a year. Several jobs plus commuting: {F.kupMultiRaised}.</p>
+  <p>The same figures apply to civil service, cooperative employment and outwork. They ignore your salary, age and seniority, so a board member on a contract of employment and an intern get the same allowance. They also ignore working hours, which matters on small part-time salaries. The only monthly constraint is that costs cannot turn the taxable base negative.</p>
+  <p>On your payslip (pasek wypłaty) the costs usually have their own line, koszty uzyskania przychodu, or appear in the breakdown of the taxable base. If it says {F.kup} and you have been commuting from another municipality for years, payroll probably never received your statement.</p>
+
+  <h2>Where the costs enter the tax calculation</h2>
+  <p>Costs never reduce your salary; they reduce the base your tax is charged on. On {$(7000)} gross, payroll first takes off your social contributions, {$(k7.social)}, then the costs, {$(k7.kup)}, and charges {F.pitLow} on what is left, rounded to whole złoty: {$(k7.taxBase)}. It then subtracts {F.reducingMonth} if you filed PIT-2. The tax advance in this example is {$(k7.pit)}.</p>
+  <p>The practical rule follows: each złoty of costs is worth your tax rate, {F.pitLow} of it in the first bracket and {F.pitHigh} in the second. Costs do not change ZUS contributions or, except on very low pay, the health contribution. Switching from {F.kup} to {F.kupRaised} therefore moves only two lines on your payslip, the tax advance and the net amount.</p>
+
+  <h2>The commuter rate of {F.kupRaised} and who qualifies</h2>
+  <p>Article 22(2)(3) has two conditions. Your permanent or temporary place of residence must be outside the locality where the workplace (zakład pracy) is located, and you must not receive a separation allowance (dodatek za rozłąkę). It does not say you must travel daily, sets no minimum distance and is silent on how you get there. Someone living just past the city boundary meets it; someone crossing the same large city from end to end does not.</p>
+  <p>Payroll will not work this out for you. Under article 32(7), the payer applies the higher costs only after you declare that the condition is met. If you later move into the town where you work, the statement stops being true and should be corrected, because under-withheld tax is your problem, not the employer's.</p>
+  <ContentTable headers={['Gross', `Net at ${F.kup}`, `Net at ${F.kupRaised}`, 'Monthly gain', 'Yearly gain']} align={['r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>The higher rate lowers your taxable base by {step}, and your tax by that amount times your rate: {gapLow} a month while you stay in the first bracket. At {$(15000)} gross part of the year falls into the second bracket, where the same step is worth {gapHigh} a month, so the yearly gain grows to {$(y15b - y15a)}. Not a fortune, but it costs one signature.</p>
+
+  <h2>Two jobs at once: the {F.kupMulti} and {F.kupMultiRaised} limits</h2>
+  <p>Each employer sees only its own contract and deducts the full {F.kup} every month. With two jobs for the whole year they deduct {$(2 * T.kup_employee_year)} between them, while article 22(2)(2) caps you at {F.kupMulti}. The {$(excess)} excess gets corrected in your annual return, which means roughly {$(excessTax)} of tax to pay in the first bracket. If both employers apply the commuter rate, the excess is {$(excessR)} and the bill about {$(excessRTax)}.</p>
+  <p>Small sums, but unwelcome when you were expecting a refund. To avoid the surprise you can ask one employer, in writing, to withhold tax without monthly costs (article 32(6)). That employer's advances go up and your return claims costs up to the limit. The tax-reducing amount works on the same logic across payers and is split through the <a href={route('pit2', lang)}>PIT-2 statement</a>.</p>
+  <p>The combined limit covers contracts that run at the same time. If you change jobs mid-year and one ends before the next begins, you worked for successive payers rather than simultaneous ones, and each month carries its own {F.kup}.</p>
+
+  <h2>Mandate and specific-work contracts: {F.kupContract} of the fee</h2>
+  <p>Civil-law contracts have no flat amount. Article 22(9)(4) gives {F.kupContract} of the income instead, and on a mandate contract (umowa zlecenie) it is calculated after the social contributions the client withholds. On {$(5000)} gross the contributions are {$(z.social)} and the costs {$(z.kup)}. A specific-work contract (umowa o dzieło) normally carries no contributions, so the percentage applies to the full {$(5000)}: costs of {$(dz.kup)}.</p>
+  <p>A percentage cuts both ways. On large contracts it far exceeds an employee's {F.kup}; on small ones it is less. Contracts worth up to {F.smallContract}, signed with someone who is not the payer's employee, are the exception: they are taxed at a flat rate with no costs at all. Our guide to <a href={route('zlecdzielo', lang)}>mandate versus specific-work contracts</a> sets the two side by side with ZUS and net pay.</p>
+
+  <h2>Creative work and the {F.kupAuthors} costs</h2>
+  <p>When your job, mandate or specific-work contract involves creating a work and transferring the copyright to the payer, the pay for that part uses costs of {F.kupAuthors} instead of the flat allowance or {F.kupContract}. The annual ceiling is {F.kupAuthorsLimit}, the upper edge of the first tax bracket. On a salary it applies only to the share that pays for the transferred rights; the rest keeps the ordinary {F.kup}.</p>
+  <p>It is a topic of its own, with its own traps: who can use it, how the salary is split and what happens once the cap is reached. Our guide to <a href={route('authors', lang)}>creative work costs</a> covers it, and the calculator below shows the effect on your pay.</p>
+
+  <div data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('authors', lang)} /></div>
+
+  <h2>Costs under the youth relief and in your annual return</h2>
+  <p>If you are under 26 and your income falls under the youth relief, the exempt part carries no tax, so there is nothing for costs to reduce. Article 22(3b) says so directly: with the exemption, employee and mandate contract costs apply only up to the part of the income that is taxable. Costs start to matter in the month you use up the exemption limit, which our guide to the <a href={route('youth', lang)}>youth tax relief</a> explains.</p>
+  <p>In your annual return you claim the employee costs at their statutory level, whatever payroll applied during the year. If you had a commuter statement for part of the year only, the costs follow month by month. For net pay with standard or commuter costs, use the <a href={route('home', lang)}>salary calculator</a>.</p>
+</GuideLayout>

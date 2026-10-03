@@ -1,0 +1,94 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, formatNumber, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const MW = P.minimum_wage.monthly, MH = P.minimum_wage.hourly, AVG = P.average_wage.forecast_2026;
+const m = uop({ gross: MW }), mNo = uop({ gross: MW, pit2: false }), mYoung = uop({ gross: MW, under26: true });
+// Netto przy różnych wymiarach etatu (brutto proporcjonalne do etatu).
+const parts = [1, 0.75, 0.5, 0.25].map((e) => { const x = uop({ gross: MW * e }); return [`${formatNumber(e * 100, 0, lang)} %`, $(MW * e), $(x.social + x.health), $(x.pit), $(x.net)]; });
+const half = uop({ gross: MW * 0.5 });
+// Miesiąc przykładowy: 168 godzin (21 dni po 8 h).
+const H = 168;
+const perHourEmployee = MW / H, netPerHour = m.net / H;
+const zl160 = zlecenie({ gross: MH * 160 }), zl100 = zlecenie({ gross: MH * 100 });
+const er = m.er;
+const erRows = [
+  ['Emerytalna (część pracodawcy)', F.emerytalnaEr, $2(er.emerytalna)],
+  ['Rentowa (część pracodawcy)', F.rentowaEr, $2(er.rentowa)],
+  ['Wypadkowa (stopa podstawowa w przykładzie ZUS)', F.wypadkowa, $2(er.wypadkowa)],
+  ['Fundusz Pracy i Fundusz Solidarnościowy', F.fpfs, $2(er.fp)],
+  ['FGŚP', F.fgsp, $2(er.fgsp)],
+  ['Razem ponad brutto', '', $2(er.total)],
+];
+const a = uop({ gross: AVG });
+const grossShare = pct(Math.round((MW / AVG) * 100) / 100, lang), netShare = pct(Math.round((m.net / a.net) * 100) / 100, lang);
+const prefShare = pct(P.b2b.zus_base_preferential / MW, lang), ppkMult = formatNumber(P.ppk.low_income_multiple, 1, lang);
+const costPerNet = formatNumber(er.cost / m.net, 2, lang);
+const faqs = [
+  { q: `Czy płaca minimalna wzrośnie jeszcze w drugiej połowie ${F.year} roku?`, a: `Nie. Rozporządzenie Rady Ministrów z 11 września 2025 r. ustala jedną kwotę na cały rok: ${F.minWage} brutto miesięcznie i ${F.minHourly} za godzinę, obie od 1 stycznia ${F.year} r. W tym roku nie ma drugiej podwyżki od 1 lipca, a ZUS stosuje ${F.minWage} od stycznia do grudnia, także jako podstawę minimalnej składki zdrowotnej przedsiębiorców.` },
+  { q: 'Ile wynosi płaca minimalna na pół etatu na rękę?', a: `Na pół etatu brutto wynosi ${$(MW * 0.5)}, a na rękę zostaje ${$(half.net)} miesięcznie przy złożonym PIT-2. Zaliczka na podatek spada wtedy do zera, bo pomniejszenie o ${F.reducingMonth} przewyższa podatek naliczony od tak niskiej podstawy. Z pensji schodzą więc tylko składki ZUS i składka zdrowotna, łącznie ${$(half.social + half.health)}.` },
+  { q: 'Czy na umowie zlecenie też obowiązuje płaca minimalna?', a: `Na zleceniu nie ma kwoty miesięcznej, jest minimalna stawka godzinowa: ${F.minHourly} brutto za każdą godzinę wykonywania zlecenia w ${F.year} r. Przy 160 godzinach daje to ${$(MH * 160)} brutto, z czego po składkach, składce zdrowotnej i zaliczce bez PIT-2 zostaje ${$(zl160.net)}. Stawka dotyczy liczby godzin faktycznie przepracowanych, więc warto je zapisywać.` },
+  { q: 'Ile pracodawca płaci łącznie za pracownika na płacy minimalnej?', a: `Pełny koszt to ${$(er.cost)} miesięcznie: ${F.minWage} brutto plus ${$(er.total)} składek i funduszy po stronie firmy, przy stopie wypadkowej ${F.wypadkowa}. Pracownik dostaje z tego ${F.minNet} na rękę, więc na każdą złotówkę netto pracodawca wydaje ${costPerNet} zł. Przy wyższej stopie wypadkowej albo wpłatach do PPK koszt rośnie.` },
+  { q: 'Ile na rękę dostanie osoba przed 26. urodzinami na płacy minimalnej?', a: `Przy uldze dla młodych ${$(mYoung.net)} miesięcznie, czyli ${$(mYoung.net - m.net)} więcej niż osoba starsza z PIT-2. Zaliczka na podatek wynosi zero, bo przychód do ${F.youthLimit} rocznie jest zwolniony z PIT, a cały rok na płacy minimalnej mieści się w tym limicie. Składki ZUS i składka zdrowotna są pobierane normalnie.` },
+];
+---
+<GuideLayout lang={lang} id="minimum" breadcrumbLabel={label('minimum', lang)}
+  title={`Płaca minimalna ${F.year}: ${F.minWage} brutto, ${F.minNet} netto`}
+  h1={`Płaca minimalna ${F.year}: ile wynosi brutto, netto i za godzinę`}
+  description={`Płaca minimalna w ${F.year} r. to ${F.minWage} brutto i ${F.minHourly} za godzinę. Netto na pełnym i niepełnym etacie, koszt pracodawcy, umowa zlecenie, z kalkulatorem.`}
+  intro={`Od 1 stycznia ${F.year} r. minimalne wynagrodzenie za pracę wynosi ${F.minWage} brutto miesięcznie, a minimalna stawka godzinowa ${F.minHourly}.`}
+  resume={`Płaca minimalna w ${F.year} r. wynosi ${F.minWage} brutto za pełny etat i daje ${F.minNet} na rękę, jeśli pracodawca ma Twoje oświadczenie PIT-2; bez niego zostaje ${$(mNo.net)}. Z pensji schodzą składki emerytalna, rentowa i chorobowa (${$(m.social)}), składka zdrowotna (${$(m.health)}) i zaliczka na podatek (${$(m.pit)}). Kwota obowiązuje od 1 stycznia do 31 grudnia: rozporządzenie Rady Ministrów z 11 września 2025 r. przewiduje w tym roku tylko jedną podwyżkę. Dla umowy zlecenia liczy się minimalna stawka godzinowa ${F.minHourly} brutto. Pracodawcę pełny etat na minimum kosztuje ${$(er.cost)} miesięcznie, a pensja minimalna to ${grossShare} prognozowanego przeciętnego wynagrodzenia (${F.avgForecast}). Osoba przed 26. rokiem życia dostaje ${$(mYoung.net)}, bo nie płaci zaliczki na PIT. Mini-kalkulator poniżej przelicza netto dla Twojego wymiaru etatu.`}
+  faqs={faqs}
+  related={[{ href: route('hourly', lang), name: label('hourly', lang), description: `Twoja stawka wobec minimum ${F.minHourly}.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Pełny koszt zatrudnienia przy dowolnej pensji.' }, { href: route('average', lang), name: label('average', lang), description: `${F.avgForecast}: prognoza na ${F.year} r. i do czego służy.` }]}
+  sources={[src('minimum', lang), src('zus_b2b', lang), src('pit_act', lang)]}>
+  <div data-chrome><MiniSim client:load kind="minimum" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Kwota na {F.year} rok: {F.minWage} miesięcznie, {F.minHourly} za godzinę</h2>
+  <p>Obie liczby pochodzą z jednego aktu: rozporządzenia Rady Ministrów z 11 września 2025 r. w sprawie minimalnego wynagrodzenia za pracę w {F.year} r. (Dz.U. 2025 poz. 1242). Paragraf pierwszy ustala {F.minWage} jako minimalne wynagrodzenie, paragraf drugi {F.minHourly} jako minimalną stawkę godzinową. Obie obowiązują od 1 stycznia. Rozporządzenie nie zawiera drugiego terminu, więc w {F.year} r. nie ma podwyżki od lipca, znanej z niektórych wcześniejszych lat. ZUS potwierdza to na swojej stronie o wysokości składek: od stycznia do grudnia minimalne wynagrodzenie wynosi {F.minWage}.</p>
+  <p>To kwota brutto, czyli przed potrąceniem składek i podatku. Na umowie o pracę dotyczy pełnego etatu. Godzinowa stawka minimalna to z kolei inny mechanizm: chroni przede wszystkim osoby na umowie zlecenia, gdzie wynagrodzenie zależy od liczby godzin, a nie od miesiąca.</p>
+
+  <h2>Ile zostaje na rękę przy pełnym etacie</h2>
+  <p>Z {F.minWage} brutto pracownik oddaje najpierw {F.socialEe} na trzy składki społeczne: emerytalną {F.emerytalnaEe}, rentową {F.rentowaEe} i chorobową {F.chorobowa}. Łącznie to {$2(m.social)}. Od tego, co zostaje, liczy się składka zdrowotna {F.health}, czyli {$2(m.health)}. Na końcu pracodawca pobiera zaliczkę na podatek: {F.pitLow} od podstawy po odjęciu kosztów uzyskania przychodu {F.kup}, pomniejszone o {F.reducingMonth} z PIT-2. Wychodzi {$(m.pit)} zaliczki i {F.minNet} netto.</p>
+  <p>Jeśli nie złożyłeś PIT-2, zaliczka rośnie o {F.reducingMonth} i do wypłaty trafia {$(mNo.net)}. Tych pieniędzy nie tracisz na zawsze, bo wrócą jako zwrot w zeznaniu rocznym, ale przy najniższej pensji miesięczna różnica jest odczuwalna. Jak działa oświadczenie i komu je złożyć, opisujemy na stronie o <a href={route('pit2', lang)}>formularzu PIT-2</a>. Pełne przejście od brutto do netto, z dowolną kwotą i rodzajem umowy, pokazuje <a href={route('home', lang)}>kalkulator wynagrodzeń</a>.</p>
+  <p>Przelicz to jeszcze na godzinę. W miesiącu, który ma 168 godzin pracy (21 dni po 8 godzin), pensja minimalna daje {$2(perHourEmployee)} brutto i {$2(netPerHour)} netto za godzinę. W krótszym miesiącu stawka za godzinę na etacie jest wyższa, w dłuższym niższa, bo pensja miesięczna się nie zmienia.</p>
+
+  <h2>Niepełny etat: brutto i netto proporcjonalnie</h2>
+  <p>Mini-kalkulator i tabela poniżej liczą brutto proporcjonalnie do wymiaru etatu. Przy niższych kwotach zmienia się struktura potrąceń: składki są nadal procentem brutto, ale zaliczka na podatek szybko spada do zera, bo pomniejszenie o {F.reducingMonth} pokrywa cały podatek naliczony od małej podstawy. Dlatego przy pół etatu netto to większa część brutto niż przy pełnym.</p>
+  <ContentTable headers={['Etat', 'Brutto', 'ZUS i zdrowotna', 'Zaliczka PIT', 'Netto (z PIT-2)']} align={['l', 'r', 'r', 'r', 'r']} rows={parts} />
+  <p>Przy ćwierci etatu brutto wynosi tylko {$(MW * 0.25)} i wtedy działa jeszcze jeden mechanizm: składka zdrowotna jest ograniczona do wysokości zaliczki na podatek liczonej według przepisów z końca 2021 r. Dotyczy to wyłącznie bardzo małych pensji, a szczegóły wyjaśniamy na stronie o <a href={route('health', lang)}>składce zdrowotnej</a>.</p>
+
+  <h2>Kogo dotyczy minimum, a kogo stawka godzinowa</h2>
+  <p>Miesięczna kwota {F.minWage} chroni pracowników zatrudnionych na umowę o pracę. Jeśli w pasku wypłaty widzisz niższe brutto przy pełnym etacie, to sygnał, by zapytać dział kadr, z czego składa się wynagrodzenie. Ta strona nie rozstrzyga, które dodatki wolno wliczać do minimum, bo zależy to od przepisów ustawy o minimalnym wynagrodzeniu, których tu nie omawiamy. W razie sporu właściwym adresem jest Państwowa Inspekcja Pracy.</p>
+  <p>Na umowie zlecenia rozporządzenie wyznacza stawkę {F.minHourly} brutto za godzinę. Porównaj ją z etatem: przy 168 godzinach pracownik dostaje {$2(perHourEmployee)} brutto za godzinę, a zleceniobiorca co najmniej {F.minHourly}. Różnica wynika z tego, że pracownik ma płatny urlop i wynagrodzenie za czas choroby, a zleceniobiorca nie, więc jego godzina jest wyceniana wyżej.</p>
+  <p>Ile zostaje ze zlecenia? Przy 160 godzinach po stawce minimalnej brutto wynosi {$(MH * 160)}, a netto {$(zl160.net)} (składki emerytalna i rentowa, zdrowotna, zaliczka bez PIT-2, bez dobrowolnej chorobowej). Przy 100 godzinach brutto to {$(MH * 100)}, netto {$(zl100.net)}. Student przed 26. rokiem życia na zleceniu nie płaci składek ZUS, więc zostaje mu prawie całe brutto; ten przypadek liczy strona o <a href={route('student', lang)}>zleceniu dla studenta</a>.</p>
+
+  <h2>Koszt pracodawcy przy płacy minimalnej</h2>
+  <p>Brutto nie jest ostatnią liczbą w budżecie firmy. Pracodawca dokłada swoją część składki emerytalnej i rentowej, składkę wypadkową oraz składki na fundusze. Tabela pokazuje miesięczny koszt przy pełnym etacie i stopie wypadkowej {F.wypadkowa}, której ZUS używa w swoim przykładzie. Rzeczywista stopa zależy od firmy i mieści się w przedziale od {F.wypadkowaMin} do {F.wypadkowaMax}.</p>
+  <ContentTable headers={['Składka', 'Stopa', 'Miesięcznie']} align={['l', 'r', 'r']} rows={erRows} highlightRow={erRows.length - 1} />
+  <p>Razem pracownik na pensji minimalnej kosztuje {$2(er.cost)} miesięcznie. Z tej sumy na jego konto trafia {F.minNet}, czyli na każdą złotówkę wypłaty firma wydaje {costPerNet} zł. Jeśli pracownik uczestniczy w PPK, dochodzi jeszcze wpłata pracodawcy {F.ppkEr} brutto. Dowolną kwotę przeliczysz w kalkulatorze <a href={route('employer', lang)}>kosztu pracodawcy</a>.</p>
+
+  <h2>Pensja minimalna wobec przeciętnej</h2>
+  <p>Prognozowane przeciętne wynagrodzenie na {F.year} r. wynosi {F.avgForecast}. Płaca minimalna to {grossShare} tej kwoty w ujęciu brutto. Na rękę różnica jest mniejsza: przy przeciętnej pensji zostaje {$(a.net)} netto, więc minimum to {netShare} netto przeciętnego. Wynika to z kwoty zmniejszającej podatek, która ma stałą wartość w złotych i przy niskiej pensji stanowi większą część zaliczki.</p>
+  <p>Przeciętne wynagrodzenie nie jest pensją typowego pracownika, tylko wskaźnikiem urzędowym. Do czego służy i skąd się bierze, opisujemy na stronie o <a href={route('average', lang)}>przeciętnym wynagrodzeniu</a>.</p>
+
+  <h2>Płaca minimalna poza paskiem wypłaty</h2>
+  <p>Ta sama kwota {F.minWage} wraca w innych miejscach systemu. Dla przedsiębiorców na skali podatkowej i podatku liniowym jest podstawą minimalnej składki zdrowotnej: w roku składkowym od lutego {F.year} r. do stycznia następnego roku składka nie może być niższa niż {F.healthMin} miesięcznie. Preferencyjne składki ZUS dla nowych firm liczy się od {prefShare} płacy minimalnej, czyli od {F.b2bBasePref}. Próg niskich zarobków w PPK, poniżej którego wpłata pracownika może być niższa niż {F.ppkEe}, to {ppkMult}-krotność minimum: {F.ppkLowIncome}.</p>
+  <p>Dlatego zmiana płacy minimalnej przesuwa nie tylko pensje najmniej zarabiających, ale też koszty jednoosobowych firm. Na {F.year} r. ta zmiana nastąpiła raz, 1 stycznia, i do końca roku liczby powyżej pozostają stałe.</p>
+
+  <h2>Pasek wypłaty na minimum: pięć pozycji do sprawdzenia</h2>
+  <p>Na pasku wypłaty za pełny miesiąc pierwsza linia to wynagrodzenie zasadnicze, które przy pełnym etacie nie powinno odbiegać od {F.minWage}. Niżej znajdziesz trzy składki pracownika, razem {$2(m.social)}, potem składkę zdrowotną {$2(m.health)} i zaliczkę na PIT {$(m.pit)}. Jeśli zaliczka jest o {F.reducingMonth} wyższa, pracodawca nie stosuje PIT-2. Jeśli w ogóle jej nie ma, a nie korzystasz z ulgi dla młodych ani innego zwolnienia z PIT, zapytaj kadry o powód, bo brakujący podatek wyjdzie w zeznaniu rocznym. Ostatnia linia, kwota do wypłaty, powinna zgadzać się z wynikiem kalkulatora co do kilku groszy, a w miesiącu z nieobecnością lub nadgodzinami będzie inna.</p>
+
+  <h2>Gdy pensja jest podawana godzinowo</h2>
+  <p>Część ofert pracy na etacie podaje stawkę za godzinę. Żeby sprawdzić, czy mieści się w minimum, pomnóż ją przez liczbę godzin w danym miesiącu i porównaj z {F.minWage}. Drugi kalkulator robi to od razu i pokazuje netto za godzinę.</p>
+  <div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('hourly', lang)} /></div>
+  <p>Wynik dotyczy umowy o pracę. Dla zlecenia liczy się porównanie samej stawki z {F.minHourly}, niezależnie od liczby godzin w miesiącu.</p>
+</GuideLayout>

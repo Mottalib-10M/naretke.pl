@@ -1,0 +1,277 @@
+{
+ "_lisezmoi": "Tous les paramètres légaux 2026 du site (RECETTE §4). Chaque valeur a été relue le 2026-10-03 sur la source officielle citée dans `sources` ; le moteur (lib/engine/pl.ts) et les pages lisent ce fichier, jamais une valeur en dur.",
+ "year": 2026,
+ "retrieved_at": "2026-10-03",
+ "valid_from": "2026-01-01",
+ "valid_to": "2026-12-31",
+ "minimum_wage": {
+  "monthly": 4806,
+  "hourly": 31.4,
+  "source": "minimum"
+ },
+ "average_wage": {
+  "forecast_2026": 9420,
+  "q4_2025_with_profits": 9228.64,
+  "source": "cap"
+ },
+ "zus": {
+  "emerytalna_employee": 0.0976,
+  "emerytalna_employer": 0.0976,
+  "rentowa_employee": 0.015,
+  "rentowa_employer": 0.065,
+  "chorobowa_employee": 0.0245,
+  "wypadkowa_basic": 0.0167,
+  "wypadkowa_min": 0.004,
+  "wypadkowa_max": 0.0812,
+  "fp": 0.01,
+  "fs": 0.0145,
+  "fgsp": 0.001,
+  "annual_cap": 282600,
+  "source": "zus_rates"
+ },
+ "health": {
+  "employee_rate": 0.09,
+  "cap_2021_rate": 0.17,
+  "cap_2021_reducing_month": 43.76,
+  "source": "health_act"
+ },
+ "pit": {
+  "rate_low": 0.12,
+  "rate_high": 0.32,
+  "threshold": 120000,
+  "free_amount": 30000,
+  "tax_reducing_amount_year": 3600,
+  "kup_employee_month": 250,
+  "kup_employee_year": 3000,
+  "kup_employee_raised_month": 300,
+  "kup_employee_raised_year": 3600,
+  "kup_multi_year": 4500,
+  "kup_multi_raised_year": 5400,
+  "kup_contract_rate": 0.2,
+  "kup_authors_rate": 0.5,
+  "kup_authors_limit": 120000,
+  "flat_small_contract_limit": 200,
+  "youth_exempt_limit": 85528,
+  "solidarity_rate": 0.04,
+  "solidarity_threshold": 1000000,
+  "source": "pit_act"
+ },
+ "ppk": {
+  "employee_basic": 0.02,
+  "employee_min": 0.005,
+  "employee_extra_max": 0.02,
+  "employer_basic": 0.015,
+  "employer_extra_max": 0.025,
+  "low_income_multiple": 1.2,
+  "state_welcome": 250,
+  "state_annual": 240,
+  "source": "ppk"
+ },
+ "b2b": {
+  "zus_base_full": 5652,
+  "zus_base_preferential": 1441.8,
+  "sickness_base_max": 23550,
+  "zus_month_full": 1926.76,
+  "zus_month_full_no_sickness": 1788.29,
+  "zus_month_preferential": 456.18,
+  "zus_month_preferential_no_sickness": 420.86,
+  "liniowy_rate": 0.19,
+  "health": {
+   "skala_rate": 0.09,
+   "liniowy_rate": 0.049,
+   "minimum_monthly": 432.54,
+   "minimum_monthly_january": 314.96,
+   "liniowy_deduction_limit": 14100,
+   "ryczalt_deductible_share": 0.5,
+   "ryczalt_bands": [
+    {
+     "revenue_up_to": 60000,
+     "base": 5537.18,
+     "monthly": 498.35
+    },
+    {
+     "revenue_up_to": 300000,
+     "base": 9228.64,
+     "monthly": 830.58
+    },
+    {
+     "revenue_up_to": 1000000000000000.0,
+     "base": 16611.55,
+     "monthly": 1495.04
+    }
+   ]
+  },
+  "ryczalt_rates": [
+   {
+    "rate": 0.12,
+    "label_pl": "IT, programowanie (PKWiU 62)",
+    "label_en": "IT and software (PKWiU 62)"
+   },
+   {
+    "rate": 0.085,
+    "label_pl": "pozostałe usługi, edukacja",
+    "label_en": "other services, education"
+   },
+   {
+    "rate": 0.14,
+    "label_pl": "usługi medyczne, architektura, inżynieria",
+    "label_en": "healthcare, architecture, engineering"
+   },
+   {
+    "rate": 0.15,
+    "label_pl": "doradztwo, reklama, usługi finansowe",
+    "label_en": "consulting, advertising, financial services"
+   },
+   {
+    "rate": 0.17,
+    "label_pl": "wolne zawody",
+    "label_en": "liberal professions"
+   },
+   {
+    "rate": 0.055,
+    "label_pl": "produkcja, budownictwo",
+    "label_en": "manufacturing, construction"
+   },
+   {
+    "rate": 0.03,
+    "label_pl": "handel, gastronomia",
+    "label_en": "retail, food service"
+   }
+  ],
+  "source": "zus_b2b"
+ },
+ "sickness": {
+  "rate_standard": 0.8,
+  "base_reduction": 0.1371,
+  "employer_days": 33,
+  "employer_days_50plus": 14,
+  "base_months": 12,
+  "source": "sickness"
+ },
+ "overtime": {
+  "supplement_50": 0.5,
+  "supplement_100": 1.0,
+  "source": "labour_code"
+ },
+ "sources": {
+  "minimum": {
+   "url": "https://dziennikustaw.gov.pl/D2025000124201.pdf",
+   "label": {
+    "pl": "Rozporządzenie Rady Ministrów z 11 września 2025 r. w sprawie minimalnego wynagrodzenia za pracę w 2026 r. (Dz.U. 2025 poz. 1242)",
+    "en": "Council of Ministers regulation of 11 September 2025 on the 2026 minimum wage (Journal of Laws 2025, item 1242)"
+   }
+  },
+  "cap": {
+   "url": "https://monitorpolski.gov.pl/M2025000120601.pdf",
+   "label": {
+    "pl": "Obwieszczenie MRPiPS z 19 listopada 2025 r. o limicie rocznej podstawy składek w 2026 r. (M.P. 2025 poz. 1206)",
+    "en": "Ministry of Family and Labour notice of 19 November 2025 on the 2026 annual contribution cap (Monitor Polski 2025, item 1206)"
+   }
+  },
+  "zus_rates": {
+   "url": "https://www.zus.pl/baza-wiedzy/skladki-wskazniki-odsetki/skladki/stopy-procentowe-skladek-na-ubezpieczenia-spoleczne",
+   "label": {
+    "pl": "ZUS – stopy procentowe składek na ubezpieczenia społeczne",
+    "en": "ZUS – social insurance contribution rates"
+   }
+  },
+  "zus_b2b": {
+   "url": "https://www.zus.pl/baza-wiedzy/skladki-wskazniki-odsetki/skladki/wysokosc-skladek-na-ubezpieczenia-spoleczne",
+   "label": {
+    "pl": "ZUS – wysokość składek na ubezpieczenia w 2026 r. (przedsiębiorcy, składka zdrowotna)",
+    "en": "ZUS – 2026 contribution amounts (self-employed, health contribution)"
+   }
+  },
+  "pit_act": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2026/592/text.pdf",
+   "label": {
+    "pl": "Ustawa o podatku dochodowym od osób fizycznych, tekst jednolity Dz.U. 2026 poz. 592 (art. 21, 22, 27, 30, 31b, 32, 41)",
+    "en": "Personal Income Tax Act, consolidated text, Journal of Laws 2026 item 592 (art. 21, 22, 27, 30, 31b, 32, 41)"
+   }
+  },
+  "sus_act": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2026/199/text.pdf",
+   "label": {
+    "pl": "Ustawa o systemie ubezpieczeń społecznych, tekst jednolity Dz.U. 2026 poz. 199 (art. 6, 16, 19, 22)",
+    "en": "Social Insurance System Act, consolidated text, Journal of Laws 2026 item 199 (art. 6, 16, 19, 22)"
+   }
+  },
+  "health_act": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2025/1461/text.pdf",
+   "label": {
+    "pl": "Ustawa o świadczeniach opieki zdrowotnej, Dz.U. 2025 poz. 1461 (art. 66, 79, 81, 83)",
+    "en": "Act on publicly funded healthcare, Journal of Laws 2025 item 1461 (art. 66, 79, 81, 83)"
+   }
+  },
+  "health_deduction": {
+   "url": "https://podatki.gov.pl/ulgi-i-odliczenia/odliczenie-skladek-na-ubezpieczenie-zdrowotne-pit",
+   "label": {
+    "pl": "podatki.gov.pl – odliczenie składek na ubezpieczenie zdrowotne",
+    "en": "podatki.gov.pl – deducting health contributions"
+   }
+  },
+  "youth": {
+   "url": "https://www.podatki.gov.pl/ulgi-i-odliczenia/ulga-dla-mlodych-pit",
+   "label": {
+    "pl": "podatki.gov.pl – ulga dla młodych",
+    "en": "podatki.gov.pl – youth tax relief"
+   }
+  },
+  "pit2": {
+   "url": "https://www.podatki.gov.pl/poradniki-i-informatory/pit-2-pit-2a-pit-3-zasady-skladania-oswiadczen-o-stosowaniu-pomniejszenia-zaliczki-o-kwote-zmniejszajaca-podatek-112-124-lub-136",
+   "label": {
+    "pl": "podatki.gov.pl – PIT-2: oświadczenie o stosowaniu pomniejszenia zaliczki",
+    "en": "podatki.gov.pl – PIT-2: statement on reducing tax advances"
+   }
+  },
+  "ryczalt_act": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2025/843/text.pdf",
+   "label": {
+    "pl": "Ustawa o zryczałtowanym podatku dochodowym, Dz.U. 2025 poz. 843 (art. 12)",
+    "en": "Lump-sum Income Tax Act, Journal of Laws 2025 item 843 (art. 12)"
+   }
+  },
+  "ppk": {
+   "url": "https://www.mojeppk.pl/dla-pracownika.html",
+   "label": {
+    "pl": "mojeppk.pl – wpłaty do PPK (pracownik, pracodawca, państwo)",
+    "en": "mojeppk.pl – PPK contributions (employee, employer, state)"
+   }
+  },
+  "budget": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2026/62/text.pdf",
+   "label": {
+    "pl": "Ustawa budżetowa na rok 2026, Dz.U. 2026 poz. 62 (art. 24–27: FP, FS, FGŚP)",
+    "en": "2026 Budget Act, Journal of Laws 2026 item 62 (art. 24–27: Labour Fund, Solidarity Fund, FGŚP)"
+   }
+  },
+  "sickness": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2026/854/text.pdf",
+   "label": {
+    "pl": "Ustawa o świadczeniach pieniężnych z ubezpieczenia społecznego w razie choroby i macierzyństwa, Dz.U. 2026 poz. 854 (art. 3, 11, 36, 45)",
+    "en": "Sickness and Maternity Benefits Act, Journal of Laws 2026 item 854 (art. 3, 11, 36, 45)"
+   }
+  },
+  "labour_code": {
+   "url": "https://api.sejm.gov.pl/eli/acts/DU/2026/1245/text.pdf",
+   "label": {
+    "pl": "Kodeks pracy, Dz.U. 2026 poz. 1245 (art. 92, 151¹)",
+    "en": "Labour Code, Journal of Laws 2026 item 1245 (art. 92, 151¹)"
+   }
+  },
+  "gus_q4": {
+   "url": "https://monitorpolski.gov.pl/M2026000011701.pdf",
+   "label": {
+    "pl": "Obwieszczenie Prezesa GUS o przeciętnym wynagrodzeniu w IV kwartale 2025 r. (M.P. 2026 poz. 117)",
+    "en": "Statistics Poland notice on the Q4 2025 average wage (Monitor Polski 2026, item 117)"
+   }
+  },
+  "ppk_tax": {
+   "url": "https://www.mojeppk.pl/faq.html",
+   "label": {
+    "pl": "mojeppk.pl – FAQ: wpłata pracodawcy do PPK jest przychodem pracownika",
+    "en": "mojeppk.pl – FAQ: the employer's PPK payment is taxable income for the employee"
+   }
+  }
+ }
+}

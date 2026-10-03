@@ -1,0 +1,53 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import LegalIdentity from '../../components/LegalIdentity.astro';
+import { AUTHOR_NAME, LEGAL, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { breadcrumbSchema } from '../../lib/seo';
+const lang = 'en';
+const F = facts(lang);
+const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
+const title = `Terms of use and legal notice for KalkulatorWynagrodzen.pl`;
+const description = `Who publishes and hosts the site, what ${F.year} calculator results are (estimates, not tax advice), liability, copyright, embedding the widget and governing law.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('terms', lang), path: route('terms', lang) }])]}
+  breadcrumbs={[{ label: label('terms', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Terms of use and legal notice</h1>
+    <p class="lead">By using this site you accept the terms below. They cover every page, the calculator itself and the widget embedded on other sites. Use is free and needs no registration.</p>
+
+    <h2>Legal notice (nota prawna)</h2>
+    <h3>Publisher</h3>
+    <LegalIdentity lang={lang} />
+    <p>Responsible for content: {AUTHOR_NAME}.</p>
+    <h3>Hosting</h3>
+    <LegalIdentity mode="hosting" lang={lang} />
+
+    <h2>What this site is, and what it is not</h2>
+    <p>The site offers a free salary calculator for Polish employment contracts (umowa o pracę), mandate contracts (umowa zlecenie), specific-work contracts (umowa o dzieło) and B2B self-employment, together with guides explaining ZUS social contributions, the health contribution and personal income tax (PIT). <strong>Results are estimates and do not constitute tax advice</strong> (in Polish: wyniki szacunkowe, nie stanowią doradztwa podatkowego), nor legal or financial advice. They rest on the rules and rates in force in {F.year} as published by ZUS, the Ministry of Finance, the Journal of Laws and the Official Gazette, and on the assumptions set out in the <a href={route('method', lang)}>methodology</a>.</p>
+    <p>What you actually receive depends on your employer's payroll, your other income, reliefs and declarations, and your final tax liability is settled in your annual return. The site is independent: it is not affiliated with ZUS, the Ministry of Finance, the National Revenue Administration (KAS) or any other authority, and does not act on their behalf.</p>
+
+    <h2>Accuracy and liability</h2>
+    <p>We update the parameters whenever the law changes and test the engine against reference cases, but we do not warrant that results are error-free or cover every situation. Among other things, the calculator does not handle several overlapping insurance titles, work abroad or individual arrangements with an employer. To the fullest extent permitted by law, we are not liable for loss arising from a decision taken solely on a calculator result, or for interruptions of the service. This does not exclude any liability that cannot lawfully be excluded. If you spot an error, tell us through the <a href={route('contact', lang)}>contact page</a>; our correction process is described in the <a href={route('editorial', lang)}>editorial policy</a>.</p>
+
+    <h2>Copyright</h2>
+    <p>The text, design, compiled data and source code of this site are protected by copyright and belong to the publisher. Copying or reuse without permission is prohibited, except for short quotations that name the source and link to the page quoted. The statutes and official documents we refer to are not the publisher's copyright.</p>
+
+    <h2>Embedding the calculator</h2>
+    <p>You may embed the calculator free of charge in an iframe on your own site, provided the visible link back to this site stays in place and nothing suggests the tool is an official government service or your own product. The snippet and the detailed conditions are on the <a href={route('widget', lang)}>widget page</a>.</p>
+
+    <h2>Links to other sites</h2>
+    <p>We link to official websites and legal texts so you can check our sources. We do not control their content and are not responsible for it.</p>
+
+    <h2>Personal data and cookies</h2>
+    <p>What you type into the calculator never leaves your browser. How data is handled is set out in the <a href={route('privacy', lang)}>privacy policy</a>, and cookies (currently none) on the <a href={route('cookies', lang)}>cookies page</a>.</p>
+
+    <h2>Governing law and changes</h2>
+    <p>These terms are governed by the law of {LEGAL.jurisdiction}. This does not deprive consumers of the protection given by the mandatory rules of their country of habitual residence. The terms may change; the version published on this page, dated below, is the one in force.</p>
+    <p>Version dated {updated}.</p>
+  </div>
+</PageLayout>

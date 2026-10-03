@@ -1,0 +1,45 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { AUTHOR_NAME, CONTACT_EMAIL, REVIEW_CYCLE_MONTHS, LANG_TAGS } from '../../data/site-config';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts } from '../../lib/facts';
+import { displayDate } from '../../lib/format';
+import { personSchema, organizationSchema, breadcrumbSchema } from '../../lib/seo';
+const lang = 'pl';
+const F = facts(lang);
+const checked = displayDate(F.retrieved, LANG_TAGS[lang]);
+const title = 'KalkulatorWynagrodzen.pl: kim jesteśmy i jak liczymy netto';
+const description = `Kto stoi za KalkulatorWynagrodzen.pl, po co zestawiamy cztery umowy obok siebie, skąd bierzemy stawki na ${F.year} r., z czego żyje serwis i jak zgłosić błąd.`;
+---
+<PageLayout title={title} description={description} lang={lang} noindex={true}
+  jsonLd={[personSchema(lang), organizationSchema(lang), breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('about', lang), path: route('about', lang) }])]}
+  breadcrumbs={[{ label: label('about', lang) }]} showAuthor={false}>
+  <div class="prose prose-slate max-w-none">
+    <h1>Kim jesteśmy i po co powstał ten kalkulator</h1>
+    <p class="lead">Serwis wydaje firma {AUTHOR_NAME}, która publikuje bezpłatne kalkulatory wynagrodzeń, podatków i świadczeń dla kilku krajów. Ten jest poświęcony Polsce i pensji liczonej uczciwie: z każdą składką, z każdym progiem, ze źródłem przy każdej stawce.</p>
+
+    <h2>Po co jeszcze jeden kalkulator wynagrodzeń</h2>
+    <p>Bo większość z nich odpowiada na jedno pytanie: ile netto z jednej kwoty brutto na jednej umowie, w typowym miesiącu. Tymczasem ludzie, którzy do nas piszą, zwykle stoją przed wyborem albo przed niespodzianką na pasku wypłaty. Dlatego zbudowaliśmy narzędzie wokół czterech rzeczy.</p>
+    <ul>
+      <li><strong>Cztery umowy obok siebie.</strong> Umowa o pracę, zlecenie, dzieło i B2B liczone z tej samej kwoty, tak żeby oferta „{F.money(12000)} na fakturę albo {F.money(10000)} na etacie” dała się porównać w minutę, a nie po wieczorze z arkuszem. Szczegóły porównania są na stronie <a href={route('compare', lang)}>B2B czy umowa o pracę</a>.</li>
+      <li><strong>Rok miesiąc po miesiącu.</strong> Netto nie jest stałe przez dwanaście miesięcy. Przy wyższych pensjach w trakcie roku wchodzi drugi próg podatkowy ({F.pitHigh}), a po przekroczeniu {F.cap} w roku znikają składki emerytalna i rentowa. Widok <a href={route('annual', lang)}>wynagrodzenia rocznego</a> pokazuje, w którym miesiącu to się dzieje.</li>
+      <li><strong>Źródła urzędowe przy każdej liczbie.</strong> Stawki pochodzą z ZUS, podatki.gov.pl, Dziennika Ustaw i Monitora Polskiego. Ostatnia pełna weryfikacja: {checked}.</li>
+      <li><strong>Wersja angielska.</strong> Coraz więcej osób pracujących w Polsce nie czyta polskich przepisów. Angielska wersja serwisu nie jest tłumaczeniem maszynowym: objaśnia pojęcia takie jak zlecenie, PIT-2 czy kwota wolna komuś, kto spotyka je pierwszy raz.</li>
+    </ul>
+
+    <h2>Jak powstają nasze wyliczenia</h2>
+    <p>Wszystkie parametry na {F.year} r. siedzą w jednym pliku, z adresem źródła i datą odczytu przy każdej grupie stawek. Silnik obliczeniowy czyta tylko ten plik, a teksty poradników biorą liczby z tego samego miejsca. Jeśli zmieni się płaca minimalna albo limit trzydziestokrotności, poprawiamy jedną wartość i zmiana trafia jednocześnie do kalkulatora i do wszystkich stron, które ją cytują.</p>
+    <p>Przed każdą publikacją silnik przechodzi zestaw testów na przypadkach kontrolnych. Opis wzorów i założeń znajdziesz w <a href={route('method', lang)}>metodologii</a>, a zasady weryfikacji i poprawiania błędów w <a href={route('editorial', lang)}>polityce redakcyjnej</a>. Pełny przegląd parametrów robimy co najmniej raz na {REVIEW_CYCLE_MONTHS} miesięcy i przy każdej zmianie przepisów.</p>
+
+    <h2>Z czego utrzymuje się serwis</h2>
+    <p>Kalkulator jest bezpłatny i nie wymaga konta. Obecnie na stronie nie ma reklam ani narzędzi analitycznych. Jeśli kiedyś pojawi się reklama, nigdy nie stanie nad kalkulatorem i nie wpłynie na wynik ani na treść poradników. Nie sprzedajemy danych, bo ich nie mamy: obliczenia wykonuje Twoja przeglądarka i nic nie trafia na nasz serwer. Szczegóły są w <a href={route('privacy', lang)}>polityce prywatności</a>.</p>
+    <p>Nie współpracujemy z biurami rachunkowymi, bankami ani firmami doradczymi i nie bierzemy pieniędzy za wzmianki. Gdyby taka relacja kiedyś powstała, napiszemy o niej wprost na stronie, której dotyczy.</p>
+
+    <h2>Czego ten serwis nie zastąpi</h2>
+    <p>Wynik kalkulatora to rzetelne oszacowanie dla typowej sytuacji, a nie interpretacja podatkowa. Nie znamy Twoich innych dochodów, ulg rodzinnych ani ustaleń z pracodawcą. Przy decyzji, która ma skutki na lata, na przykład przejściu na B2B, warto pokazać nasze liczby doradcy podatkowemu albo księgowej. Nie jesteśmy powiązani z ZUS, Ministerstwem Finansów ani żadnym urzędem.</p>
+
+    <h2>Znalazłeś błąd? Napisz</h2>
+    <p>Każde zgłoszenie sprawdzamy ze źródłem. Najszybciej pomaga link z paska adresu skopiowany po wpisaniu danych, bo kalkulator zapisuje w nim wszystkie pola, oraz kwota, której się spodziewałeś, na przykład z paska wypłaty albo z PIT-11. Adres: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Więcej o tym, jak opisać przypadek, na stronie <a href={route('contact', lang)}>kontaktu</a>.</p>
+  </div>
+</PageLayout>

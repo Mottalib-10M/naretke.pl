@@ -1,0 +1,80 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uopYear, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney } from '../../lib/format';
+const lang = 'en';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const Z = P.zus;
+const CAP = Z.annual_cap;
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const eeRate = Z.emerytalna_employee + Z.rentowa_employee, erRate = Z.emerytalna_employer + Z.rentowa_employer;
+const rows = [25000, 30000, 40000, 50000].map((g) => {
+  const y = uopYear({ gross: g }), m = capMonth(g);
+  return [$(g), m ? MONTHS[m - 1] : '–', $((12 * g - CAP) * eeRate), $(y.months[0].health), $(y.months[11].health), $(y.months[0].net), $(y.months[11].net)];
+});
+const G = 30000, y30 = uopYear({ gross: G }), c30 = capMonth(G) ?? 12;
+const yearRows = y30.months.map((m) => [MONTHS[m.month - 1], $(m.emerytalna + m.rentowa), $(m.chorobowa), $(m.health), $(m.pit), $(m.net)]);
+const firstFull = y30.months[c30] ?? y30.months[11];
+const before = y30.months[c30 - 2];
+const BON = 20000, bonusY = uopYear({ gross: BON, months: [...Array(11).fill(BON), BON * 4] });
+const bonusDec = bonusY.months[11], bonusUncapped = $(BON * 4 * eeRate), bonusUnder = $(CAP - BON * 11);
+const minGross = $(CAP / 12);
+const b2bYear = $(P.b2b.zus_base_full * 12);
+const erSaved30 = $((12 * G - CAP) * erRate);
+const faqs = [
+  { q: 'I have two employers and together I will pass the cap. What do I have to do?', a: `Tell every payer that your annual contribution base has gone over ${F.cap} (article 19(6) of the Social Insurance System Act). Each employer sees only what it pays you, so without your notice it keeps deducting pension and disability contributions. If your notice is wrong and contributions that were due go unpaid, the law makes you, not the employer, responsible for the consequences.` },
+  { q: 'After the cap, do I still pay sickness and health contributions?', a: `Yes. The ${F.cap} cap covers only the pension and disability contributions. The ${F.chorobowa} sickness contribution is charged on full gross pay until December, and the ${F.health} health contribution actually rises, because its base is gross pay minus social contributions. On ${$(G)} gross it goes from ${$(y30.months[0].health)} in January to ${$(y30.months[11].health)} in December.` },
+  { q: 'Does the 30x cap carry over into next year?', a: `No. The Act speaks of the annual contribution base in a given calendar year, so the counter resets in January. From the first payroll of the new year your employer deducts pension and disability contributions on your full gross again, up to the new cap published each year in Monitor Polski. In ${F.year} it is ${F.cap}, thirty times the forecast average wage of ${F.avgForecast}.` },
+  { q: 'Do the months without pension contributions still count towards my pension record?', a: `Yes. Article 19(7) says that a period in which pension and disability contributions are not paid because the annual cap was exceeded is treated as a period of insurance under the pension rules. No contributions arise on pay above ${F.cap}, so that part adds nothing to your ZUS account, but the months themselves stay in your insurance history.` },
+  { q: 'My employer kept deducting contributions after I passed the cap. Can I get them back?', a: `Pension and disability contributions paid above ${F.cap} count as paid when not due; article 19(6a) applies the refund rules of article 24. If ZUS spots the overpayment itself, it informs the payers and, through them, you (article 19(6b)). In practice start with payroll: the employer files the corrected reports, and the date ZUS receives them is the date the overpayment is established.` },
+];
+---
+<GuideLayout lang={lang} id="cap" breadcrumbLabel={label('cap', lang)} title={`ZUS Contribution Cap ${F.year}: ${F.cap} and December Pay`} h1={`The ZUS contribution cap in ${F.year}: ${F.cap}`}
+  description={`The ${F.year} ZUS cap is ${F.cap}. Above it, pension and disability contributions stop and net pay rises. See your crossing month and what is still deducted.`}
+  intro={`Poland caps the yearly base for pension and disability contributions: in ${F.year}, nothing is charged on pay above ${F.cap} (the limit 30-krotności).`}
+  resume={`In ${F.year} Polish pension and disability contributions are charged only on the first ${F.cap} of pay in the year. That is thirty times the forecast average wage of ${F.avgForecast}, as announced in Monitor Polski. Anyone earning more than ${minGross} gross a month passes the cap before the year ends: on ${$(30000)} in ${MONTHS[(capMonth(30000) ?? 12) - 1]}, on ${$(50000)} as early as ${MONTHS[(capMonth(50000) ?? 12) - 1]}. From then on the ${F.emerytalnaEe} pension and ${F.rentowaEe} disability contributions disappear from your payslip, and your employer stops paying its share of ${F.emerytalnaEr} and ${F.rentowaEr}. The ${F.chorobowa} sickness contribution and the ${F.health} health contribution carry on, and health actually goes up because its base grows. Net pay rises after the cap, although the higher tax bracket, which high earners reach around the same time, often eats much of the gain. With several employers the cap is counted per person, and telling your payers is your job. The mini calculator finds your month.`}
+  faqs={faqs}
+  related={[{ href: route('zus', lang), name: label('zus', lang), description: `Employee rates: ${F.emerytalnaEe}, ${F.rentowaEe}, ${F.chorobowa}.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `When you reach ${F.pitHigh} and how it overlaps with the cap.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Every month of the year, with cap and bracket.' }]}
+  sources={[src('cap', lang), src('sus_act', lang), src('zus_rates', lang)]}>
+  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
+
+  <h2>Where the {F.cap} figure comes from</h2>
+  <p>Article 19(1) of the Social Insurance System Act limits the annual base for pension (emerytalna) and disability (rentowa) contributions to thirty times the forecast average monthly wage set in the budget act. For {F.year} that forecast is {F.avgForecast}, so the cap is {F.cap}. The minister for social security announces it every year in the official gazette, Monitor Polski.</p>
+  <p>The cap applies to the contribution base, meaning pay that ZUS contributions are charged on, not to net pay or taxable income. Bonuses and other components that carry contributions count towards it. Spread evenly over twelve months, the threshold is {minGross} gross a month: earn less and you never reach it, earn more and you cross it at some point in the year.</p>
+  <p>On your payslip (pasek wypłaty) the crossing month shows smaller pension and disability lines than usual, because they are charged only on the part of gross pay still under the cap. From the next month those two lines read zero.</p>
+
+  <h2>The crossing month at different salaries</h2>
+  <ContentTable headers={['Monthly gross', 'Cap crossed in', 'Contributions saved', 'Health in January', 'Health in December', 'Net in January', 'Net in December']} align={['r', 'l', 'r', 'r', 'r', 'r', 'r']} rows={rows} />
+  <p>"Contributions saved" is the employee's pension and disability contribution not charged on pay above the cap. December's net can still be lower than January's. The reason is tax, not ZUS: at these salaries, income since January passes {F.threshold} and the employer withholds {F.pitHigh} rather than {F.pitLow} on the excess. Both effects overlap in the second half of the year.</p>
+
+  <h2>What drops off your payslip and what stays</h2>
+  <p>Once the cap is exceeded, the payer must stop calculating and paying pension and disability contributions (article 19(5)). That covers both shares: yours, {F.emerytalnaEe} and {F.rentowaEe}, and the employer's, {F.emerytalnaEr} and {F.rentowaEr}. At {$(G)} gross the employer saves {erSaved30} over the year this way, so your cost to the company drops in the last months.</p>
+  <p>The {F.chorobowa} sickness contribution stays, since the cap does not touch it, and so does the health contribution. Health goes up, because it is charged on gross pay minus social contributions, and fewer contributions mean a bigger base. At {$(G)} gross it climbs from {$(y30.months[0].health)} to {$(y30.months[11].health)} a month. Your taxable base grows too, since social contributions are deducted from income before tax, so part of the saving goes back to the tax office as a larger advance.</p>
+
+  <h2>A year on {$(G)} gross, month by month</h2>
+  <ContentTable headers={['Month', 'Pension and disability', 'Sickness', 'Health', 'Tax advance', 'Net']} align={['l', 'r', 'r', 'r', 'r', 'r']} rows={yearRows} highlightRow={c30 - 1} />
+  <p>Three phases show up. Early in the year net pay is {$(y30.months[0].net)}. Then income passes the tax threshold and take-home pay drops, to {$(before.net)} at its lowest. In {MONTHS[c30 - 1]} pay since January passes {F.cap}: pension and disability are charged on only part of the gross, and from the next month they vanish, lifting net pay back to {$(firstFull.net)}. The highlighted row is the crossing month.</p>
+  <p>When comparing job offers at this level, compare yearly net pay, not January's. The first payslip flatters a high salary and the summer ones understate it. The <a href={route('annual', lang)}>annual salary calculator</a> runs the full year.</p>
+
+  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('brackets', lang)} /></div>
+
+  <h2>A big bonus can push you over</h2>
+  <p>The cap counts all contribution-bearing pay, so a year-end bonus can trigger it even when the monthly salary alone never would. Take {$(BON)} gross a month and a December payment of {$(BON * 4)} including the bonus. By November, pay since January stands at {$(BON * 11)}, still under {F.cap}. In December only {bonusUnder} fits under the cap, so the pension and disability lines on the December payslip come to {$(bonusDec.emerytalna + bonusDec.rentowa)} rather than the {bonusUncapped} they would be without it.</p>
+  <p>The same goes for a pay rise in the middle of the year: the cap is reached earlier than a calculation based on January pay suggests. Payroll counts the actual cumulative base each month, so you do not need to do anything with a single employer.</p>
+
+  <h2>Several payers: one cap per person</h2>
+  <p>The cap belongs to the insured person, not to the contract. If in {F.year} you hold two jobs, or a job plus a mandate contract (umowa zlecenie), pay from every title subject to pension and disability contributions adds up towards a single {F.cap}. Each payer, though, sees only its own payroll and will keep deducting until December unless you tell it otherwise.</p>
+  <p>The law puts that duty on you: with more than one payer, the insured person notifies all of them that the cap has been exceeded (article 19(6)). If a mistaken notice leads to contributions that were due going unpaid, you bear the consequences. So keep a running total and report the crossing only once it has actually happened, with the month and the amounts.</p>
+  <p>Contributions already paid above the cap are treated as paid when not due, and the Act points to article 24(6a)–(8) for what follows. When ZUS detects the excess itself, it informs the payers and, through them, you. Work out the refund steps and timing with payroll and ZUS, since they depend on when the employer files corrected documents.</p>
+
+  <h2>Pension record, the self-employed and next January</h2>
+  <p>No pension contributions arise on pay above the cap, so that pay adds nothing to your ZUS account. The months themselves stay in your record: article 19(7) treats the period without contributions because of the cap as a period of insurance.</p>
+  <p>Self-employed people paying ZUS on the standard base of {F.b2bBaseFull} never get near the cap: twelve such bases come to {b2bYear}, far below {F.cap}. High earners on B2B contracts do not get the year-end lift, but they pay contributions on a low fixed base from the start. Our <a href={route('compare', lang)}>B2B versus employment contract</a> comparison puts both side by side, and the guide to <a href={route('zus', lang)}>ZUS contributions</a> lists every rate.</p>
+  <p>In January the counter starts from zero and the first payslips of the new year are lower again. That is not a payroll error, just full pension and disability contributions coming back.</p>
+</GuideLayout>

@@ -1,0 +1,40 @@
+---
+/** Page « ile netto z X brutto » : angle rédigé propre au montant + tableaux du moteur. */
+import GuideLayout from './GuideLayout.astro';
+import ContentTable from './ContentTable.astro';
+import SalaryCalculator from './calc/SalaryCalculator';
+import { route, AMOUNTS, type Locale } from '../i18n/routes';
+import { amountLabel } from '../i18n/nav';
+import { amountCtx } from '../lib/amount-context';
+import { uop, uopYear, zlecenie, dzielo, b2b, PARAMS as P } from '../lib/engine/pl';
+import { src } from '../lib/facts';
+import type { AngleFn } from '../lib/amount-types';
+interface Props { lang: Locale; amount: number; angle: AngleFn }
+const { lang, amount, angle } = Astro.props;
+const c = amountCtx(amount, lang);
+const a = angle(c);
+const $ = c.$;
+const T = (pl: string, en: string) => (lang === 'en' ? en : pl);
+const m = uop({ gross: amount });
+const y = uopYear({ gross: amount });
+const z = zlecenie({ gross: amount }), d = dzielo({ gross: amount });
+const contracts = [
+  [T('Umowa o pracę', 'Employment contract'), $(m.social), $(m.health), $(m.pit), $(m.net)],
+  [T('Umowa zlecenie', 'Mandate contract (zlecenie)'), $(z.social), $(z.health), $(z.pit), $(z.net)],
+  [T('Umowa o dzieło', 'Specific-work contract (dzieło)'), $(0), $(0), $(d.pit), $(d.net)],
+  ...(['liniowy', 'ryczalt', 'skala'] as const).map((f) => { const b = b2b({ revenue: amount, form: f, ryczaltRate: P.b2b.ryczalt_rates[0].rate }); return [`B2B ${f === 'liniowy' ? T('liniowy', 'flat tax') : f === 'ryczalt' ? T('ryczałt IT', 'lump sum (IT)') : T('skala', 'tax scale')}`, $(b.social + b.fp), $(b.health), $(b.tax), $(b.net)]; }),
+];
+const idx = AMOUNTS.indexOf(amount as (typeof AMOUNTS)[number]);
+const neighbours = [AMOUNTS[idx - 1], AMOUNTS[idx + 1]].filter(Boolean) as number[];
+---
+<GuideLayout lang={lang} id={`amount-${amount}`} breadcrumbLabel={amountLabel(amount, lang)} title={a.title} h1={a.h1} description={a.description} intro={a.intro} resume={a.resume} faqs={a.faqs}
+  related={[{ href: route('home', lang), name: T('Kalkulator wynagrodzeń', 'Salary calculator'), description: T('Dowolna kwota, cztery umowy.', 'Any amount, four contracts.') }, ...neighbours.map((n) => ({ href: route(`amount-${n}`, lang), name: amountLabel(n, lang), description: T('Netto, koszt pracodawcy i rok miesiąc po miesiącu.', 'Net pay, employer cost and the year month by month.') }))]}
+  sources={[src('pit_act', lang), src('sus_act', lang), src('zus_b2b', lang), src('cap', lang)]}>
+  <div data-outil><SalaryCalculator client:load lang={lang} defaultGross={amount} methodHref={route('method', lang)} /></div>
+  {a.sections.map((s) => (<><h2>{s.h2}</h2><Fragment set:html={s.html} /></>))}
+  <h2>{T(`${c.gross} brutto na każdej umowie`, `${c.gross} gross on each contract`)}</h2>
+  <ContentTable headers={[T('Umowa', 'Contract'), 'ZUS', T('Zdrowotna', 'Health'), T('Podatek', 'Tax'), T('Netto', 'Net')]} align={['l', 'r', 'r', 'r', 'r']} rows={contracts} highlightRow={0} />
+  <h2>{T('Rok miesiąc po miesiącu na umowie o pracę', 'The year month by month on an employment contract')}</h2>
+  <ContentTable headers={[T('Miesiąc', 'Month'), 'ZUS', T('Zdrowotna', 'Health'), 'PIT', T('Netto', 'Net')]} align={['l', 'r', 'r', 'r', 'r']}
+    rows={[...y.months.map((x) => [String(x.month), $(x.social), $(x.health), $(x.pit), $(x.net)]), [T('Rok', 'Year'), $(y.total.social), $(y.total.health), $(y.total.pit), $(y.total.net)]]} highlightRow={12} />
+</GuideLayout>

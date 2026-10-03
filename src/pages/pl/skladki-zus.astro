@@ -1,0 +1,91 @@
+---
+import MiniSim from '../../components/calc/MiniSim';
+import GuideLayout from '../../components/GuideLayout.astro';
+import ContentTable from '../../components/ContentTable.astro';
+import { route } from '../../i18n/routes';
+import { label } from '../../i18n/nav';
+import { facts, src } from '../../lib/facts';
+import { uop, zlecenie, uopYear, capMonth, PARAMS as P } from '../../lib/engine/pl';
+import { formatMoney, pct } from '../../lib/format';
+const lang = 'pl';
+const F = facts(lang);
+const $ = (x: number) => formatMoney(x, 0, lang);
+const $2 = (x: number) => formatMoney(x, 2, lang);
+const Z = P.zus;
+const G = 8000;
+const u = uop({ gross: G });
+const erRate = pct(Z.emerytalna_employer + Z.rentowa_employer + Z.wypadkowa_basic + Z.fp + Z.fs + Z.fgsp, lang);
+const allRate = pct(Z.emerytalna_employee + Z.rentowa_employee + Z.chorobowa_employee + Z.emerytalna_employer + Z.rentowa_employer + Z.wypadkowa_basic + Z.fp + Z.fs + Z.fgsp, lang);
+const rateRows = [
+  ['Emerytalna', F.emerytalnaEe, F.emerytalnaEr, F.emerytalnaTotal, $2(u.emerytalna), $2(u.er.emerytalna)],
+  ['Rentowa', F.rentowaEe, F.rentowaEr, F.rentowaTotal, $2(u.rentowa), $2(u.er.rentowa)],
+  ['Chorobowa', F.chorobowa, '0 %', F.chorobowa, $2(u.chorobowa), $2(0)],
+  ['Wypadkowa', '0 %', F.wypadkowa, F.wypadkowa, $2(0), $2(u.er.wypadkowa)],
+  ['Fundusz Pracy + Solidarnościowy', '0 %', F.fpfs, F.fpfs, $2(0), $2(u.er.fp)],
+  ['FGŚP', '0 %', F.fgsp, F.fgsp, $2(0), $2(u.er.fgsp)],
+  ['Razem', F.socialEe, erRate, allRate, $2(u.social), $2(u.er.total)],
+];
+const wypLow = uop({ gross: G, wypadkowaRate: Z.wypadkowa_min }).er.wypadkowa, wypHigh = uop({ gross: G, wypadkowaRate: Z.wypadkowa_max }).er.wypadkowa;
+const z = zlecenie({ gross: 4000 }), zs = zlecenie({ gross: 4000, sickness: true }), zst = zlecenie({ gross: 4000, student: true });
+const big = 30000, bigY = uopYear({ gross: big }), bigM = capMonth(big);
+const MONTHS = ['styczniu', 'lutym', 'marcu', 'kwietniu', 'maju', 'czerwcu', 'lipcu', 'sierpniu', 'wrześniu', 'październiku', 'listopadzie', 'grudniu'];
+const dec = bigY.months[11];
+const capMult = String(Math.round(Z.annual_cap / P.average_wage.forecast_2026));
+const Z4 = $(4000);
+const yr = [P.minimum_wage.monthly, G, 15000].map((g) => { const y = uopYear({ gross: g }); return { g, ee: y.total.social, er: y.total.erTotal, hl: y.total.health, pit: y.total.pit }; });
+const faqs = [
+  { q: 'Jaki procent pensji brutto pracownik oddaje na ZUS?', a: `Na umowie o pracę ${F.socialEe} brutto: ${F.emerytalnaEe} na emerytalną, ${F.rentowaEe} na rentową i ${F.chorobowa} na chorobową. Przy ${$(G)} brutto to ${$2(u.social)} miesięcznie. Składka zdrowotna ${F.health} nie należy do ZUS-owskich składek społecznych i liczy się osobno, od brutto pomniejszonego o te trzy składki. Pracodawca dokłada ze swoich pieniędzy około ${erRate} brutto.` },
+  { q: 'Czy po przekroczeniu limitu 282 600 zł dalej płacę składkę chorobową?'.replace('282 600 zł', F.cap), a: `Tak. Roczny limit ${F.cap} dotyczy tylko składek emerytalnej i rentowej. Składka chorobowa ${F.chorobowa} jest pobierana od całego brutto przez cały rok, podobnie jak składka zdrowotna. Przy pensji ${$(big)} brutto limit pęka w ${bigM ? MONTHS[bigM - 1] : 'tym roku'}, a w grudniu z ZUS-owskich składek zostaje już tylko chorobowa: ${$2(dec.chorobowa)}.` },
+  { q: 'Jaką stopę składki wypadkowej płaci mój pracodawca?', a: `Ustawa o systemie ubezpieczeń społecznych dopuszcza stopę od ${F.wypadkowaMin} do ${F.wypadkowaMax} podstawy wymiaru, a konkretna wartość zależy od firmy. ZUS w swoich wyliczeniach używa ${F.wypadkowa}. Przy pensji ${$(G)} brutto różnica między skrajnymi stopami to ${$2(wypLow)} albo ${$2(wypHigh)} miesięcznie. Składkę w całości finansuje pracodawca, więc nie zmienia ona Twojego netto.` },
+  { q: 'Czy na umowie zlecenie muszę płacić składkę chorobową?', a: `Nie musisz. Zleceniobiorca objęty obowiązkowo emerytalną i rentową może przystąpić do ubezpieczenia chorobowego dobrowolnie, na swój wniosek (art. 11 ust. 2 ustawy systemowej). Przy zleceniu na ${Z4} brutto chorobowa kosztuje ${$2(zs.chorobowa)} miesięcznie i obniża netto z ${$(z.net)} do ${$(zs.net)}. W zamian zyskujesz prawo do zasiłku chorobowego.` },
+  { q: 'Kto płaci Fundusz Pracy i Fundusz Solidarnościowy?', a: `Wyłącznie pracodawca, z własnych środków. Ustawa budżetowa na ${F.year} r. ustala składkę na Fundusz Pracy na ${F.fp}, a na Fundusz Solidarnościowy na ${F.fs} podstawy składek emerytalnej i rentowej, razem ${F.fpfs}. Do tego dochodzi ${F.fgsp} na Fundusz Gwarantowanych Świadczeń Pracowniczych. Przy ${$(G)} brutto fundusze kosztują firmę ${$2(u.er.fp + u.er.fgsp)} miesięcznie.` },
+];
+---
+<GuideLayout lang={lang} id="zus" breadcrumbLabel={label('zus', lang)}
+  title={`Składki ZUS ${F.year}: stawki pracownika i pracodawcy, limit`}
+  h1={`Składki ZUS w ${F.year} r.: ile płaci pracownik, a ile pracodawca`}
+  description={`Składki ZUS w ${F.year} r.: pracownik płaci ${F.socialEe} brutto, pracodawca około ${erRate}. Stawki, limit ${F.cap}, zlecenie, wypadkowa i fundusze, z kalkulatorem.`}
+  intro={`Na umowie o pracę ZUS pobiera ${F.socialEe} brutto z pensji pracownika, a pracodawca dokłada od siebie jeszcze około ${erRate}.`}
+  resume={`Pracownik na umowie o pracę płaci w ${F.year} r. ${F.socialEe} brutto składek społecznych: emerytalną ${F.emerytalnaEe}, rentową ${F.rentowaEe} i chorobową ${F.chorobowa}. Pracodawca dokłada swoją połowę emerytalnej (${F.emerytalnaEr}), rentową ${F.rentowaEr}, wypadkową (od ${F.wypadkowaMin} do ${F.wypadkowaMax}, w przykładach ZUS ${F.wypadkowa}), ${F.fp} na Fundusz Pracy, ${F.fs} na Fundusz Solidarnościowy i ${F.fgsp} na FGŚP, razem około ${erRate}. Przy pensji ${$(G)} brutto oznacza to ${$2(u.social)} potrącone z wypłaty i ${$2(u.er.total)} zapłacone ponad brutto. Emerytalna i rentowa przestają być pobierane po przekroczeniu rocznego limitu ${F.cap}, czyli ${capMult}-krotności prognozowanego przeciętnego wynagrodzenia. Na zleceniu obowiązkowe są emerytalna i rentowa, chorobowa jest dobrowolna, a student przed 26. rokiem życia nie płaci składek wcale. Mini-kalkulator poniżej rozbija składki dla Twojej pensji.`}
+  faqs={faqs}
+  related={[{ href: route('cap', lang), name: label('cap', lang), description: `Kiedy znikają emerytalna i rentowa: limit ${F.cap}.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Pełny ZUS ${F.b2bZusFull}, preferencyjny i ulga na start.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Pełny koszt pensji z wszystkimi składkami.' }]}
+  sources={[src('zus_rates', lang), src('sus_act', lang), src('budget', lang), src('cap', lang)]}>
+  <div data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('home', lang)} /></div>
+
+  <h2>Stawki {F.year}: kto płaci którą składkę</h2>
+  <p>Stopy procentowe składek wyznacza art. 22 ustawy o systemie ubezpieczeń społecznych, a podział między pracownika i pracodawcę art. 16. Emerytalną {F.emerytalnaTotal} płacą po połowie. Rentową {F.rentowaTotal} dzielą nierówno: pracownik {F.rentowaEe}, pracodawca {F.rentowaEr}. Chorobową {F.chorobowa} finansuje w całości ubezpieczony, a wypadkową w całości płatnik. Fundusze, czyli Fundusz Pracy, Fundusz Solidarnościowy i FGŚP, to wyłącznie koszt firmy; ich stawki na {F.year} r. ustala ustawa budżetowa w art. 25–27.</p>
+  <p>Tabela pokazuje stawki i kwoty przy pensji {$(G)} brutto. Wypadkowa liczona jest stopą {F.wypadkowa}, której ZUS używa w swoich przykładach.</p>
+  <ContentTable headers={['Składka', 'Pracownik', 'Pracodawca', 'Razem', `Pracownik przy ${$(G)}`, `Pracodawca przy ${$(G)}`]} align={['l', 'r', 'r', 'r', 'r', 'r']} rows={rateRows} highlightRow={rateRows.length - 1} />
+  <p>Wszystkie stawki są procentem tej samej podstawy, czyli brutto. Na pasku wypłaty składki pracownika widać jako potrącenia, a składek pracodawcy zwykle nie ma wcale, bo nie zmniejszają wypłaty. Ich sumę pokazuje kalkulator <a href={route('employer', lang)}>kosztu pracodawcy</a>.</p>
+
+  <h2>Co kupujesz za każdą składkę</h2>
+  <p>Składka emerytalna buduje przyszłą emeryturę i jest największą pozycją po obu stronach. Rentowa ubezpiecza na wypadek niezdolności do pracy. Chorobowa daje prawo do zasiłku chorobowego, który wynosi {F.sickRate} podstawy, a także do zasiłku macierzyńskiego. Przez pierwsze {F.sickDays} dni choroby w roku (u osób po 50. roku życia {F.sickDays50} dni) pracownikowi płaci jednak pracodawca, w formie wynagrodzenia chorobowego, również w wysokości {F.sickRate}. Ile to daje w złotych, pokazuje <a href={route('sick', lang)}>kalkulator chorobowego</a>.</p>
+  <p>Wypadkowa finansuje świadczenia po wypadku przy pracy lub chorobie zawodowej. Fundusz Pracy pokrywa m.in. zasiłki dla bezrobotnych, a FGŚP wypłaca pensje, gdy pracodawca stanie się niewypłacalny. Przy pracy w szczególnych warunkach lub o szczególnym charakterze pracodawca opłaca jeszcze składkę na Fundusz Emerytur Pomostowych; nie uwzględniamy jej w kalkulatorach, bo dotyczy tylko części stanowisk.</p>
+
+  <h2>Składka wypadkowa: od {F.wypadkowaMin} do {F.wypadkowaMax}</h2>
+  <p>To jedyna składka, której stawka nie jest jedna dla wszystkich. Ustawa dopuszcza przedział od {F.wypadkowaMin} do {F.wypadkowaMax}, a pracodawca stosuje stopę ustaloną dla swojej firmy. W kalkulatorach przyjmujemy {F.wypadkowa}, tak jak ZUS w swoich wyliczeniach. Przy {$(G)} brutto wypadkowa kosztuje od {$2(wypLow)} do {$2(wypHigh)} miesięcznie, zależnie od stopy. Netto pracownika się przy tym nie zmienia, bo tę składkę w całości opłaca firma.</p>
+
+  <h2>Limit {capMult}-krotności: {F.cap} rocznie</h2>
+  <p>Emerytalna i rentowa liczone są tylko od brutto do rocznego limitu. W {F.year} r. wynosi on {F.cap}, czyli {capMult}-krotność prognozowanego przeciętnego wynagrodzenia {F.avgForecast}. W miesiącu, w którym skumulowane brutto przekroczy limit, składki liczy się już tylko od części poniżej niego, a w kolejnych miesiącach emerytalna i rentowa znikają całkowicie. Dotyczy to obu stron: pracodawca też przestaje płacić swoją część.</p>
+  <p>Przykład: przy {$(big)} brutto miesięcznie limit zostaje przekroczony w {bigM ? MONTHS[bigM - 1] : 'tym roku'}. W styczniu pracownik oddaje na ZUS {$2(bigY.months[0].social)}, w grudniu już tylko składkę chorobową {$2(dec.chorobowa)}. Limit nie obejmuje chorobowej, więc ta jest pobierana do końca roku. Dokładny moment przekroczenia i jego wpływ na netto omawia strona o <a href={route('cap', lang)}>rocznym limicie składek</a>.</p>
+
+  <h2>Umowa zlecenie: obowiązkowe i dobrowolne składki</h2>
+  <p>Zleceniobiorca płaci emerytalną i rentową według tych samych stawek co pracownik, a zleceniodawca dokłada swoją część. Chorobowa jest dobrowolna: art. 11 ust. 2 ustawy systemowej pozwala do niej przystąpić na wniosek. Przy zleceniu na {Z4} brutto składki społeczne bez chorobowej wynoszą {$2(z.social)}, a z chorobową {$2(zs.social)}. Netto spada odpowiednio z {$(z.net)} do {$(zs.net)}. To niewielka cena za prawo do zasiłku, jeśli zlecenie jest Twoim głównym źródłem dochodu.</p>
+  <p>Wyjątek dotyczy uczniów szkół ponadpodstawowych i studentów przed ukończeniem 26 lat. Art. 6 ust. 4 ustawy zwalnia ich z obowiązku ubezpieczeń emerytalnego i rentowego na zleceniu, więc ze zlecenia na {Z4} zostaje im {$(zst.net)}. Ten przypadek szczegółowo opisuje strona o <a href={route('student', lang)}>zleceniu dla studenta</a>.</p>
+
+  <h2>Działalność gospodarcza: składki od podstawy, nie od dochodu</h2>
+  <p>Przedsiębiorca płaci emerytalną, rentową i wypadkową w całości sam, a chorobową dobrowolnie. Składek nie liczy się od przychodu ani od dochodu, tylko od zadeklarowanej podstawy, która w {F.year} r. nie może być niższa niż {F.b2bBaseFull}. Daje to {F.b2bZusFull} miesięcznie z chorobową albo {F.b2bZusFullNoSick} bez niej. Nowe firmy mogą przez pewien czas płacić od podstawy preferencyjnej {F.b2bBasePref}. Warianty, ulgę na start i Mały ZUS plus opisujemy na stronie <a href={route('zusb2b', lang)}>ZUS przedsiębiorcy</a>.</p>
+
+  <h2>ZUS w skali roku: trzy przykładowe pensje</h2>
+  <p>Miesięczne kwoty łatwo zbagatelizować, roczne już nie. Na płacy minimalnej pracownik oddaje w ciągu roku {$(yr[0].ee)} składek społecznych, a pracodawca płaci za niego dodatkowo {$(yr[0].er)}. Przy {$(yr[1].g)} brutto to odpowiednio {$(yr[1].ee)} i {$(yr[1].er)}, a przy {$(yr[2].g)} brutto {$(yr[2].ee)} i {$(yr[2].er)}. Dla porównania: zaliczki na PIT za cały rok przy {$(yr[1].g)} brutto wynoszą {$(yr[1].pit)}, czyli wyraźnie mniej niż same składki pracownika. Przy przeciętnych zarobkach to ZUS, a nie podatek, jest największym obciążeniem pensji.</p>
+  <p>Składki liczy się od całego brutto danego miesiąca, więc premia, nagroda czy wynagrodzenie za nadgodziny podnoszą je w tym samym miesiącu według tych samych stawek. Wyjątkiem jest sytuacja po przekroczeniu limitu: wtedy premia nie zwiększa już emerytalnej ani rentowej. Ile zostaje z premii na rękę, liczy kalkulator <a href={route('bonus', lang)}>premii netto</a>.</p>
+
+  <h2>Składki na pasku wypłaty</h2>
+  <p>Na pasku znajdziesz zwykle trzy osobne pozycje: ubezpieczenie emerytalne, rentowe i chorobowe, czasem zsumowane jako „składki ZUS pracownika”. Sprawdź dwie rzeczy. Po pierwsze, czy suma to {F.socialEe} brutto z danego miesiąca, łącznie z premią i nadgodzinami. Po drugie, czy po przekroczeniu limitu emerytalna i rentowa rzeczywiście zniknęły.</p>
+  <p>Składka zdrowotna figuruje na pasku obok, ale to inna danina: płacona do NFZ za pośrednictwem ZUS, z własną podstawą i stawką {F.health}. Opisujemy ją w poradniku o <a href={route('health', lang)}>składce zdrowotnej</a>.</p>
+
+  <h2>Ile kosztuje pensja z wszystkimi składkami</h2>
+  <p>Drugi kalkulator sumuje składki i fundusze po stronie firmy dla dowolnej pensji, z opcją PPK.</p>
+  <div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('employer', lang)} /></div>
+  <p>Przy {$(G)} brutto całkowity koszt to {$2(u.er.cost)}, a do pracownika trafia {$(u.net)} netto. Różnica między tymi kwotami to składki obu stron, składka zdrowotna i zaliczka na podatek.</p>
+</GuideLayout>

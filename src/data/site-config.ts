@@ -1,6 +1,6 @@
 /** Configuration centrale du site (générée par new-site.py). */
-export const SITE_URL = "https://kalkulatorwynagrodzen.pl";
-export const SITE_NAMES: Record<string, string> = {"pl": "KalkulatorWynagrodzen.pl", "en": "KalkulatorWynagrodzen.pl"};
+export const SITE_URL = "https://naretke.pl";
+export const SITE_NAMES: Record<string, string> = {"pl": "naretke.pl", "en": "naretke.pl"};
 export const LANG_TAGS: Record<string, string> = {"pl": "pl-PL", "en": "en-PL"};
 export const OG_LOCALES: Record<string, string> = {"pl": "pl_PL", "en": "en_GB"};
 export const LOCALE_TAG = 'pl-PL';
@@ -18,7 +18,7 @@ export const AUTHOR_DESC: Record<string, string> = {"pl": "Radif Partners publik
  *  themes reellement traites par le site, pas une liste de mots-cles : un sujet
  *  declare ici sans page qui le couvre est une declaration fausse. */
 export const KNOWS_ABOUT: Record<string, string[]> = {"pl": ["Wynagrodzenie brutto netto", "Składki ZUS", "Składka zdrowotna", "Podatek PIT", "Umowa zlecenie", "Umowa o dzieło", "B2B ryczałt, liniowy, skala", "PPK"], "en": ["Polish gross to net salary", "ZUS social contributions", "Health contribution", "Polish PIT", "Mandate contract (umowa zlecenie)", "Contract for specific work (umowa o dzieło)", "B2B taxation in Poland", "PPK pension plan"]};
-export const CONTACT_EMAIL = "kontakt@kalkulatorwynagrodzen.pl";
+export const CONTACT_EMAIL = "kontakt@naretke.pl";
 export const THEME_COLOR = '#DC143C';
 export const LOGO_SYMBOL = 'zł';
 export const BING_VERIFY_CODE = '';

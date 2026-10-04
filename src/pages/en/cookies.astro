@@ -10,7 +10,7 @@ const lang = 'en';
 const F = facts(lang);
 const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
 const title = `Cookies policy ${F.year}: this site stores no cookies at all`;
-const description = `In ${F.year} KalkulatorWynagrodzen.pl stores no cookies, nothing in localStorage, runs no analytics or ads, so it shows no consent banner. How to check it yourself.`;
+const description = `In ${F.year} naretke.pl stores no cookies, nothing in localStorage, runs no analytics or ads, so it shows no consent banner. How to check it yourself.`;
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}

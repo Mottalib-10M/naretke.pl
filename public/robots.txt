@@ -3,4 +3,4 @@ Allow: /
 
 Disallow: /*?*
 
-Sitemap: https://kalkulatorwynagrodzen.pl/sitemap-index.xml
+Sitemap: https://naretke.pl/sitemap-index.xml

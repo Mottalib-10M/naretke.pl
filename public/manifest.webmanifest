@@ -1,6 +1,6 @@
 {
- "name": "KalkulatorWynagrodzen.pl",
- "short_name": "Kalkulator wynagrodzeń",
+ "name": "naretke.pl",
+ "short_name": "NaRękę",
  "description": "Kalkulator wynagrodzeń 2026: brutto netto dla umowy o pracę, zlecenia, o dzieło i B2B, z ZUS, składką zdrowotną i PIT.",
  "start_url": "/pl/",
  "display": "standalone",

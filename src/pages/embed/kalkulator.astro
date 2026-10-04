@@ -15,7 +15,7 @@ import { SITE_URL } from '../../data/site-config';
   <body class="bg-white p-2 text-navy-900">
     <div id="pl"><SalaryCalculator client:load lang="pl" compact={true} /></div>
     <div id="en" hidden><SalaryCalculator client:load lang="en" compact={true} /></div>
-    <p class="mt-2 text-center text-xs text-navy-600"><a href={SITE_URL} target="_blank" rel="noopener" class="hover:underline">kalkulatorwynagrodzen.pl</a> · <span id="credit">obliczenia w przeglądarce</span></p>
+    <p class="mt-2 text-center text-xs text-navy-600"><a href={SITE_URL} target="_blank" rel="noopener" class="hover:underline">naretke.pl</a> · <span id="credit">obliczenia w przeglądarce</span></p>
     <script is:inline>
       if (new URLSearchParams(location.search).get('lang') === 'en') { document.getElementById('pl').hidden = true; document.getElementById('en').hidden = false; document.documentElement.lang = 'en-PL'; document.getElementById('credit').textContent = 'calculated in your browser'; }
     </script>

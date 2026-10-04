@@ -10,7 +10,7 @@ const lang = 'pl';
 const F = facts(lang);
 const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
 const title = `Pliki cookies ${F.year}: serwis nie zapisuje żadnych ciasteczek`;
-const description = `W ${F.year} r. KalkulatorWynagrodzen.pl nie zapisuje cookies ani danych w localStorage, nie ma analityki ani reklam, więc nie ma banera zgody. Jak to sprawdzić.`;
+const description = `W ${F.year} r. naretke.pl nie zapisuje cookies ani danych w localStorage, nie ma analityki ani reklam, więc nie ma banera zgody. Jak to sprawdzić.`;
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}

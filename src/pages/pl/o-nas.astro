@@ -9,8 +9,8 @@ import { personSchema, organizationSchema, breadcrumbSchema } from '../../lib/se
 const lang = 'pl';
 const F = facts(lang);
 const checked = displayDate(F.retrieved, LANG_TAGS[lang]);
-const title = 'KalkulatorWynagrodzen.pl: kim jesteśmy i jak liczymy netto';
-const description = `Kto stoi za KalkulatorWynagrodzen.pl, po co zestawiamy cztery umowy obok siebie, skąd bierzemy stawki na ${F.year} r., z czego żyje serwis i jak zgłosić błąd.`;
+const title = 'naretke.pl: kim jesteśmy i jak liczymy netto';
+const description = `Kto stoi za naretke.pl, po co zestawiamy cztery umowy obok siebie, skąd bierzemy stawki na ${F.year} r., z czego żyje serwis i jak zgłosić błąd.`;
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[personSchema(lang), organizationSchema(lang), breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('about', lang), path: route('about', lang) }])]}

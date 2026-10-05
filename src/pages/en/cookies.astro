@@ -1,6 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
-import { CONTACT_EMAIL, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import ContentTable from '../../components/ContentTable.astro';
+import { CONTACT_EMAIL, LANG_TAGS, GA4_ID, CLARITY_ID } from '../../data/site-config';
 import { route } from '../../i18n/routes';
 import { label } from '../../i18n/nav';
 import { facts } from '../../lib/facts';
@@ -8,34 +9,54 @@ import { displayDate } from '../../lib/format';
 import { breadcrumbSchema } from '../../lib/seo';
 const lang = 'en';
 const F = facts(lang);
-const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
-const title = `Cookies policy ${F.year}: this site stores no cookies at all`;
-const description = `In ${F.year} naretke.pl stores no cookies, nothing in localStorage, runs no analytics or ads, so it shows no consent banner. How to check it yourself.`;
+/** Date this page last changed (Google Analytics 4 and Microsoft Clarity switched on). */
+const PAGE_UPDATED = '2026-10-05';
+const updated = displayDate(PAGE_UPDATED, LANG_TAGS[lang]);
+const gaCookie = `_ga_${GA4_ID.replace(/^G-/, '')}`;
+const title = `Cookie policy Poland ${F.year}: Google Analytics and Clarity`;
+const description = `Cookie policy for naretke.pl in Poland, ${F.year}: which cookies Google Analytics 4 and Microsoft Clarity set, how long they last and how to block them yourself.`;
+const summary = [
+  ['Strictly necessary site cookies', 'None'],
+  ['Analytics (Google Analytics 4, Microsoft Clarity)', GA4_ID || CLARITY_ID ? 'Active from page load' : 'None'],
+  ['Advertising and social media pixels', 'None'],
+  ['Browser storage (localStorage)', 'Not used by the calculator'],
+];
+const cookies = [
+  ['_clck', 'Microsoft Clarity', 'Recognises the same browser on later visits', '1 year'],
+  ['_clsk', 'Microsoft Clarity', 'Groups page views into one session', '1 day'],
+  ['MUID, CLID', 'Microsoft (on Microsoft domains)', 'Identifiers Microsoft may use across its services', 'Set by Microsoft'],
+  ['_ga', 'Google Analytics 4', 'Tells visitors apart under a pseudonymous ID', '2 years'],
+  [gaCookie, 'Google Analytics 4', 'Keeps track of the session', '2 years'],
+];
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}
   breadcrumbs={[{ label: label('cookies', lang) }]} showAuthor={false}>
   <div class="prose prose-slate max-w-none">
     <h1>Cookies and similar technologies</h1>
-    <p class="lead">This page supplements the <a href={route('privacy', lang)}>privacy policy</a>. The answer is short: at present the site stores no cookies on your device.</p>
+    <p class="lead">This page supplements the <a href={route('privacy', lang)}>privacy policy</a>. It lists the cookies placed on your device, who sets them, why and for how long.</p>
 
-    <h2>Where things stand today</h2>
-    <ul>
-      <li><strong>Strictly necessary cookies:</strong> none. The calculator works without them.</li>
-      <li><strong>Analytics cookies:</strong> none. We use no Google Analytics, no Microsoft Clarity and no other traffic measurement tool.</li>
-      <li><strong>Advertising cookies:</strong> none. The site shows no ads.</li>
-      <li><strong>Browser storage (localStorage, sessionStorage):</strong> the calculator does not use it. Your figures are not saved even locally.</li>
-    </ul>
-    <p>That is why there is no cookie consent banner: there is nothing to consent to. The widget embedded on other sites behaves the same way and stores nothing either.</p>
+    <h2>At a glance</h2>
+    <ContentTable headers={['Type', 'On naretke.pl']} rows={summary} />
+    <p>The calculator itself needs no cookies: your gross pay, contract type and reliefs are worked out in your browser and never reach a server. Cookies come only from the two audience measurement tools described below, which load as soon as a page opens. The site shows no cookie banner or consent pop-up.</p>
+
+    <h2>Microsoft Clarity</h2>
+    <p>Clarity is a Microsoft tool that shows us how pages are used: clicks, scrolling, pages visited, device and browser type and an approximate location. It produces session recordings (a replay of the visit) and heatmaps, which tell us, for instance, whether the PIT-2 option in the calculator is understood or whether anyone reads the notes under the result. Whatever you type into the calculator fields is masked in your browser, so your salary never appears in a recording.</p>
+
+    <h2>Google Analytics 4</h2>
+    <p>Google Analytics 4 is provided by Google Ireland Limited. It gives us aggregate statistics: page views, where a visit came from (search engine, link, direct), how long it lasted, device type and approximate location at country or city level. Data linked to these cookies is kept for 14 months.</p>
+
+    <h2>Cookies set</h2>
+    <ContentTable headers={['Name', 'Set by', 'Purpose', 'Lifetime']} rows={cookies} />
+
+    <h2>How to switch measurement off</h2>
+    <p>With no banner, the choice sits with your browser. You can block third-party cookies, block the <code>clarity.ms</code> and <code>google-analytics.com</code> domains with a content blocker, or install Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">Analytics opt-out browser add-on</a>. To remove cookies already stored, clear this site's data in your browser settings. The calculator works exactly the same without them.</p>
 
     <h2>What about the link with my result?</h2>
-    <p>The calculator writes your inputs into the page address so that a finished calculation can be sent to someone. That is not a cookie: nothing stays on your device beyond ordinary browsing history, and the link only carries your figures if you copy it and pass it on yourself.</p>
+    <p>The calculator writes your inputs into the page address so a finished calculation can be shared. That is not a cookie. The address is updated in a way the analytics tool does not record while you type; if you open a link that already contains figures, though, they are part of the address of the page visited.</p>
 
-    <h2>How to check for yourself</h2>
-    <p>In Chrome, Edge or Firefox, open the developer tools (F12), go to the “Application” or “Storage” tab and select “Cookies” for this domain. The list is empty. The “Network” tab will also show that the page makes no connection to analytics or advertising servers.</p>
-
-    <h2>If this ever changes</h2>
-    <p>Should we add an audience measurement tool or advertising, we will first update this page and the <a href={route('privacy', lang)}>privacy policy</a>, listing each cookie, its purpose and how long it lasts. Tools that require consent will only start once you have given it through a banner, and you will be able to withdraw it at any time.</p>
+    <h2>The widget on other sites</h2>
+    <p>The calculator embedded in a frame on other websites loads neither Google Analytics nor Clarity and sets no cookies.</p>
     <p>Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Version dated {updated}.</p>
   </div>
 </PageLayout>

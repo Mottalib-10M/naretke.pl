@@ -1,6 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
-import { CONTACT_EMAIL, LAST_UPDATED, LANG_TAGS } from '../../data/site-config';
+import ContentTable from '../../components/ContentTable.astro';
+import { CONTACT_EMAIL, LANG_TAGS, GA4_ID, CLARITY_ID } from '../../data/site-config';
 import { route } from '../../i18n/routes';
 import { label } from '../../i18n/nav';
 import { facts } from '../../lib/facts';
@@ -8,34 +9,54 @@ import { displayDate } from '../../lib/format';
 import { breadcrumbSchema } from '../../lib/seo';
 const lang = 'pl';
 const F = facts(lang);
-const updated = displayDate(LAST_UPDATED, LANG_TAGS[lang]);
-const title = `Pliki cookies ${F.year}: serwis nie zapisuje żadnych ciasteczek`;
-const description = `W ${F.year} r. naretke.pl nie zapisuje cookies ani danych w localStorage, nie ma analityki ani reklam, więc nie ma banera zgody. Jak to sprawdzić.`;
+/** Data ostatniej zmiany tej strony (włączenie Google Analytics 4 i Microsoft Clarity). */
+const PAGE_UPDATED = '2026-10-05';
+const updated = displayDate(PAGE_UPDATED, LANG_TAGS[lang]);
+const gaCookie = `_ga_${GA4_ID.replace(/^G-/, '')}`;
+const title = `Pliki cookies w Polsce ${F.year}: Google Analytics i Clarity`;
+const description = `Pliki cookies na naretke.pl w Polsce ${F.year}: co zapisują Google Analytics 4 i Microsoft Clarity, jak długo, w jakim celu i jak je zablokować w przeglądarce.`;
+const summary = [
+  ['Niezbędne cookies serwisu', 'Brak'],
+  ['Analityka (Google Analytics 4, Microsoft Clarity)', GA4_ID || CLARITY_ID ? 'Aktywna od otwarcia strony' : 'Brak'],
+  ['Reklamy i piksele mediów społecznościowych', 'Brak'],
+  ['Pamięć przeglądarki (localStorage)', 'Kalkulator jej nie używa'],
+];
+const cookies = [
+  ['_clck', 'Microsoft Clarity', 'Rozpoznaje tę samą przeglądarkę przy kolejnych wizytach', '1 rok'],
+  ['_clsk', 'Microsoft Clarity', 'Łączy odsłony w jedną sesję', '1 dzień'],
+  ['MUID, CLID', 'Microsoft (domeny Microsoftu)', 'Identyfikatory, których Microsoft może używać w swoich usługach', 'Określa Microsoft'],
+  ['_ga', 'Google Analytics 4', 'Odróżnia odwiedzających za pomocą pseudonimowego identyfikatora', '2 lata'],
+  [gaCookie, 'Google Analytics 4', 'Przechowuje stan sesji', '2 lata'],
+];
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}
   breadcrumbs={[{ label: label('cookies', lang) }]} showAuthor={false}>
   <div class="prose prose-slate max-w-none">
     <h1>Pliki cookies i podobne technologie</h1>
-    <p class="lead">Ta strona uzupełnia <a href={route('privacy', lang)}>politykę prywatności</a>. Odpowiedź jest krótka: obecnie serwis nie zapisuje na Twoim urządzeniu żadnych plików cookies.</p>
+    <p class="lead">Ta strona uzupełnia <a href={route('privacy', lang)}>politykę prywatności</a>. Wyjaśnia, jakie pliki cookies trafiają na Twoje urządzenie, kto je zapisuje, po co i na jak długo.</p>
 
-    <h2>Stan na dziś</h2>
-    <ul>
-      <li><strong>Cookies niezbędne:</strong> brak. Kalkulator działa bez nich.</li>
-      <li><strong>Cookies analityczne:</strong> brak. Nie używamy Google Analytics, Microsoft Clarity ani żadnego innego narzędzia do mierzenia ruchu.</li>
-      <li><strong>Cookies reklamowe:</strong> brak. Serwis nie wyświetla reklam.</li>
-      <li><strong>Pamięć przeglądarki (localStorage, sessionStorage):</strong> kalkulator z niej nie korzysta. Twoich danych nie zapisujemy nawet lokalnie.</li>
-    </ul>
-    <p>Dlatego nie widzisz banera ze zgodą na cookies: nie ma na co się zgadzać. Widget osadzany na innych stronach działa tak samo i również niczego nie zapisuje.</p>
+    <h2>W skrócie</h2>
+    <ContentTable headers={['Rodzaj', 'Na naretke.pl']} rows={summary} />
+    <p>Sam kalkulator nie potrzebuje cookies: kwota brutto, rodzaj umowy i ulgi są przeliczane w Twojej przeglądarce i nie trafiają na żaden serwer. Pliki cookies zapisują wyłącznie dwa narzędzia do mierzenia ruchu opisane niżej. Ładują się w momencie otwarcia strony. Serwis nie wyświetla banera ani okna zgody na cookies.</p>
+
+    <h2>Microsoft Clarity</h2>
+    <p>Clarity to narzędzie Microsoftu, które pokazuje nam, jak ludzie korzystają ze stron: kliknięcia, przewijanie, odwiedzone podstrony, rodzaj urządzenia i przeglądarki oraz przybliżoną lokalizację. Tworzy nagrania sesji (odtworzenie przebiegu wizyty) i mapy cieplne. Dzięki nim widzimy na przykład, czy pole „PIT-2” w kalkulatorze jest zrozumiałe albo czy ktoś dociera do objaśnień pod wynikiem. To, co wpisujesz w pola kalkulatora, jest maskowane w Twojej przeglądarce, więc Twoje wynagrodzenie nie pojawia się w nagraniach.</p>
+
+    <h2>Google Analytics 4</h2>
+    <p>Google Analytics 4 dostarcza Google Ireland Limited. Daje nam zbiorcze statystyki: liczbę odsłon, źródło wizyty (wyszukiwarka, link, wejście bezpośrednie), czas trwania, rodzaj urządzenia i przybliżoną lokalizację na poziomie kraju lub miasta. Dane powiązane z tymi plikami cookies są przechowywane przez 14 miesięcy.</p>
+
+    <h2>Lista plików cookies</h2>
+    <ContentTable headers={['Nazwa', 'Kto zapisuje', 'Cel', 'Czas przechowywania']} rows={cookies} />
+
+    <h2>Jak wyłączyć pomiar</h2>
+    <p>Nie ma banera, więc decyzja należy do Twojej przeglądarki. Możesz zablokować cookies podmiotów trzecich, zablokować domeny <code>clarity.ms</code> i <code>google-analytics.com</code> rozszerzeniem do blokowania treści albo zainstalować <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">dodatek Google do wyłączania Google Analytics</a>. Żeby usunąć zapisane już pliki, wyczyść dane tej witryny w ustawieniach przeglądarki. Kalkulator działa bez nich tak samo.</p>
 
     <h2>A co z linkiem z wynikiem?</h2>
-    <p>Kalkulator zapisuje wpisane wartości w adresie strony, żeby można było wysłać komuś gotowe wyliczenie. To nie jest plik cookie: nic nie zostaje na urządzeniu poza zwykłą historią przeglądania, a link zawiera Twoje kwoty tylko wtedy, gdy sam go skopiujesz i przekażesz dalej.</p>
+    <p>Kalkulator zapisuje wpisane wartości w adresie strony, żeby można było wysłać komuś gotowe wyliczenie. To nie jest plik cookie. Adres jest aktualizowany w taki sposób, że narzędzie analityczne nie rejestruje tej zmiany podczas wpisywania. Jeśli jednak otworzysz link, który już zawiera kwoty, stają się one częścią adresu odwiedzonej strony.</p>
 
-    <h2>Jak to sprawdzić samemu</h2>
-    <p>W przeglądarce Chrome, Edge lub Firefox otwórz narzędzia deweloperskie (klawisz F12), przejdź do zakładki „Aplikacja” albo „Pamięć” i wybierz „Pliki cookie” dla tej domeny. Lista jest pusta. W zakładce „Sieć” zobaczysz też, że strona nie łączy się z serwerami analitycznymi ani reklamowymi.</p>
-
-    <h2>Jeśli to się zmieni</h2>
-    <p>Gdybyśmy kiedyś dodali narzędzie do mierzenia ruchu albo reklamy, najpierw zaktualizujemy tę stronę i <a href={route('privacy', lang)}>politykę prywatności</a>, opisując każdy plik cookie, jego cel i czas przechowywania. Narzędzia, które wymagają zgody, uruchomią się dopiero po tym, jak ją wyrazisz w banerze, a zgodę będzie można w każdej chwili wycofać.</p>
+    <h2>Widget na innych stronach</h2>
+    <p>Kalkulator osadzany w ramce na innych stronach nie ładuje Google Analytics ani Clarity i nie zapisuje cookies.</p>
     <p>Pytania: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Wersja z dnia {updated}.</p>
   </div>
 </PageLayout>

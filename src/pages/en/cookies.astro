@@ -1,7 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
 import ContentTable from '../../components/ContentTable.astro';
-import { CONTACT_EMAIL, LANG_TAGS, GA4_ID, CLARITY_ID } from '../../data/site-config';
+import { CONTACT_EMAIL, LANG_TAGS } from '../../data/site-config';
 import { route } from '../../i18n/routes';
 import { label } from '../../i18n/nav';
 import { facts } from '../../lib/facts';
@@ -9,24 +9,16 @@ import { displayDate } from '../../lib/format';
 import { breadcrumbSchema } from '../../lib/seo';
 const lang = 'en';
 const F = facts(lang);
-/** Date this page last changed (Google Analytics 4 and Microsoft Clarity switched on). */
-const PAGE_UPDATED = '2026-10-05';
+/** Date this page last changed (no cookies, Clarity in cookieless mode). */
+const PAGE_UPDATED = '2026-10-06';
 const updated = displayDate(PAGE_UPDATED, LANG_TAGS[lang]);
-const gaCookie = `_ga_${GA4_ID.replace(/^G-/, '')}`;
-const title = `Cookie policy Poland ${F.year}: Google Analytics and Clarity`;
-const description = `Cookie policy for naretke.pl in Poland, ${F.year}: which cookies Google Analytics 4 and Microsoft Clarity set, how long they last and how to block them yourself.`;
+const title = `Cookie policy Poland ${F.year}: naretke.pl sets no cookies`;
+const description = `Cookies on naretke.pl in ${F.year}: the site sets no cookies and keeps none of your salary inputs. Page stability is checked anonymously with Microsoft Clarity.`;
 const summary = [
-  ['Strictly necessary site cookies', 'None'],
-  ['Analytics (Google Analytics 4, Microsoft Clarity)', GA4_ID || CLARITY_ID ? 'Active from page load' : 'None'],
-  ['Advertising and social media pixels', 'None'],
-  ['Browser storage (localStorage)', 'Not used by the calculator'],
-];
-const cookies = [
-  ['_clck', 'Microsoft Clarity', 'Recognises the same browser on later visits', '1 year'],
-  ['_clsk', 'Microsoft Clarity', 'Groups page views into one session', '1 day'],
-  ['MUID, CLID', 'Microsoft (on Microsoft domains)', 'Identifiers Microsoft may use across its services', 'Set by Microsoft'],
-  ['_ga', 'Google Analytics 4', 'Tells visitors apart under a pseudonymous ID', '2 years'],
-  [gaCookie, 'Google Analytics 4', 'Keeps track of the session', '2 years'],
+  ['Site cookies', 'None'],
+  ['Analytics or advertising cookies', 'None'],
+  ['Browser storage (localStorage, sessionStorage)', 'Not used by the calculator'],
+  ['Stability check (Microsoft Clarity)', 'Anonymous, cookieless'],
 ];
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
@@ -34,29 +26,25 @@ const cookies = [
   breadcrumbs={[{ label: label('cookies', lang) }]} showAuthor={false}>
   <div class="prose prose-slate max-w-none">
     <h1>Cookies and similar technologies</h1>
-    <p class="lead">This page supplements the <a href={route('privacy', lang)}>privacy policy</a>. It lists the cookies placed on your device, who sets them, why and for how long.</p>
+    <p class="lead">The short answer: naretke.pl stores no cookies on your device. How data is handled is explained in the <a href={route('privacy', lang)}>privacy policy</a>.</p>
 
     <h2>At a glance</h2>
     <ContentTable headers={['Type', 'On naretke.pl']} rows={summary} />
-    <p>The calculator itself needs no cookies: your gross pay, contract type and reliefs are worked out in your browser and never reach a server. Cookies come only from the two audience measurement tools described below, which load as soon as a page opens. The site shows no cookie banner or consent pop-up.</p>
 
-    <h2>Microsoft Clarity</h2>
-    <p>Clarity is a Microsoft tool that shows us how pages are used: clicks, scrolling, pages visited, device and browser type and an approximate location. It produces session recordings (a replay of the visit) and heatmaps, which tell us, for instance, whether the PIT-2 option in the calculator is understood or whether anyone reads the notes under the result. Whatever you type into the calculator fields is masked in your browser, so your salary never appears in a recording.</p>
+    <h2>Your figures stay in the browser tab</h2>
+    <p>Net pay, ZUS contributions, the health contribution and PIT advance are worked out by a script in your browser. Gross pay, contract type (employment, mandate, specific-work or B2B), the PIT-2 form, youth relief or PPK are not written to a cookie, to <code>localStorage</code> or to any other browser storage, and they are gone once you close the tab. To keep a calculation, copy the result link: the figures then live in the page address, not in a cookie. Since nothing is stored, there is no cookie banner either: there is nothing to accept.</p>
 
-    <h2>Google Analytics 4</h2>
-    <p>Google Analytics 4 is provided by Google Ireland Limited. It gives us aggregate statistics: page views, where a visit came from (search engine, link, direct), how long it lasted, device type and approximate location at country or city level. Data linked to these cookies is kept for 14 months.</p>
+    <h2>Anonymous stability check</h2>
+    <p>To spot when the calculator stops working, a page loads too slowly or a button does nothing, the site runs Microsoft Clarity in cookieless mode. Clarity then creates none of <code>_clck</code>, <code>_clsk</code>, <code>MUID</code> or <code>CLID</code>, gives every page view its own single-use identifier and does not join your visits together. Page text and form fields are masked in the browser before anything leaves it.</p>
 
-    <h2>Cookies set</h2>
-    <ContentTable headers={['Name', 'Set by', 'Purpose', 'Lifetime']} rows={cookies} />
+    <h2>Advertising</h2>
+    <p>The site shows no ads and loads no advertising or social media pixels.</p>
 
-    <h2>How to switch measurement off</h2>
-    <p>With no banner, the choice sits with your browser. You can block third-party cookies, block the <code>clarity.ms</code> and <code>google-analytics.com</code> domains with a content blocker, or install Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">Analytics opt-out browser add-on</a>. To remove cookies already stored, clear this site's data in your browser settings. The calculator works exactly the same without them.</p>
-
-    <h2>What about the link with my result?</h2>
-    <p>The calculator writes your inputs into the page address so a finished calculation can be shared. That is not a cookie. The address is updated in a way the analytics tool does not record while you type; if you open a link that already contains figures, though, they are part of the address of the page visited.</p>
+    <h2>Blocking this check too</h2>
+    <p>If you would rather not have even this anonymous check, block the <code>clarity.ms</code> domain in your browser or with a content blocker. The salary calculator works exactly the same.</p>
 
     <h2>The widget on other sites</h2>
-    <p>The calculator embedded in a frame on other websites loads neither Google Analytics nor Clarity and sets no cookies.</p>
+    <p>The calculator embedded in a frame on other websites does not load Clarity and stores nothing on the device.</p>
     <p>Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Version dated {updated}.</p>
   </div>
 </PageLayout>

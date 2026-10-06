@@ -1,7 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
 import LegalIdentity from '../../components/LegalIdentity.astro';
-import { CONTACT_EMAIL, LEGAL, SITE_URL, LANG_TAGS, GA4_ID } from '../../data/site-config';
+import { CONTACT_EMAIL, LEGAL, SITE_URL, LANG_TAGS } from '../../data/site-config';
 import { route } from '../../i18n/routes';
 import { label } from '../../i18n/nav';
 import { facts } from '../../lib/facts';
@@ -9,19 +9,18 @@ import { displayDate } from '../../lib/format';
 import { breadcrumbSchema } from '../../lib/seo';
 const lang = 'en';
 const F = facts(lang);
-/** Date this policy last changed (Google Analytics 4 and Microsoft Clarity switched on). */
-const PAGE_UPDATED = '2026-10-05';
+/** Date this policy last changed (no cookies, Clarity in cookieless mode). */
+const PAGE_UPDATED = '2026-10-06';
 const updated = displayDate(PAGE_UPDATED, LANG_TAGS[lang]);
-const gaCookie = `_ga_${GA4_ID.replace(/^G-/, '')}`;
-const title = `Privacy policy Poland ${F.year}: salary calculator and analytics`;
-const description = `Privacy policy for naretke.pl in Poland, ${F.year}: the calculator runs in your browser, what Google Analytics and Clarity measure, how to object, GDPR rights.`;
+const title = `Privacy policy Poland ${F.year}: salary calculator, no cookies`;
+const description = `Privacy policy for naretke.pl in Poland, ${F.year}: the calculator runs in your browser, no cookies, an anonymous Clarity stability check, your GDPR rights.`;
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('privacy', lang), path: route('privacy', lang) }])]}
   breadcrumbs={[{ label: label('privacy', lang) }]} showAuthor={false}>
   <div class="prose prose-slate max-w-none">
     <h1>Privacy policy</h1>
-    <p class="lead">In short: the calculator sends the figures you type nowhere, the site shows no advertising, and we measure traffic with Microsoft Clarity and Google Analytics 4, described in section 3. Below are the details the GDPR (EU Regulation 2016/679) requires for {SITE_URL}.</p>
+    <p class="lead">In short: the calculator sends the figures you type nowhere, the site sets no cookies, we keep no personal data about visitors and we show no advertising. The only measurement is an anonymous check of page stability (Microsoft Clarity without cookies), described in section 3. Below are the details the GDPR (EU Regulation 2016/679) requires for {SITE_URL}.</p>
 
     <h2>1. Data controller</h2>
     <LegalIdentity lang={lang} />
@@ -36,30 +35,28 @@ const description = `Privacy policy for naretke.pl in Poland, ${F.year}: the cal
     <p>The site is hosted on GitHub Pages (GitHub, Inc.). Like any web server, GitHub receives the visitor's IP address and the technical details of each request. According to GitHub's documentation, visitor IP addresses are logged and stored for security purposes. We have no access to these logs and make no use of them. The legal basis is legitimate interest (Article 6(1)(f) GDPR): serving the site and protecting it against abuse. Retention is set by GitHub in its <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="nofollow noopener" target="_blank">privacy statement</a>.</p>
     <h3>Emails</h3>
     <p>If you write to us, we process your email address and the content of your message in order to reply and, where relevant, to fix a calculation error (Article 6(1)(f) GDPR). We keep that correspondence for no longer than three years after the last exchange.</p>
-    <h3>Audience measurement: Microsoft Clarity</h3>
-    <p>We use Microsoft Clarity (Microsoft Ireland Operations Limited and Microsoft Corporation) to understand how the site's pages are used. Clarity loads when the page opens, with no consent banner. It records clicks, scrolling, pages visited and their addresses, device and browser type and an approximate location derived from the IP address, and builds session recordings and heatmaps from them. Anything you type into the calculator fields is masked in your browser and never transmitted. Clarity sets the cookies <code>_clck</code> (1 year) and <code>_clsk</code> (1 day); Microsoft may also use the <code>MUID</code> and <code>CLID</code> cookies on its own domains. Details: <a href="https://privacy.microsoft.com/privacystatement" rel="nofollow noopener" target="_blank">Microsoft privacy statement</a>.</p>
-    <h3>Audience measurement: Google Analytics 4</h3>
-    <p>We also use Google Analytics 4, provided by Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Ireland). It loads the same way, when the page opens and without a consent banner. It collects page views, where the visit came from, how long it lasted, device and browser type and an approximate location (country, city) derived from the IP address. It sets the cookies <code>_ga</code> and <code>{gaCookie}</code>, each lasting 2 years, and keeps the data for 14 months. Google explains its processing in its <a href="https://policies.google.com/privacy" rel="nofollow noopener" target="_blank">privacy policy</a>.</p>
+    <h3>Anonymous stability check: Microsoft Clarity without cookies</h3>
+    <p>We ourselves keep no personal data about you, and the site sets no cookies. To catch faults in the calculator we use Microsoft Clarity, provided by Microsoft Ireland Operations Limited, One Microsoft Place, South County Business Park, Leopardstown, Dublin 18, Ireland, in cookieless mode. For each page view on its own, Clarity measures script errors, loading times, clicks that do nothing and scroll depth. It writes no cookie (no <code>_clck</code>, <code>_clsk</code>, <code>MUID</code> or <code>CLID</code>), leaves no identifier on your device and does not link your visits. Page text, gross pay and every other field are masked in the browser. Microsoft receives the technical data of the request, including the IP address, from which it derives only a rough location. Recordings are kept for 30 days, aggregate figures for up to 13 months. Details: <a href="https://privacy.microsoft.com/privacystatement" rel="nofollow noopener" target="_blank">Microsoft privacy statement</a>.</p>
     <h3>Legal basis and objecting</h3>
-    <p>Purpose: knowing which pages are read and improving the calculator and the guides. The data is not used for advertising or profiling, and the site shows no ads. The legal basis is the controller's legitimate interest in understanding how the site is used (Article 6(1)(f) GDPR). You can object at any time (Article 21 GDPR), and the quickest way is to switch measurement off yourself: block third-party cookies or the <code>clarity.ms</code> and <code>google-analytics.com</code> domains in your browser, or install Google's <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">Analytics opt-out browser add-on</a>, then clear this site's data to delete cookies already stored. The calculator keeps working. Every cookie is listed on the <a href={route('cookies', lang)}>cookies page</a>.</p>
+    <p>Purpose: a calculator and guides that work without errors. The data is not used for advertising or profiling. The legal basis is the controller's legitimate interest (Article 6(1)(f) GDPR). You can object at any time (Article 21 GDPR) by writing to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> or simply by blocking the <code>clarity.ms</code> domain in your browser. The calculator keeps working. More on the <a href={route('cookies', lang)}>cookies page</a>.</p>
     <h3>Advertising</h3>
     <p>The site shows no advertising and loads no advertising or social media pixels.</p>
 
     <h2>4. Who receives data</h2>
-    <p>We never sell, rent or share personal data for marketing. Data is processed on our behalf by processors: the hosting provider (GitHub, Inc.), Microsoft (Clarity) and Google (Google Analytics 4); emails pass through our mail provider.</p>
+    <p>We never sell, rent or share personal data for marketing. Data is processed on our behalf by processors: the hosting provider (GitHub, Inc.) and Microsoft (technical data of the stability check); emails pass through our mail provider.</p>
 
     <h2>5. Transfers outside the European Economic Area</h2>
-    <p>GitHub, Inc., Microsoft Corporation and Google LLC are based in the United States, so technical and measurement data may be transferred there. These transfers rely on the European Commission's standard contractual clauses and on the companies' participation in the EU–U.S. Data Privacy Framework, as each provider states. If you block the <code>clarity.ms</code> and <code>google-analytics.com</code> domains, no measurement data is transferred.</p>
+    <p>GitHub, Inc. and Microsoft Corporation are based in the United States, so technical data may be transferred there. These transfers rely on the European Commission's standard contractual clauses and on the companies' participation in the EU–U.S. Data Privacy Framework, as each provider states. If you block the <code>clarity.ms</code> domain, no stability-check data is transferred.</p>
 
     <h2>6. Your rights</h2>
     <p>You have the right of access, rectification, erasure, restriction of processing and data portability, and the right to object to processing based on legitimate interest (Articles 15 to 21 GDPR). Write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>; we reply within one month, free of charge. Because there are no user accounts, we usually hold nothing that identifies you beyond any emails you sent, and we will tell you so plainly.</p>
     <p>You may also lodge a complaint with a supervisory authority. The controller is established in France, so the lead authority is the {LEGAL.supervisoryAuthority} (<a href={LEGAL.supervisoryAuthorityUrl} rel="nofollow noopener" target="_blank">{LEGAL.supervisoryAuthorityUrl.replace('https://', '')}</a>). If you live in Poland, you can also complain to the President of the Personal Data Protection Office, Prezes UODO (<a href="https://uodo.gov.pl" rel="nofollow noopener" target="_blank">uodo.gov.pl</a>), under Article 77 GDPR.</p>
 
     <h2>7. No profiling</h2>
-    <p>A calculator result is a computation you asked for, carried out on your own device from your own inputs. It has no legal effect and is not an automated decision within the meaning of Article 22 GDPR. We build no user profiles, and traffic statistics are never used to make decisions about individuals.</p>
+    <p>A calculator result is a computation you asked for, carried out on your own device from your own inputs. It has no legal effect and is not an automated decision within the meaning of Article 22 GDPR. We build no user profiles, and stability-check data is never used to make decisions about individuals.</p>
 
     <h2>8. Changes to this policy</h2>
-    <p>If we change our measurement tools or add new ones, we will update this policy and the <a href={route('cookies', lang)}>cookies page</a> first. Connections to the site are encrypted (HTTPS), and the site keeps no user database.</p>
+    <p>If we change our stability-check tool or add another, we will update this policy and the <a href={route('cookies', lang)}>cookies page</a> first. Connections to the site are encrypted (HTTPS), and the site keeps no user database.</p>
     <p>Version dated {updated}.</p>
   </div>
 </PageLayout>

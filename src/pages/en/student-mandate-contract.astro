@@ -32,7 +32,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'The full mandate contract calculator, with a student option.' }, { href: route('youth', lang), name: label('youth', lang), description: `Zero PIT on up to ${F.youthLimit} before your 26th birthday.` }, { href: route('hourly', lang), name: label('hourly', lang), description: `Hourly pay and the ${F.minHourly} minimum.` }]}
   sources={[src('sus_act', lang), src('youth', lang), src('health_act', lang), src('minimum', lang)]}>
-  <div data-chrome><MiniSim client:load kind="student" lang={lang} href={route('zlecenie', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="student" lang={lang} href={route('zlecenie', lang)} /></div>
 
   <h2>Three separate exemptions that stack</h2>
   <p>Net pay equal to gross is the result of three different rules meeting in one person. The first is article 6(4) of the Social Insurance System Act: mandate contractors who are secondary school pupils or students are not compulsorily covered by pension and disability insurance until they turn 26. The second follows from it. Voluntary sickness insurance is open only to people compulsorily covered by pension and disability insurance, and the healthcare act makes health insurance compulsory for mandate contractors who meet the conditions for social insurance. A student does not, so no health contribution arises under that contract.</p>

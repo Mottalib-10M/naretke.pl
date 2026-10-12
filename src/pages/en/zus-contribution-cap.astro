@@ -42,7 +42,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zus', lang), name: label('zus', lang), description: `Employee rates: ${F.emerytalnaEe}, ${F.rentowaEe}, ${F.chorobowa}.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `When you reach ${F.pitHigh} and how it overlaps with the cap.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Every month of the year, with cap and bracket.' }]}
   sources={[src('cap', lang), src('sus_act', lang), src('zus_rates', lang)]}>
-  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
 
   <h2>Where the {F.cap} figure comes from</h2>
   <p>Article 19(1) of the Social Insurance System Act limits the annual base for pension (emerytalna) and disability (rentowa) contributions to thirty times the forecast average monthly wage set in the budget act. For {F.year} that forecast is {F.avgForecast}, so the cap is {F.cap}. The minister for social security announces it every year in the official gazette, Monitor Polski.</p>

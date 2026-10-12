@@ -30,7 +30,7 @@ const neighbours = [AMOUNTS[idx - 1], AMOUNTS[idx + 1]].filter(Boolean) as numbe
 <GuideLayout lang={lang} id={`amount-${amount}`} breadcrumbLabel={amountLabel(amount, lang)} title={a.title} h1={a.h1} description={a.description} intro={a.intro} resume={a.resume} faqs={a.faqs}
   related={[{ href: route('home', lang), name: T('Kalkulator wynagrodzeń', 'Salary calculator'), description: T('Dowolna kwota, cztery umowy.', 'Any amount, four contracts.') }, ...neighbours.map((n) => ({ href: route(`amount-${n}`, lang), name: amountLabel(n, lang), description: T('Netto, koszt pracodawcy i rok miesiąc po miesiącu.', 'Net pay, employer cost and the year month by month.') }))]}
   sources={[src('pit_act', lang), src('sus_act', lang), src('zus_b2b', lang), src('cap', lang)]}>
-  <div data-outil><SalaryCalculator client:load lang={lang} defaultGross={amount} methodHref={route('method', lang)} /></div>
+  <div slot="outil" data-outil><SalaryCalculator client:load lang={lang} defaultGross={amount} methodHref={route('method', lang)} /></div>
   {a.sections.map((s) => (<><h2>{s.h2}</h2><Fragment set:html={s.html} /></>))}
   <h2>{T(`${c.gross} brutto na każdej umowie`, `${c.gross} gross on each contract`)}</h2>
   <ContentTable headers={[T('Umowa', 'Contract'), 'ZUS', T('Zdrowotna', 'Health'), T('Podatek', 'Tax'), T('Netto', 'Net')]} align={['l', 'r', 'r', 'r', 'r']} rows={contracts} highlightRow={0} />

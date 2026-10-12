@@ -48,7 +48,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Netto w każdym miesiącu roku, z progiem i limitem ZUS.' }, { href: route('allowance', lang), name: label('allowance', lang), description: `${F.freeAmount} kwoty wolnej i ${F.reducingYear} ulgi w podatku.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} bez progów: dla kogo na działalności.` }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('annual', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('annual', lang)} /></div>
 
   <h2>Skala {F.year}: dwie stawki i jedna kwota zmniejszająca</h2>
   <p>Art. 27 ust. 1 ustawy o podatku dochodowym od osób fizycznych zawiera tabelę z dwoma wierszami. Do {F.threshold} podstawy podatek wynosi {F.pitLow} minus kwota zmniejszająca podatek {F.reducingYear}. Powyżej {F.threshold} podatek to {fixedPart} plus {F.pitHigh} nadwyżki. Kwota {fixedPart} to po prostu podatek od pierwszych {F.threshold}, już pomniejszony o kwotę zmniejszającą. Dzięki temu ulga zostaje także u osób w drugim progu: polska skala jej nie wygasza.</p>

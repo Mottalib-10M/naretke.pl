@@ -44,7 +44,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: 'Kalkulator B2B', description: 'Netto na skali, liniowym i ryczałcie z wybranym ZUS.' }, { href: route('health', lang), name: label('health', lang), description: `Zdrowotna na etacie i w firmie: ${F.health}, ${F.healthLiniowy} i ryczałt.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `Kiedy ${F.liniowy} opłaca się bardziej niż skala.` }]}
   sources={[src('zus_b2b', lang), src('sus_act', lang), src('budget', lang), src('sickness', lang)]}>
-  <div data-chrome><MiniSim client:load kind="zusb2b" lang={lang} href={route('b2b', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="zusb2b" lang={lang} href={route('b2b', lang)} /></div>
 
   <h2>Składki miesięczne w {F.year} r. pozycja po pozycji</h2>
   <ContentTable headers={['Wariant', 'Podstawa', 'Emerytalna i rentowa', 'Wypadkowa', 'Chorobowa', 'FP i FS', 'Razem']} align={['l', 'r', 'r', 'r', 'r', 'r', 'r']} rows={rows} />

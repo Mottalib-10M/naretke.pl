@@ -41,7 +41,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('authors', lang), name: label('authors', lang), description: `Kiedy przysługuje ${F.kupAuthors} i jak działa limit ${F.kupAuthorsLimit}.` }, { href: route('pit2', lang), name: 'PIT-2', description: `Drugie oświadczenie, które obniża zaliczkę o ${F.reducingMonth}.` }, { href: route('home', lang), name: 'Kalkulator wynagrodzeń', description: 'Netto z kosztami podstawowymi lub podwyższonymi.' }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-chrome><MiniSim client:load kind="kup" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="kup" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Cztery kwoty z art. 22 ust. 2: ryczałt, nie rachunki</h2>
   <p>Pracownik nie zbiera paragonów za paliwo ani biletów miesięcznych, żeby mieć koszty. Ustawa o PIT przyjmuje je ryczałtem, w czterech wariantach. Przy jednym stosunku pracy to {F.kup} miesięcznie i {F.kupYear} rocznie. Przy kilku stosunkach pracy jednocześnie obowiązuje łączny limit {F.kupMulti} rocznie. Dla osób dojeżdżających z innej miejscowości kwoty rosną do {F.kupRaised} miesięcznie i {F.kupRaisedYear} rocznie, a przy kilku etatach i dojazdach do {F.kupMultiRaised}.</p>

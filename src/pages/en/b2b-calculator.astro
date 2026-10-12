@@ -30,7 +30,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('compare', lang), name: label('compare', lang), description: 'Which B2B rate matches an employment salary.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `When the ${F.liniowy} flat tax beats the scale.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Lump-sum rates and the three health bands.' }]}
   sources={[src('zus_b2b', lang), src('pit_act', lang), src('ryczalt_act', lang), src('health_deduction', lang)]}>
-  <div data-outil>
+  <div slot="outil" data-outil>
     <SalaryCalculator client:load lang={lang} contract="b2b" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
   </div>
 

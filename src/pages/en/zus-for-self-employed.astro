@@ -40,7 +40,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: 'B2B calculator', description: 'Take-home pay on the tax scale, flat tax or lump sum, with your ZUS option.' }, { href: route('health', lang), name: label('health', lang), description: `Health contribution for employees and businesses: ${F.health}, ${F.healthLiniowy} and lump sum.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `When the ${F.liniowy} flat tax beats the tax scale.` }]}
   sources={[src('zus_b2b', lang), src('sus_act', lang), src('budget', lang), src('sickness', lang)]}>
-  <div data-chrome><MiniSim client:load kind="zusb2b" lang={lang} href={route('b2b', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="zusb2b" lang={lang} href={route('b2b', lang)} /></div>
 
   <h2>Monthly contributions in {F.year}, line by line</h2>
   <ContentTable headers={['Option', 'Base', 'Pension and disability', 'Accident', 'Sickness', 'Labour + Solidarity Funds', 'Total']} align={['l', 'r', 'r', 'r', 'r', 'r', 'r']} rows={rows} />

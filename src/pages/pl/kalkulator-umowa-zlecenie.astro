@@ -32,7 +32,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('student', lang), name: label('student', lang), description: 'Zlecenie bez ZUS i zdrowotnej dla ucznia i studenta.' }, { href: route('zlecdzielo', lang), name: label('zlecdzielo', lang), description: 'Która umowa daje więcej przy tej samej kwocie.' }, { href: route('dzielo', lang), name: 'Kalkulator umowy o dzieło', description: `Netto z dzieła z kosztami ${F.kupContract} lub ${F.kupAuthors}.` }]}
   sources={[src('sus_act', lang), src('pit_act', lang), src('minimum', lang)]}>
-  <div data-outil>
+  <div slot="outil" data-outil>
     <SalaryCalculator client:load lang={lang} contract="zlecenie" lockContract={true} defaultGross={4000} methodHref={route('method', lang)} />
   </div>
 

@@ -61,7 +61,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: 'Kalkulator B2B', description: 'Ryczałt, liniowy i skala obok siebie dla Twojego przychodu.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} od dochodu: kiedy koszty przeważają szalę.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Składki społeczne od ${F.b2bZusPref} do ${F.b2bZusFull} miesięcznie.` }]}
   sources={[src('ryczalt_act', lang), src('zus_b2b', lang), src('health_deduction', lang)]}>
-  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('b2b', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('b2b', lang)} /></div>
 
   <h2>Stawki ryczałtu według rodzaju działalności</h2>
   <p>Ostatnia kolumna pokazuje miesięczne netto przy przychodzie {$(15000)}, pełnym ZUS bez chorobowego i bez kosztów. Opisy działalności są skrócone: o stawce rozstrzyga brzmienie art. 12 ust. 1 i klasyfikacja PKWiU Twojej usługi.</p>

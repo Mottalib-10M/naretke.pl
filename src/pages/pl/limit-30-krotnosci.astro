@@ -46,7 +46,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zus', lang), name: label('zus', lang), description: `Stawki: ${F.emerytalnaEe}, ${F.rentowaEe}, ${F.chorobowa} po stronie pracownika.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `Kiedy wchodzisz w ${F.pitHigh} i jak to się łączy z limitem.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Każdy miesiąc roku osobno, z limitem i progiem.' }]}
   sources={[src('cap', lang), src('sus_act', lang), src('zus_rates', lang)]}>
-  <div data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="cap" lang={lang} href={route('annual', lang)} /></div>
 
   <h2>Skąd się bierze {F.cap}</h2>
   <p>Art. 19 ust. 1 ustawy o systemie ubezpieczeń społecznych stanowi, że roczna podstawa wymiaru składek emerytalnej i rentowej nie może przekroczyć trzydziestokrotności prognozowanego przeciętnego wynagrodzenia miesięcznego z ustawy budżetowej. Na {F.year} r. ta prognoza wynosi {F.avgForecast}, więc limit to {F.cap}. Minister właściwy do spraw zabezpieczenia społecznego ogłasza go co roku obwieszczeniem w Monitorze Polskim.</p>

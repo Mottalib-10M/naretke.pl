@@ -38,7 +38,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: 'B2B calculator', description: 'Tax scale, flat tax and lump sum for your revenue and costs.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: `Rates from ${pct(P.b2b.ryczalt_rates[6].rate, lang)} and a health contribution in three bands.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh} on the scale: how the ${F.threshold} threshold works.` }]}
   sources={[src('pit_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
-  <div data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
 
   <h2>Tax scale or flat tax: take-home at five revenue levels</h2>
   <p>The table assumes no costs, full ZUS without voluntary sickness cover, and an average across the year. The difference column shows how much more (plus) or less (minus) the flat tax leaves you each month.</p>

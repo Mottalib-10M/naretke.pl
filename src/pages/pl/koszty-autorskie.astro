@@ -45,7 +45,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('kup', lang), name: label('kup', lang), description: `Zwykłe koszty pracownicze: ${F.kup} lub ${F.kupRaised} miesięcznie.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `Kiedy dochód przekracza ${F.threshold} i wchodzi stawka ${F.pitHigh}.` }, { href: route('dzielo', lang), name: 'Kalkulator umowy o dzieło', description: `Netto z dzieła z kosztami ${F.kupContract} lub ${F.kupAuthors}.` }]}
   sources={[src('pit_act', lang), src('sus_act', lang), src('health_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Skąd bierze się zysk: przykład z pensją {$(12000)}</h2>
   <p>Weźmy programistkę z pensją {$(12000)} brutto, której umowa wskazuje, że połowa wynagrodzenia przysługuje za przeniesienie praw do tworzonego kodu. Płatnik najpierw potrąca składki społeczne od całej kwoty: w styczniu to {formatMoney(m1.social, 2, lang)}. Na część autorską ({$(6000)}) przypada połowa tych składek, czyli {formatMoney(socialHalf, 2, lang)}. Koszty autorskie to {F.kupAuthors} różnicy, a więc około {$(kupAuth)} w miesiącu. Od drugiej połowy pensji odlicza się zwykłe {F.kup}.</p>

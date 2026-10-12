@@ -40,7 +40,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('employer', lang), name: label('employer', lang), description: `Wpłata ${F.ppkEr} w pełnym koszcie zatrudnienia.` }, { href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'Ile brutto potrzeba na to samo netto z PPK.' }, { href: route('home', lang), name: label('home', lang), description: 'Netto z PPK lub bez, dla każdej umowy.' }]}
   sources={[src('ppk', lang), src('ppk_tax', lang), src('pit_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Netto z PPK i bez PPK dla pięciu pensji</h2>
   <p>Stawki podstawowe: {F.ppkEe} pracownika i {F.ppkEr} pracodawcy, bez wpłat dodatkowych i bez dopłat państwa. Ostatnia kolumna mówi, ile złotych trafia na konto PPK na każdą złotówkę, o którą spada Twoje netto.</p>

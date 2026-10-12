@@ -35,7 +35,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Mandate contract net pay with every contribution option.' }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} a month and ${F.minHourly} an hour.` }, { href: route('overtime', lang), name: label('overtime', lang), description: `The ${F.ot50} or ${F.ot100} supplement for extra hours.` }]}
   sources={[src('minimum', lang), src('pit_act', lang), src('zus_rates', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>From hourly rate to monthly take-home</h2>
   <p>The table assumes {formatNumber(H, 0, lang)} hours a month, that is 21 days of 8 hours. Treat it as an example only: in the calculator, enter the hours from your own schedule or contract.</p>

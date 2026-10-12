@@ -39,7 +39,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: label('b2b', lang), description: 'Netto z faktury z kosztami i ulgami ZUS.' }, { href: route('employer', lang), name: label('employer', lang), description: 'Budżet firmy na etat, od którego warto zacząć negocjacje.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Stawki ryczałtu i składka zdrowotna według przychodu.' }]}
   sources={[src('zus_b2b', lang), src('ryczalt_act', lang), src('pit_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('b2b', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('b2b', lang)} /></div></div>
 
   <h2>Ta sama kwota na etacie i na fakturze</h2>
   <p>Pierwsza tabela traktuje brutto z umowy o pracę i miesięczny przychód z faktury (bez VAT) jako tę samą liczbę. Netto z etatu to średnia z dwunastu miesięcy, bo przy wyższych pensjach druga część roku jest opodatkowana stawką {F.pitHigh}, a po przekroczeniu limitu {F.cap} znikają składki emerytalna i rentowa.</p>

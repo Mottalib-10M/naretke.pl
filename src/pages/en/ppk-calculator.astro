@@ -37,7 +37,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('employer', lang), name: label('employer', lang), description: `The ${F.ppkEr} payment in the full cost of employment.` }, { href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'The gross needed to keep the same net with PPK.' }, { href: route('home', lang), name: label('home', lang), description: 'Net pay with or without PPK, for every contract.' }]}
   sources={[src('ppk', lang), src('ppk_tax', lang), src('pit_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="ppk" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Net pay with and without PPK on five salaries</h2>
   <p>Basic rates: {F.ppkEe} from the employee and {F.ppkEr} from the employer, with no additional payments and no state top-ups. The last column shows how many złoty reach your PPK account for every złoty your net pay falls.</p>

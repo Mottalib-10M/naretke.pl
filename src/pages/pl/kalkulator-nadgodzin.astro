@@ -35,7 +35,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('hourly', lang), name: label('hourly', lang), description: 'Z pensji na stawkę za godzinę i odwrotnie.' }, { href: route('annual', lang), name: label('annual', lang), description: 'Netto każdego miesiąca, z drugim progiem podatkowym.' }, { href: route('home', lang), name: label('home', lang), description: 'Netto z pensji podstawowej, bez dodatków.' }]}
   sources={[src('labour_code', lang), src('pit_act', lang), src('zus_rates', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="overtime" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="overtime" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Nadgodziny z dodatkiem {F.ot50} i {F.ot100} dla czterech pensji</h2>
   <p>Przykład: dziesięć nadgodzin w zwykłe dni robocze albo osiem godzin w nocy lub w święto. Stawka godzinowa to pensja podzielona przez {formatNumber(H, 0, lang)} godzin; kwoty netto pokazują, o ile wzrośnie przelew w miesiącu przed drugim progiem.</p>

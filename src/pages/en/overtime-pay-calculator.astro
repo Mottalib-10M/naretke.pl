@@ -33,7 +33,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('hourly', lang), name: label('hourly', lang), description: 'From monthly salary to hourly rate and back.' }, { href: route('annual', lang), name: label('annual', lang), description: 'Net pay for each month, including the second bracket.' }, { href: route('home', lang), name: label('home', lang), description: 'Net pay on your base salary, without extras.' }]}
   sources={[src('labour_code', lang), src('pit_act', lang), src('zus_rates', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="overtime" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="overtime" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Overtime at {F.ot50} and {F.ot100} on four salaries</h2>
   <p>The example uses ten overtime hours on ordinary working days, or eight hours at night or on a public holiday. The hourly rate is salary divided by {formatNumber(H, 0, lang)} hours; the net figures show how much the transfer grows in a month before the second tax bracket.</p>

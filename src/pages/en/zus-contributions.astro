@@ -50,7 +50,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('cap', lang), name: label('cap', lang), description: `When pension and disability stop: the ${F.cap} cap.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Full ZUS of ${F.b2bZusFull}, preferential rates and the start-up relief.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Full cost of a salary with every contribution.' }]}
   sources={[src('zus_rates', lang), src('sus_act', lang), src('budget', lang), src('cap', lang)]}>
-  <div data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('home', lang)} /></div>
 
   <h2>The {F.year} rates and who pays which</h2>
   <p>Contribution rates are set by article 22 of the Social Insurance System Act, and article 16 splits them between employee and employer. The pension contribution of {F.emerytalnaTotal} is shared equally. The disability contribution of {F.rentowaTotal} is split unevenly: {F.rentowaEe} for the employee, {F.rentowaEr} for the employer. Sickness ({F.chorobowa}) is paid entirely by the insured person and accident insurance entirely by the employer. The funds, meaning the Labour Fund, the Solidarity Fund and FGŚP, are purely a business cost; their {F.year} rates are fixed by articles 25 to 27 of the Budget Act.</p>

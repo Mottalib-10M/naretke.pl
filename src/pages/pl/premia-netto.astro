@@ -37,7 +37,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Netto każdego miesiąca i moment wejścia w drugi próg.' }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh}: zasady progu ${F.threshold}.` }, { href: route('overtime', lang), name: label('overtime', lang), description: 'Dodatki za nadgodziny liczone jak premia, razem z pensją.' }]}
   sources={[src('pit_act', lang), src('zus_rates', lang), src('cap', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="bonus" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="bonus" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Trzy premie przy trzech pensjach</h2>
   <p>Kwoty netto dotyczą premii wypłaconej w styczniu razem z pensją, z PIT-2 i kosztami {F.kup}.</p>

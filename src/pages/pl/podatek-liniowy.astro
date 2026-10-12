@@ -42,7 +42,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: 'Kalkulator B2B', description: 'Skala, liniowy i ryczałt dla Twojego przychodu i kosztów.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: `Stawki od ${pct(P.b2b.ryczalt_rates[6].rate, lang)} i zdrowotna w trzech progach.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh} na skali: jak działa próg ${F.threshold}.` }]}
   sources={[src('pit_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
-  <div data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="liniowy" lang={lang} href={route('b2b', lang)} /></div>
 
   <h2>Skala czy liniowy: netto przy pięciu poziomach przychodu</h2>
   <p>Tabela zakłada brak kosztów, pełny ZUS bez dobrowolnego chorobowego i średnią z całego roku. Kolumna różnicy pokazuje, o ile liniowy daje więcej (plus) albo mniej (minus) na rękę.</p>

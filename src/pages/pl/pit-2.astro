@@ -44,7 +44,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('home', lang), name: 'Kalkulator wynagrodzeń', description: 'Netto dla każdej umowy, z PIT-2 lub bez.' }, { href: route('allowance', lang), name: 'Kwota wolna od podatku', description: `${F.freeAmount} wolne od podatku: jak to działa.` }, { href: route('zlecdzielo', lang), name: 'Zlecenie czy dzieło', description: 'Porównanie netto obu umów przy tej samej kwocie.' }]}
   sources={[src('pit2', lang), src('pit_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="pit2" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="pit2" lang={lang} href={route('home', lang)} /></div>
   <h2>Ile daje PIT-2 przy różnych pensjach</h2>
   <ContentTable headers={['Brutto', 'Netto bez PIT-2', 'Netto z PIT-2', 'Różnica']} align={['r', 'r', 'r', 'r']} rows={rows} />
   <p>Różnica jest stała, bo kwota zmniejszająca nie zależy od dochodu: polski system nie wygasza jej po przekroczeniu progu, inaczej niż w wielu krajach. Nawet przy pensji w drugim progu pomniejszenie zostaje w każdej wypłacie.</p>

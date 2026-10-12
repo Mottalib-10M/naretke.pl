@@ -50,7 +50,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zus', lang), name: label('zus', lang), description: `${F.socialEe} pracownika, od których zależy podstawa zdrowotnej.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} podatku i ${linRate} zdrowotnej na działalności.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Stawki ryczałtu i progi zdrowotnej.' }]}
   sources={[src('health_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
-  <div data-chrome><MiniSim client:load kind="health" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="health" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Etat: {F.health} od brutto po składkach społecznych</h2>
   <p>Art. 79 ustawy o świadczeniach opieki zdrowotnej finansowanych ze środków publicznych ustala stawkę na {F.health} podstawy wymiaru. Podstawą dla pracownika jest brutto, od którego liczy się składki społeczne, pomniejszone o te składki w części finansowanej przez pracownika (art. 81 ust. 6). Przy {$(G)} brutto składki społeczne wynoszą {$2(u.social)}, zostaje {$2(G - u.social)} podstawy i {$2(u.health)} składki.</p>

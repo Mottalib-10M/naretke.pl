@@ -43,7 +43,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'The gross salary behind a given take-home.' }, { href: route('zus', lang), name: label('zus', lang), description: 'Employee and employer contributions, rate by rate.' }, { href: route('ppk', lang), name: label('ppk', lang), description: 'PPK payments by employee, employer and state.' }]}
   sources={[src('zus_rates', lang), src('budget', lang), src('ppk', lang), src('sus_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Employer contributions on a {$(G)} salary</h2>
   <p>Every contribution uses the same base, the gross salary. The amounts in the third column are for one month, before the annual cap comes into play.</p>

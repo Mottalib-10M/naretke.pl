@@ -43,7 +43,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('student', lang), name: label('student', lang), description: 'Students on zlecenie: no ZUS and no tax.' }, { href: route('kup', lang), name: label('kup', lang), description: `${F.kup} or ${F.kupRaised} a month once the relief runs out.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Net pay month by month, with and without the relief.' }]}
   sources={[src('youth', lang), src('pit_act', lang), src('health_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('home', lang)} /></div>
 
   <h2>The month your exemption runs out</h2>
   <ContentTable headers={['Monthly gross', 'Net with relief', 'Net without relief', 'Limit used up in', 'Tax saved in the year']} align={['r', 'r', 'r', 'l', 'r']} rows={rows} />

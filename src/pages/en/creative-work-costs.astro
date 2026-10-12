@@ -41,7 +41,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('kup', lang), name: label('kup', lang), description: `Standard employee costs: ${F.kup} or ${F.kupRaised} a month.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `When income passes ${F.threshold} and the ${F.pitHigh} rate starts.` }, { href: route('dzielo', lang), name: 'Specific-work contract calculator', description: `Net pay on dzieło with ${F.kupContract} or ${F.kupAuthors} costs.` }]}
   sources={[src('pit_act', lang), src('sus_act', lang), src('health_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="authors" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Where the saving comes from: a {$(12000)} salary worked through</h2>
   <p>Picture a software developer on {$(12000)} gross whose contract states that half of her pay is for transferring the rights to the code she writes. Her employer first takes social contributions from the whole amount: {formatMoney(m1.social, 2, lang)} in January. Half of that, {formatMoney(socialHalf, 2, lang)}, belongs to the copyright portion of {$(6000)}. Creative costs are {F.kupAuthors} of what remains, about {$(kupAuth)} a month. The other half of her salary still gets the flat {F.kup}.</p>

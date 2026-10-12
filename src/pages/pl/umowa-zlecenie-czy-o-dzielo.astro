@@ -32,7 +32,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Netto ze zlecenia, ze składką chorobową lub bez.' }, { href: route('dzielo', lang), name: label('dzielo', lang), description: `Netto z dzieła, z kosztami ${F.kupContract} albo ${F.kupAuthors}.` }, { href: route('authors', lang), name: label('authors', lang), description: `Kiedy przysługuje ${F.kupAuthors} kosztów.` }]}
   sources={[src('sus_act', lang), src('pit_act', lang), src('health_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecenie', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecenie', lang)} /></div>
 
   <h2>Rezultat czy staranność: różnica prawna</h2>
   <p>Obie umowy reguluje kodeks cywilny, nie kodeks pracy, więc żadna nie daje urlopu ani okresu wypowiedzenia znanego z etatu. Różnią się przedmiotem. Umowa o dzieło zobowiązuje do wykonania konkretnego rezultatu, który da się odebrać i ocenić: tłumaczenia, logo, programu, remontu łazienki, reportażu. Wykonawca odpowiada za efekt, a wynagrodzenie należy się za dzieło, nie za godziny.</p>

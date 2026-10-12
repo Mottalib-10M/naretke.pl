@@ -43,7 +43,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('cap', lang), name: label('cap', lang), description: `${F.cap}: kiedy znikają składki emerytalna i rentowa.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Składki od podstawy ${F.b2bBaseFull} i preferencyjny ZUS.` }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} brutto: netto i koszt pracodawcy.` }]}
   sources={[src('cap', lang), src('gus_q4', lang), src('budget', lang), src('zus_b2b', lang)]}>
-  <div data-chrome><MiniSim client:load kind="average" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="average" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Dwie średnie w przepisach na {F.year} rok</h2>
   <p>Kiedy ktoś pyta o przeciętne wynagrodzenie, zwykle ma na myśli jedną liczbę z wiadomości. W przepisach o składkach i podatkach na {F.year} r. funkcjonują jednak dwie różne kwoty, ogłaszane przez różne urzędy i używane do innych celów. Mylenie ich to najczęstszy błąd przy liczeniu składek przedsiębiorcy.</p>

@@ -33,7 +33,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zus', lang), name: label('zus', lang), description: `The ${F.chorobowa} sickness contribution that funds benefits.` }, { href: route('home', lang), name: label('home', lang), description: 'Net pay on a full salary, without sick days.' }, { href: route('compare', lang), name: label('compare', lang), description: 'On B2B, sickness cover is voluntary only.' }]}
   sources={[src('sickness', lang), src('labour_code', lang), src('health_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="sick" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="sick" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Ten days of L4 on four salaries</h2>
   <p>The table assumes the same salary over the last {S.base_months} months. "Normal pay for those days" is 1/30 of gross times the number of days, the amount you would have received had you not been ill.</p>

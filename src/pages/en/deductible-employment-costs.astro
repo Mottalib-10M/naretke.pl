@@ -40,7 +40,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('authors', lang), name: label('authors', lang), description: `When ${F.kupAuthors} applies and how the ${F.kupAuthorsLimit} cap works.` }, { href: route('pit2', lang), name: 'PIT-2 form', description: `The other statement that cuts your tax by ${F.reducingMonth} a month.` }, { href: route('home', lang), name: 'Polish salary calculator', description: 'Net pay with standard or commuter costs.' }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-chrome><MiniSim client:load kind="kup" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="kup" lang={lang} href={route('home', lang)} /></div>
 
   <h2>A flat allowance, not an expense claim</h2>
   <p>If you come from a country where employees itemise work expenses, Poland will feel simpler. Nobody asks for fuel receipts or train tickets. Article 22(2) of the PIT Act sets four fixed amounts. One employment contract: {F.kup} a month and {F.kupYear} a year. Several at the same time: {F.kupMulti} a year in total. Commuting from another locality: {F.kupRaised} a month and {F.kupRaisedYear} a year. Several jobs plus commuting: {F.kupMultiRaised}.</p>

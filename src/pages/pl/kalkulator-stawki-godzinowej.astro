@@ -37,7 +37,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Netto ze zlecenia ze wszystkimi wariantami składek.' }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} miesięcznie i ${F.minHourly} za godzinę.` }, { href: route('overtime', lang), name: label('overtime', lang), description: `Dodatek ${F.ot50} lub ${F.ot100} za godziny ponad normę.` }]}
   sources={[src('minimum', lang), src('pit_act', lang), src('zus_rates', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="hourly" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Od stawki godzinowej do pensji netto</h2>
   <p>Tabela przyjmuje {formatNumber(H, 0, lang)} godzin w miesiącu, czyli 21 dni po 8 godzin. To tylko przykład: w kalkulatorze wpisz liczbę godzin z własnego grafiku albo umowy.</p>

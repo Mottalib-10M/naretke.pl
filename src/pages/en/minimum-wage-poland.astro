@@ -48,7 +48,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('hourly', lang), name: label('hourly', lang), description: `Your rate against the ${F.minHourly} minimum.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Full employment cost at any salary.' }, { href: route('average', lang), name: label('average', lang), description: `${F.avgForecast}: the ${F.year} forecast and what it is used for.` }]}
   sources={[src('minimum', lang), src('zus_b2b', lang), src('pit_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="minimum" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="minimum" lang={lang} href={route('home', lang)} /></div>
 
   <h2>The {F.year} figures: {F.minWage} a month, {F.minHourly} an hour</h2>
   <p>Both numbers come from one legal act, the Council of Ministers regulation of 11 September 2025 on the minimum wage for {F.year} (Journal of Laws 2025, item 1242). Its first paragraph fixes the monthly minimum at {F.minWage}; the second sets the minimum hourly rate at {F.minHourly}. Both took effect on 1 January. There is no second date in the regulation, so unlike some earlier years Poland has no July increase in {F.year}. ZUS, the social insurance institution, says the same on its contribution page: the minimum wage is {F.minWage} from January to December.</p>

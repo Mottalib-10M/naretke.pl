@@ -45,7 +45,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Net pay in every month, with the bracket and ZUS cap.' }, { href: route('allowance', lang), name: label('allowance', lang), description: `The ${F.freeAmount} allowance and ${F.reducingYear} of tax relief.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} with no brackets: who it suits.` }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('annual', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="brackets" lang={lang} href={route('annual', lang)} /></div>
 
   <h2>The {F.year} scale: two rates and one reducing amount</h2>
   <p>Article 27(1) of the Personal Income Tax Act contains a two-row table. Up to {F.threshold} of taxable base, tax is {F.pitLow} minus the tax-reducing amount of {F.reducingYear}. Above {F.threshold}, tax is {fixedPart} plus {F.pitHigh} of the excess. That {fixedPart} is simply the tax on the first {F.threshold}, already reduced by the tax-reducing amount. The relief therefore stays with people in the second bracket too: the Polish scale does not phase it out.</p>

@@ -40,7 +40,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('pit2', lang), name: label('pit2', lang), description: `Oświadczenie, które daje ${F.reducingMonth} co miesiąc.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh}: kiedy wchodzisz w drugi próg.` }, { href: route('youth', lang), name: label('youth', lang), description: `Zwolnienie do ${F.youthLimit} przed 26. rokiem życia.` }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('home', lang)} /></div>
 
   <h2>{F.freeAmount} i {F.reducingYear}: jedna ulga, dwie liczby</h2>
   <p>W rozmowach mówi się o kwocie wolnej {F.freeAmount}, w ustawie i na pasku wypłaty widać {F.reducingYear} albo {F.reducingMonth}. To ta sama ulga. Ustawa nie wyłącza pierwszych {F.freeAmount} z opodatkowania, tylko każe od podatku obliczonego według stawki {F.pitLow} odjąć stałą kwotę {F.reducingYear}. Ponieważ {F.pitLow} od {F.freeAmount} to dokładnie {F.reducingYear}, wynik jest taki, jakby {F.freeAmount} dochodu było wolne od podatku. Stąd potoczna nazwa.</p>

@@ -34,7 +34,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zus', lang), name: label('zus', lang), description: `Składka chorobowa ${F.chorobowa}, z której finansowane są zasiłki.` }, { href: route('home', lang), name: label('home', lang), description: 'Netto z pełnej pensji, bez dni choroby.' }, { href: route('compare', lang), name: label('compare', lang), description: 'Na B2B chorobowe jest tylko dobrowolne.' }]}
   sources={[src('sickness', lang), src('labour_code', lang), src('health_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="sick" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="sick" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Dziesięć dni L4 przy czterech pensjach</h2>
   <p>Tabela zakłada, że pensja była taka sama przez ostatnie {S.base_months} miesięcy. Kolumna „Pensja za te dni” to 1/30 brutto razy liczba dni, czyli kwota, którą dostałbyś bez choroby.</p>

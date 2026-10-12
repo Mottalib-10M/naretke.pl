@@ -50,7 +50,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('hourly', lang), name: label('hourly', lang), description: `Twoja stawka wobec minimum ${F.minHourly}.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Pełny koszt zatrudnienia przy dowolnej pensji.' }, { href: route('average', lang), name: label('average', lang), description: `${F.avgForecast}: prognoza na ${F.year} r. i do czego służy.` }]}
   sources={[src('minimum', lang), src('zus_b2b', lang), src('pit_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="minimum" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="minimum" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Kwota na {F.year} rok: {F.minWage} miesięcznie, {F.minHourly} za godzinę</h2>
   <p>Obie liczby pochodzą z jednego aktu: rozporządzenia Rady Ministrów z 11 września 2025 r. w sprawie minimalnego wynagrodzenia za pracę w {F.year} r. (Dz.U. 2025 poz. 1242). Paragraf pierwszy ustala {F.minWage} jako minimalne wynagrodzenie, paragraf drugi {F.minHourly} jako minimalną stawkę godzinową. Obie obowiązują od 1 stycznia. Rozporządzenie nie zawiera drugiego terminu, więc w {F.year} r. nie ma podwyżki od lipca, znanej z niektórych wcześniejszych lat. ZUS potwierdza to na swojej stronie o wysokości składek: od stycznia do grudnia minimalne wynagrodzenie wynosi {F.minWage}.</p>

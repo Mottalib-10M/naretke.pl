@@ -47,7 +47,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('nettobrutto', lang), name: label('nettobrutto', lang), description: 'Jakie brutto daje określoną kwotę na rękę.' }, { href: route('zus', lang), name: label('zus', lang), description: 'Składki pracownika i pracodawcy, stopa po stopie.' }, { href: route('ppk', lang), name: label('ppk', lang), description: 'Wpłaty do PPK pracownika, firmy i państwa.' }]}
   sources={[src('zus_rates', lang), src('budget', lang), src('ppk', lang), src('sus_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="employer" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Składki pracodawcy przy pensji {$(G)} brutto</h2>
   <p>Każda składka liczona jest od tej samej podstawy, czyli od wynagrodzenia brutto. Kwoty w trzeciej kolumnie to wynik dla jednego miesiąca, przed przekroczeniem rocznego limitu.</p>

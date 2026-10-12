@@ -47,7 +47,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('student', lang), name: label('student', lang), description: 'Student na zleceniu: bez ZUS i bez podatku.' }, { href: route('kup', lang), name: label('kup', lang), description: `${F.kup} lub ${F.kupRaised} miesięcznie po wyczerpaniu ulgi.` }, { href: route('annual', lang), name: label('annual', lang), description: 'Netto miesiąc po miesiącu, z ulgą i bez.' }]}
   sources={[src('youth', lang), src('pit_act', lang), src('health_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="youth" lang={lang} href={route('home', lang)} /></div>
 
   <h2>W którym miesiącu kończy się limit</h2>
   <ContentTable headers={['Brutto miesięcznie', 'Netto z ulgą', 'Netto bez ulgi', 'Limit wyczerpany', 'Mniej podatku w roku']} align={['r', 'r', 'r', 'l', 'r']} rows={rows} />

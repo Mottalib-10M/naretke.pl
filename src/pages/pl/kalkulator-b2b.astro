@@ -31,7 +31,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('compare', lang), name: label('compare', lang), description: 'Ile B2B odpowiada pensji na etacie.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `Kiedy ${F.liniowy} wygrywa ze skalą.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Stawki ryczałtu i zdrowotna w trzech progach.' }]}
   sources={[src('zus_b2b', lang), src('pit_act', lang), src('ryczalt_act', lang), src('health_deduction', lang)]}>
-  <div data-outil>
+  <div slot="outil" data-outil>
     <SalaryCalculator client:load lang={lang} contract="b2b" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
   </div>
 

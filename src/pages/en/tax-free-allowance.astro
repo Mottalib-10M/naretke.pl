@@ -40,7 +40,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('pit2', lang), name: label('pit2', lang), description: `The statement that gives you ${F.reducingMonth} a month.` }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh}: when the second bracket starts.` }, { href: route('youth', lang), name: label('youth', lang), description: `Exemption up to ${F.youthLimit} for people under 26.` }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="allowance" lang={lang} href={route('home', lang)} /></div>
 
   <h2>{F.freeAmount} and {F.reducingYear}: one relief, two numbers</h2>
   <p>People talk about a {F.freeAmount} allowance; the Act and your payslip show {F.reducingYear} or {F.reducingMonth}. It is the same relief. The law does not exempt the first {F.freeAmount} from tax; it tells you to subtract a fixed {F.reducingYear} from tax calculated at {F.pitLow}. Since {F.pitLow} of {F.freeAmount} is exactly {F.reducingYear}, the outcome is as if {F.freeAmount} of income were tax-free. Hence the everyday name.</p>

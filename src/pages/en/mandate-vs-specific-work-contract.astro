@@ -31,7 +31,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Net pay on a mandate, with or without sickness cover.' }, { href: route('dzielo', lang), name: label('dzielo', lang), description: `Net pay on dzieło, with ${F.kupContract} or ${F.kupAuthors} costs.` }, { href: route('authors', lang), name: label('authors', lang), description: `When ${F.kupAuthors} costs apply.` }]}
   sources={[src('sus_act', lang), src('pit_act', lang), src('health_act', lang)]}>
-  <div data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecenie', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="zlecdzielo" lang={lang} href={route('zlecenie', lang)} /></div>
 
   <h2>Result or due care: the legal difference</h2>
   <p>Both contracts fall under the Civil Code, not the Labour Code, so neither gives you paid leave or the notice periods of an employment contract. What separates them is the subject. A specific-work contract commits you to a defined result that can be handed over and assessed: a translation, a logo, a piece of software, a bathroom renovation, a magazine feature. You answer for the outcome, and you are paid for the work delivered, not the hours.</p>

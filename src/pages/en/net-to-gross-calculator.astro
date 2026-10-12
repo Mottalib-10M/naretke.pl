@@ -40,7 +40,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('home', lang), name: label('home', lang), description: 'The other direction: gross to net for every contract type.' }, { href: route('employer', lang), name: label('employer', lang), description: 'What the gross you ask for costs your employer.' }, { href: route('pit2', lang), name: 'PIT-2 form', description: `${F.reducingMonth} more each month once the form is filed.` }]}
   sources={[src('pit_act', lang), src('zus_rates', lang), src('health_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Gross salary needed for common take-home targets</h2>
   <p>Each row assumes PIT-2 is filed and work costs of {F.kup} apply, which matches most people with a single employer. The last column shows the full cost to the company, a useful number when you discuss the budget for a role.</p>

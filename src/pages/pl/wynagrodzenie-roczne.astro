@@ -43,7 +43,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} i ${F.pitHigh}: jak działa próg ${F.threshold}.` }, { href: route('cap', lang), name: label('cap', lang), description: `Limit ${F.cap}: kiedy kończą się składki emerytalna i rentowa.` }, { href: route('bonus', lang), name: label('bonus', lang), description: 'Ile zostaje z premii w styczniu, a ile w grudniu.' }]}
   sources={[src('pit_act', lang), src('cap', lang), src('zus_rates', lang)]}>
-  <div data-outil>
+  <div slot="outil" data-outil>
     <SalaryCalculator client:load lang={lang} contract="uop" lockContract={true} defaultGross={15000} methodHref={route('method', lang)} />
     <div data-chrome><MiniSim client:load kind="annual" lang={lang} href={route('home', lang)} /></div>
   </div>

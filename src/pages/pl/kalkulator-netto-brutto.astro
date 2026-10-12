@@ -43,7 +43,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('home', lang), name: label('home', lang), description: 'Kierunek odwrotny: z brutto na netto, dla każdej umowy.' }, { href: route('employer', lang), name: label('employer', lang), description: 'Ile pracodawcę kosztuje brutto, o które prosisz.' }, { href: route('pit2', lang), name: 'PIT-2', description: `${F.reducingMonth} miesięcznie więcej na rękę po złożeniu oświadczenia.` }]}
   sources={[src('pit_act', lang), src('zus_rates', lang), src('health_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="nettobrutto" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Brutto potrzebne dla typowych kwot na rękę</h2>
   <p>Tabela pokazuje miesiąc z PIT-2 i kosztami {F.kup}, czyli sytuację większości osób zatrudnionych na etacie u jednego pracodawcy. Ostatnia kolumna to pełny koszt pracodawcy, który przyda się w rozmowie o budżecie stanowiska.</p>

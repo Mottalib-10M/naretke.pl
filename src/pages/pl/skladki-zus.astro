@@ -50,7 +50,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('cap', lang), name: label('cap', lang), description: `Kiedy znikają emerytalna i rentowa: limit ${F.cap}.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Pełny ZUS ${F.b2bZusFull}, preferencyjny i ulga na start.` }, { href: route('employer', lang), name: label('employer', lang), description: 'Pełny koszt pensji z wszystkimi składkami.' }]}
   sources={[src('zus_rates', lang), src('sus_act', lang), src('budget', lang), src('cap', lang)]}>
-  <div data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="zus" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Stawki {F.year}: kto płaci którą składkę</h2>
   <p>Stopy procentowe składek wyznacza art. 22 ustawy o systemie ubezpieczeń społecznych, a podział między pracownika i pracodawcę art. 16. Emerytalną {F.emerytalnaTotal} płacą po połowie. Rentową {F.rentowaTotal} dzielą nierówno: pracownik {F.rentowaEe}, pracodawca {F.rentowaEr}. Chorobową {F.chorobowa} finansuje w całości ubezpieczony, a wypadkową w całości płatnik. Fundusze, czyli Fundusz Pracy, Fundusz Solidarnościowy i FGŚP, to wyłącznie koszt firmy; ich stawki na {F.year} r. ustala ustawa budżetowa w art. 25–27.</p>

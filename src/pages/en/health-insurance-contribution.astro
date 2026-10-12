@@ -49,7 +49,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zus', lang), name: label('zus', lang), description: `The ${F.socialEe} employee contributions that shape the health base.` }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} tax and ${linRate} health for sole traders.` }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Lump-sum tax rates and health bands.' }]}
   sources={[src('health_act', lang), src('health_deduction', lang), src('zus_b2b', lang)]}>
-  <div data-chrome><MiniSim client:load kind="health" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="health" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Employees: {F.health} of gross after social contributions</h2>
   <p>Article 79 of the Act on healthcare services financed from public funds sets the rate at {F.health} of the contribution base. For an employee, the base is the gross pay on which social contributions are charged, reduced by the part of those contributions the employee pays (article 81(6)). On {$(G)} gross, social contributions are {$2(u.social)}, leaving a base of {$2(G - u.social)} and a contribution of {$2(u.health)}.</p>

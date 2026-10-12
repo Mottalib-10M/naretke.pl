@@ -38,7 +38,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: label('b2b', lang), description: 'Net from an invoice, with costs and ZUS reliefs.' }, { href: route('employer', lang), name: label('employer', lang), description: 'The company budget for a job, a sound basis for negotiation.' }, { href: route('ryczalt', lang), name: label('ryczalt', lang), description: 'Lump-sum rates and health contribution by revenue.' }]}
   sources={[src('zus_b2b', lang), src('ryczalt_act', lang), src('pit_act', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('b2b', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="compare" lang={lang} href={route('b2b', lang)} /></div></div>
 
   <h2>The same amount on a payslip and on an invoice</h2>
   <p>The first table treats the employment gross and the monthly invoice revenue (excluding VAT) as the same number. Employment net is the average of twelve months, because higher salaries are taxed at {F.pitHigh} in the later part of the year, and pension and disability contributions stop once gross pay passes {F.cap}.</p>

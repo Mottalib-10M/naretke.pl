@@ -42,7 +42,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('cap', lang), name: label('cap', lang), description: `${F.cap}: when pension and disability contributions stop.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Contributions on the ${F.b2bBaseFull} base and preferential ZUS.` }, { href: route('minimum', lang), name: label('minimum', lang), description: `${F.minWage} gross: net pay and employer cost.` }]}
   sources={[src('cap', lang), src('gus_q4', lang), src('budget', lang), src('zus_b2b', lang)]}>
-  <div data-chrome><MiniSim client:load kind="average" lang={lang} href={route('home', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="average" lang={lang} href={route('home', lang)} /></div>
 
   <h2>Two averages in the {F.year} rules</h2>
   <p>Ask about the average salary in Poland and most people quote one number from the news. The contribution and tax rules for {F.year}, though, use two different figures, published by different bodies for different purposes. Mixing them up is the most common mistake when working out self-employed contributions.</p>

@@ -33,7 +33,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecenie', lang), name: label('zlecenie', lang), description: 'Pełny kalkulator zlecenia, z opcją studenta.' }, { href: route('youth', lang), name: label('youth', lang), description: `Zerowy PIT do ${F.youthLimit} przychodu przed 26. urodzinami.` }, { href: route('hourly', lang), name: label('hourly', lang), description: `Stawka godzinowa i minimum ${F.minHourly}.` }]}
   sources={[src('sus_act', lang), src('youth', lang), src('health_act', lang), src('minimum', lang)]}>
-  <div data-chrome><MiniSim client:load kind="student" lang={lang} href={route('zlecenie', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="student" lang={lang} href={route('zlecenie', lang)} /></div>
 
   <h2>Trzy zwolnienia, które się sumują</h2>
   <p>Netto równe brutto to efekt trzech osobnych przepisów, które przypadkiem spotykają się w jednej osobie. Pierwszy to art. 6 ust. 4 ustawy systemowej: zleceniobiorcy będący uczniami szkół ponadpodstawowych lub studentami nie podlegają obowiązkowo ubezpieczeniom emerytalnemu i rentowym do ukończenia 26 lat. Drugi wynika z tego pierwszego: dobrowolne ubezpieczenie chorobowe przysługuje tylko osobom objętym obowiązkowo emerytalnym i rentowym, a ustawa o świadczeniach opieki zdrowotnej nakłada obowiązek ubezpieczenia zdrowotnego na zleceniobiorców spełniających warunki objęcia ubezpieczeniami społecznymi. Student ich nie spełnia, więc składka zdrowotna z tej umowy nie powstaje.</p>

@@ -29,7 +29,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('zlecdzielo', lang), name: label('zlecdzielo', lang), description: 'Dzieło czy zlecenie przy tej samej kwocie.' }, { href: route('authors', lang), name: label('authors', lang), description: `Koszty ${F.kupAuthors} i limit ${F.kupAuthorsLimit} w roku.` }, { href: route('zlecenie', lang), name: 'Kalkulator umowy zlecenie', description: 'Netto ze zlecenia z ZUS, zdrowotną i chorobowym.' }]}
   sources={[src('pit_act', lang), src('pit2', lang)]}>
-  <div data-outil>
+  <div slot="outil" data-outil>
     <SalaryCalculator client:load lang={lang} contract="dzielo" lockContract={true} defaultGross={3000} methodHref={route('method', lang)} />
   </div>
 

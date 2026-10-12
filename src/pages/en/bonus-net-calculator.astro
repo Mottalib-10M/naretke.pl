@@ -37,7 +37,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('annual', lang), name: label('annual', lang), description: 'Net pay for each month and when the second bracket starts.' }, { href: route('brackets', lang), name: label('brackets', lang), description: `${F.pitLow} and ${F.pitHigh}: how the ${F.threshold} threshold works.` }, { href: route('overtime', lang), name: label('overtime', lang), description: 'Overtime supplements, taxed like a bonus together with salary.' }]}
   sources={[src('pit_act', lang), src('zus_rates', lang), src('cap', lang)]}>
-  <div data-outil><div data-chrome><MiniSim client:load kind="bonus" lang={lang} href={route('home', lang)} /></div></div>
+  <div slot="outil" data-outil><div data-chrome><MiniSim client:load kind="bonus" lang={lang} href={route('home', lang)} /></div></div>
 
   <h2>Three bonuses on three salaries</h2>
   <p>Net figures are for a bonus paid in January together with salary, with PIT-2 filed and work costs of {F.kup}.</p>

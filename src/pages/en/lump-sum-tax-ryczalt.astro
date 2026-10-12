@@ -58,7 +58,7 @@ const faqs = [
   faqs={faqs}
   related={[{ href: route('b2b', lang), name: 'B2B calculator', description: 'Lump sum, flat tax and tax scale side by side for your revenue.' }, { href: route('liniowy', lang), name: label('liniowy', lang), description: `${F.liniowy} on profit: when costs tip the balance.` }, { href: route('zusb2b', lang), name: label('zusb2b', lang), description: `Social contributions from ${F.b2bZusPref} to ${F.b2bZusFull} a month.` }]}
   sources={[src('ryczalt_act', lang), src('zus_b2b', lang), src('health_deduction', lang)]}>
-  <div data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('b2b', lang)} /></div>
+  <div slot="outil" data-chrome><MiniSim client:load kind="ryczalt" lang={lang} href={route('b2b', lang)} /></div>
 
   <h2>Lump-sum rates by type of business</h2>
   <p>The last column shows monthly take-home on {$(15000)} of revenue, with full ZUS without sickness cover and no costs. The descriptions are shortened: the rate is decided by the wording of Article 12(1) and the PKWiU classification of your service.</p>

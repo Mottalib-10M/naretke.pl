@@ -102,7 +102,7 @@ export default function SalaryCalculator({ lang = 'pl', contract = 'uop', defaul
         </div>
       )}
       <div className={`grid gap-6 ${compact ? '' : 'lg:grid-cols-2'}`}>
-        <form className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
+        <form className="grid content-start grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
           <NumberField id="kw-gross" label={grossLabel} value={gross} onChange={setGross} unit="zł" max={2_000_000} lang={l} className="sm:col-span-2" />
           {c === 'uop' && <>
             <SelectField id="kw-kup" label={T(l, 'Koszty uzyskania przychodu', 'Deductible costs')} value={kup} onChange={setKup} options={[{ value: 'standard', label: `${formatMoney(PARAMS.pit.kup_employee_month, 0, l)} ${T(l, '(praca na miejscu)', '(local job)')}` }, { value: 'raised', label: `${formatMoney(PARAMS.pit.kup_employee_raised_month, 0, l)} ${T(l, '(dojazd z innej miejscowości)', '(commuting)')}` }]} />

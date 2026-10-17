@@ -1,50 +1,34 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
-import ContentTable from '../../components/ContentTable.astro';
-import { CONTACT_EMAIL, LANG_TAGS } from '../../data/site-config';
+import { CLARITY_ID, CONTACT_EMAIL, GA4_ID, LAST_UPDATED, SITE_NAMES } from '../../data/site-config';
 import { route } from '../../i18n/routes';
-import { label } from '../../i18n/nav';
-import { facts } from '../../lib/facts';
-import { displayDate } from '../../lib/format';
-import { breadcrumbSchema } from '../../lib/seo';
 const lang = 'en';
-const F = facts(lang);
-/** Date this page last changed (no cookies, Clarity in cookieless mode). */
-const PAGE_UPDATED = '2026-10-06';
-const updated = displayDate(PAGE_UPDATED, LANG_TAGS[lang]);
-const title = `Cookie policy Poland ${F.year}: naretke.pl sets no cookies`;
-const description = `Cookies on naretke.pl in ${F.year}: the site sets no cookies and keeps none of your salary inputs. Page stability is checked anonymously with Microsoft Clarity.`;
-const summary = [
-  ['Site cookies', 'None'],
-  ['Analytics or advertising cookies', 'None'],
-  ['Browser storage (localStorage, sessionStorage)', 'Not used by the calculator'],
-  ['Stability check (Microsoft Clarity)', 'Anonymous, cookieless'],
-];
+const title = `Cookies – ${SITE_NAMES[lang]}`;
+const description = GA4_ID ? 'Google Analytics audience measurement cookies and nothing else: names, purpose, a lifetime of 13 months at most, the provider and how to object.' : 'The site sets no cookies: what you type stays in your browser and nothing is kept on your device.';
 ---
-<PageLayout title={title} description={description} lang={lang} noindex={true}
-  jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('cookies', lang), path: route('cookies', lang) }])]}
-  breadcrumbs={[{ label: label('cookies', lang) }]} showAuthor={false}>
+{/* Page générée par scripts/gen-legal-pages.py (trame, décision GA4 du 2026-10-17). Ne pas
+     retoucher à la main : relancer le script. Un passage propre au site se garde entre
+     les marqueurs site:debut et site:fin. */}
+<PageLayout title={title} description={description} lang={lang} noindex={true} breadcrumbs={[{ label: 'Cookies' }]} showAuthor={false}>
   <div class="prose prose-slate max-w-none">
-    <h1>Cookies and similar technologies</h1>
-    <p class="lead">The short answer: naretke.pl stores no cookies on your device. How data is handled is explained in the <a href={route('privacy', lang)}>privacy policy</a>.</p>
-
-    <h2>At a glance</h2>
-    <ContentTable headers={['Type', 'On naretke.pl']} rows={summary} />
-
-    <h2>Your figures stay in the browser tab</h2>
-    <p>Net pay, ZUS contributions, the health contribution and PIT advance are worked out by a script in your browser. Gross pay, contract type (employment, mandate, specific-work or B2B), the PIT-2 form, youth relief or PPK are not written to a cookie, to <code>localStorage</code> or to any other browser storage, and they are gone once you close the tab. To keep a calculation, copy the result link: the figures then live in the page address, not in a cookie. Since nothing is stored, there is no cookie banner either: there is nothing to accept.</p>
-
-    <h2>Anonymous stability check</h2>
-    <p>To spot when the calculator stops working, a page loads too slowly or a button does nothing, the site runs Microsoft Clarity in cookieless mode. Clarity then creates none of <code>_clck</code>, <code>_clsk</code>, <code>MUID</code> or <code>CLID</code>, gives every page view its own single-use identifier and does not join your visits together. Page text and form fields are masked in the browser before anything leaves it.</p>
-
-    <h2>Advertising</h2>
-    <p>The site shows no ads and loads no advertising or social media pixels.</p>
-
-    <h2>Blocking this check too</h2>
-    <p>If you would rather not have even this anonymous check, block the <code>clarity.ms</code> domain in your browser or with a content blocker. The salary calculator works exactly the same.</p>
-
-    <h2>The widget on other sites</h2>
-    <p>The calculator embedded in a frame on other websites does not load Clarity and stores nothing on the device.</p>
-    <p>Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Version dated {updated}.</p>
+    <h1>Cookies</h1>
+    {GA4_ID ? (<>
+    <p>The site sets Google Analytics audience measurement cookies and those alone: no advertising cookie, no social media cookie. Details of the processing are in the <a href={route('privacy', lang)}>privacy policy</a>.</p>
+    <h2>Cookies set</h2>
+    <table><thead><tr><th>Name</th><th>Provider</th><th>Purpose</th><th>Lifetime</th></tr></thead><tbody>
+    <tr><td><code>_ga</code></td><td>Google Analytics</td><td>Tell visitors apart with a random identifier</td><td>13 months at most (390 days)</td></tr>
+    <tr><td><code>_ga_{GA4_ID.replace('G-', '')}</code></td><td>Google Analytics</td><td>Keep the state of the current visit</td><td>13 months at most (390 days)</td></tr>
+    </tbody></table>
+    <p>These lifetimes are not extended on each visit; Google’s default is 2 years and the site shortens it. Purpose: audience measurement (pages viewed, referrer, device, approximate country). The IP address is anonymised: Google Analytics 4 neither logs nor stores it. No advertising and no ad sharing: ad storage, ad personalisation and Google signals are switched off.</p>
+    <p>Provider: Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland. Data may be transferred to Google LLC in the United States under the EU–U.S. Data Privacy Framework and the European Commission’s standard contractual clauses. Retention at Google: 14 months. Legal basis: the publisher’s legitimate interests (Article 6(1)(f) GDPR).</p>
+    <h2>Objecting to these cookies</h2>
+    <p>Block or delete cookies in your browser settings, or install the <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">Google Analytics opt-out browser add-on</a>. The site and its calculators work the same way.</p>
+    </>) : (<>
+    <p>The site <strong>sets no cookies</strong>. Details of the processing are in the <a href={route('privacy', lang)}>privacy policy</a>.</p>
+    </>)}
+    {CLARITY_ID && (<><h2>Microsoft Clarity, cookie-free</h2><p>Page stability is monitored with Microsoft Clarity in cookie-free mode: Clarity sets no cookies, each page view gets a single-use identifier, and page content and your inputs are masked. Blocking <code>clarity.ms</code> stops it.</p></>)}
+    <h2>What you type</h2>
+    <p>Calculations run in your browser: what you enter is sent to no server and is gone when you close the page.</p>
+    <p>Questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Last updated: {LAST_UPDATED}.</p>
   </div>
 </PageLayout>

@@ -1,7 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
 import LegalIdentity from '../../components/LegalIdentity.astro';
-import { CONTACT_EMAIL, LEGAL, SITE_URL, LANG_TAGS } from '../../data/site-config';
+import { CONTACT_EMAIL, GA4_ID, LEGAL, SITE_URL, LANG_TAGS } from '../../data/site-config';
 import { route } from '../../i18n/routes';
 import { label } from '../../i18n/nav';
 import { facts } from '../../lib/facts';
@@ -9,18 +9,18 @@ import { displayDate } from '../../lib/format';
 import { breadcrumbSchema } from '../../lib/seo';
 const lang = 'pl';
 const F = facts(lang);
-/** Data ostatniej zmiany polityki (brak cookies, Clarity w trybie bez cookies). */
-const PAGE_UPDATED = '2026-10-06';
+/** Data ostatniej zmiany polityki (Google Analytics z cookies, Clarity w trybie bez cookies). */
+const PAGE_UPDATED = '2026-10-17';
 const updated = displayDate(PAGE_UPDATED, LANG_TAGS[lang]);
-const title = `Polityka prywatności Polska ${F.year}: kalkulator bez cookies`;
-const description = `Polityka prywatności naretke.pl w Polsce, ${F.year}: kalkulator liczy w przeglądarce, brak cookies, anonimowy pomiar stabilności Microsoft Clarity, prawa RODO.`;
+const title = `Polityka prywatności Polska ${F.year}: kalkulator i Google Analytics`;
+const description = `Polityka prywatności naretke.pl w Polsce, ${F.year}: kalkulator liczy w przeglądarce, pomiar ruchu Google Analytics z cookies bez reklam, Clarity bez cookies, prawa RODO.`;
 ---
 <PageLayout title={title} description={description} lang={lang} noindex={true}
   jsonLd={[breadcrumbSchema([{ name: label('home', lang), path: route('home', lang) }, { name: label('privacy', lang), path: route('privacy', lang) }])]}
   breadcrumbs={[{ label: label('privacy', lang) }]} showAuthor={false}>
   <div class="prose prose-slate max-w-none">
     <h1>Polityka prywatności</h1>
-    <p class="lead">Krótko: kalkulator nie wysyła wpisanych kwot nigdzie, serwis nie zapisuje plików cookies, nie przechowujemy danych osobowych odwiedzających i nie wyświetlamy reklam. Jedyny pomiar to anonimowa kontrola stabilności stron (Microsoft Clarity bez cookies), opisana w punkcie 3. Poniżej szczegóły wymagane przez RODO (rozporządzenie UE 2016/679) dla serwisu {SITE_URL}.</p>
+    <p class="lead">Krótko: kalkulator nie wysyła wpisanych kwot nigdzie i nie wyświetlamy reklam. Ruch w serwisie mierzymy narzędziem Google Analytics, które zapisuje pliki cookies <code>_ga</code> i <code>_ga_…</code> na 13 miesięcy, a stabilność stron sprawdza Microsoft Clarity bez cookies; oba opisuje punkt 3. Poniżej szczegóły wymagane przez RODO (rozporządzenie UE 2016/679) dla serwisu {SITE_URL}.</p>
 
     <h2>1. Administrator danych</h2>
     <LegalIdentity lang={lang} />
@@ -35,18 +35,22 @@ const description = `Polityka prywatności naretke.pl w Polsce, ${F.year}: kalku
     <p>Serwis jest hostowany w usłudze GitHub Pages (GitHub, Inc.). Jak każdy serwer, przy każdym wejściu na stronę GitHub otrzymuje adres IP odwiedzającego i techniczne dane żądania. Według dokumentacji GitHub adresy IP odwiedzających są rejestrowane i przechowywane ze względów bezpieczeństwa. My nie mamy dostępu do tych dzienników i z nich nie korzystamy. Podstawą jest prawnie uzasadniony interes (art. 6 ust. 1 lit. f RODO): udostępnienie strony i ochrona przed nadużyciami. Okres przechowywania określa GitHub w swojej <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="nofollow noopener" target="_blank">polityce prywatności</a>.</p>
     <h3>Wiadomości e-mail</h3>
     <p>Jeśli do nas napiszesz, przetwarzamy Twój adres e-mail i treść wiadomości, żeby odpowiedzieć i ewentualnie poprawić błąd w obliczeniach (art. 6 ust. 1 lit. f RODO). Korespondencję przechowujemy nie dłużej niż trzy lata od ostatniej wymiany wiadomości.</p>
-    <h3>Anonimowa kontrola stabilności: Microsoft Clarity bez cookies</h3>
-    <p>Sami nie przechowujemy żadnych Twoich danych osobowych, a serwis nie zapisuje plików cookies. Żeby wykrywać błędy kalkulatora, korzystamy z Microsoft Clarity, które dostarcza Microsoft Ireland Operations Limited, One Microsoft Place, South County Business Park, Leopardstown, Dublin 18, Irlandia, w trybie bez cookies. Dla każdej odsłony osobno Clarity mierzy błędy skryptów, czas ładowania, kliknięcia bez efektu i głębokość przewinięcia. Nie zapisuje przy tym żadnego pliku cookie (ani <code>_clck</code>, <code>_clsk</code>, <code>MUID</code>, <code>CLID</code>), nie zostawia identyfikatora na Twoim urządzeniu i nie łączy Twoich wizyt. Tekst stron, kwota brutto i wszystkie inne pola są maskowane w przeglądarce. Microsoft otrzymuje techniczne dane żądania, w tym adres IP, z którego ustala tylko przybliżoną lokalizację. Nagrania są przechowywane 30 dni, dane zbiorcze do 13 miesięcy. Szczegóły: <a href="https://privacy.microsoft.com/privacystatement" rel="nofollow noopener" target="_blank">oświadczenie Microsoft o ochronie prywatności</a>.</p>
+    <h3>Pomiar ruchu: Google Analytics</h3>
+    <p>Serwis korzysta z Google Analytics 4, żeby liczyć wizyty i sprawdzać, które strony są przydatne: odsłony, stronę odsyłającą, czas wizyty, typ urządzenia i przeglądarki, przybliżony kraj i miasto. W tym celu Google Analytics zapisuje na Twoim urządzeniu dwa pliki cookies: <code>_ga</code>, który odróżnia odwiedzających losowym identyfikatorem, i <code>_ga_{GA4_ID.replace('G-', '')}</code>, który przechowuje stan wizyty. Ich ważność ustawiliśmy na najwyżej 13 miesięcy (390 dni) i nie jest przedłużana przy każdej wizycie; domyślnie Google przewiduje 2 lata.</p>
+    <p>Adres IP jest anonimizowany: Google Analytics 4 go nie rejestruje i nie przechowuje, używa go tylko przy zbieraniu danych do ustalenia przybliżonego kraju i miasta. Adres strony wysyłany do Google Analytics jest pozbawiony parametrów, więc kwoty zapisane w linku z wynikiem nie są przekazywane. Serwis nie wyświetla reklam: przechowywanie danych reklamowych, personalizacja reklam i sygnały Google są wyłączone, a dane pomiarowe nie trafiają do żadnego reklamodawcy.</p>
+    <p>Dostawca: Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlandia, jako podmiot przetwarzający (art. 28 RODO). Okres przechowywania danych u Google: 14 miesięcy, potem usunięcie. Podstawa: prawnie uzasadniony interes administratora (art. 6 ust. 1 lit. f RODO), czyli wiedza o tym, jak serwis jest używany. Sprzeciw bez pisania do nas: zablokuj lub usuń pliki cookies w ustawieniach przeglądarki albo zainstaluj <a href="https://tools.google.com/dlpage/gaoptout" rel="nofollow noopener" target="_blank">dodatek do przeglądarki blokujący Google Analytics</a>. Kalkulator działa wtedy tak samo.</p>
+    <h3>Kontrola stabilności: Microsoft Clarity bez cookies</h3>
+    <p>Żeby wykrywać błędy kalkulatora, korzystamy z Microsoft Clarity, które dostarcza Microsoft Ireland Operations Limited, One Microsoft Place, South County Business Park, Leopardstown, Dublin 18, Irlandia, w trybie bez cookies. Dla każdej odsłony osobno Clarity mierzy błędy skryptów, czas ładowania, kliknięcia bez efektu i głębokość przewinięcia. Clarity działa przy tym w trybie bez cookies (bez <code>_clck</code>, <code>_clsk</code>, <code>MUID</code>, <code>CLID</code>), bez identyfikatora na Twoim urządzeniu i bez łączenia Twoich wizyt. Tekst stron, kwota brutto i wszystkie inne pola są maskowane w przeglądarce. Microsoft otrzymuje techniczne dane żądania, w tym adres IP, z którego ustala tylko przybliżoną lokalizację. Nagrania są przechowywane 30 dni, dane zbiorcze do 13 miesięcy. Szczegóły: <a href="https://privacy.microsoft.com/privacystatement" rel="nofollow noopener" target="_blank">oświadczenie Microsoft o ochronie prywatności</a>.</p>
     <h3>Podstawa prawna i sprzeciw</h3>
-    <p>Cel: kalkulator i poradniki, które działają bez błędów. Dane nie służą do reklam ani profilowania. Podstawą jest prawnie uzasadniony interes administratora (art. 6 ust. 1 lit. f RODO). Możesz w każdej chwili wnieść sprzeciw (art. 21 RODO): napisz na <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> albo po prostu zablokuj domenę <code>clarity.ms</code> w przeglądarce. Kalkulator działa bez zmian. Więcej na stronie <a href={route('cookies', lang)}>cookies</a>.</p>
+    <p>Cel: wiedza o ruchu w serwisie oraz kalkulator i poradniki, które działają bez błędów. Dane nie służą do reklam ani profilowania. Podstawą jest prawnie uzasadniony interes administratora (art. 6 ust. 1 lit. f RODO). Możesz w każdej chwili wnieść sprzeciw (art. 21 RODO): napisz na <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> albo zablokuj pliki cookies Google Analytics i domenę <code>clarity.ms</code> w przeglądarce. Kalkulator działa bez zmian. Więcej na stronie <a href={route('cookies', lang)}>cookies</a>.</p>
     <h3>Reklamy</h3>
     <p>Serwis nie wyświetla reklam i nie ładuje pikseli reklamowych ani mediów społecznościowych.</p>
 
     <h2>4. Komu przekazujemy dane</h2>
-    <p>Nie sprzedajemy, nie wynajmujemy i nie udostępniamy danych osobowych w celach marketingowych. Dane przetwarzają na nasze zlecenie podmioty przetwarzające: dostawca hostingu (GitHub, Inc.) i Microsoft (techniczne dane kontroli stabilności), a wiadomości e-mail przechodzą przez dostawcę naszej poczty.</p>
+    <p>Nie sprzedajemy, nie wynajmujemy i nie udostępniamy danych osobowych w celach marketingowych. Dane przetwarzają na nasze zlecenie podmioty przetwarzające: dostawca hostingu (GitHub, Inc.), Google Ireland Limited (Google Analytics) i Microsoft (techniczne dane kontroli stabilności), a wiadomości e-mail przechodzą przez dostawcę naszej poczty.</p>
 
     <h2>5. Przekazywanie poza Europejski Obszar Gospodarczy</h2>
-    <p>GitHub, Inc. i Microsoft Corporation mają siedziby w Stanach Zjednoczonych, więc dane techniczne mogą trafiać do USA. Te przekazania opierają się na standardowych klauzulach umownych Komisji Europejskiej oraz na udziale tych firm w programie EU–U.S. Data Privacy Framework, jak deklaruje każdy z dostawców. Jeśli zablokujesz domenę <code>clarity.ms</code>, żadne dane z kontroli stabilności nie są przekazywane.</p>
+    <p>GitHub, Inc., Google LLC i Microsoft Corporation mają siedziby w Stanach Zjednoczonych, więc dane techniczne mogą trafiać do USA. Te przekazania opierają się na standardowych klauzulach umownych Komisji Europejskiej oraz na udziale tych firm w programie EU–U.S. Data Privacy Framework, jak deklaruje każdy z dostawców. Jeśli zablokujesz domenę <code>clarity.ms</code>, żadne dane z kontroli stabilności nie są przekazywane.</p>
 
     <h2>6. Twoje prawa</h2>
     <p>Masz prawo dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, przeniesienia oraz prawo sprzeciwu wobec przetwarzania opartego na prawnie uzasadnionym interesie (art. 15–21 RODO). Napisz na <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>; odpowiemy w ciągu miesiąca, bezpłatnie. Ponieważ nie prowadzimy kont użytkowników, zwykle nie mamy żadnych danych, które pozwalałyby Cię zidentyfikować, poza ewentualną korespondencją, i powiemy Ci to wprost.</p>
@@ -56,7 +60,7 @@ const description = `Polityka prywatności naretke.pl w Polsce, ${F.year}: kalku
     <p>Wynik kalkulatora to obliczenie, o które sam prosisz, wykonane na Twoim urządzeniu z Twoich danych. Nie wywołuje skutków prawnych i nie jest zautomatyzowaną decyzją w rozumieniu art. 22 RODO. Nie tworzymy profili użytkowników, a dane z kontroli stabilności nie służą do podejmowania decyzji wobec konkretnych osób.</p>
 
     <h2>8. Zmiany tej polityki</h2>
-    <p>Jeśli zmienimy narzędzie do kontroli stabilności albo dodamy nowe, najpierw zaktualizujemy tę politykę i stronę o <a href={route('cookies', lang)}>cookies</a>. Połączenie ze stroną jest szyfrowane (HTTPS), a serwis nie prowadzi bazy danych użytkowników.</p>
+    <p>Jeśli zmienimy narzędzie do pomiaru ruchu lub kontroli stabilności albo dodamy nowe, najpierw zaktualizujemy tę politykę i stronę o <a href={route('cookies', lang)}>cookies</a>. Połączenie ze stroną jest szyfrowane (HTTPS), a serwis nie prowadzi bazy danych użytkowników.</p>
     <p>Wersja z dnia {updated}.</p>
   </div>
 </PageLayout>
